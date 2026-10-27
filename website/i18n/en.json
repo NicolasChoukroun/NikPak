@@ -1,0 +1,782 @@
+{
+ "meta": {
+  "lang_name": "English",
+  "dir": "ltr",
+  "desc": "NikPak makes smaller archives than 7-Zip, RAR 7 and ZIP, protected by quantum-resistant encryption: 256-bit XChaCha20-Poly1305 and Argon2id, with no RSA or elliptic curves for a quantum computer to break. Media-aware compression. Windows, macOS, Linux.",
+  "t_home": "NikPak: smaller archives than 7-Zip, RAR and ZIP",
+  "t_features": "Features",
+  "t_benchmarks": "Benchmarks",
+  "t_guide": "User guide",
+  "t_buy": "Buy a licence",
+  "t_contact": "Contact",
+  "t_thanks": "Thank you",
+  "t_skins": "Skins"
+ },
+ "nav": {
+  "home": "Home",
+  "features": "Features",
+  "benchmarks": "Benchmarks",
+  "guide": "User guide",
+  "buy": "Buy",
+  "contact": "Contact",
+  "menu": "Menu",
+  "language": "Language",
+  "skip": "Skip to content",
+  "skins": "Skins"
+ },
+ "common": {
+  "download": "Free download",
+  "download_note": "Version {v} · NikPak + unNik · Windows, macOS, Linux",
+  "buy": "Buy a licence",
+  "see_benchmarks": "See the benchmarks",
+  "read_guide": "Read the user guide",
+  "all_features": "All the features",
+  "tagline": "Fast, media-aware archiving for the .nik format, with quantum-resistant encryption.",
+  "copyright": "© 2026 Nicolas Choukroun. Distributed and licensed by Nikkoid LLC.",
+  "product": "Product",
+  "support": "Support",
+  "community": "Community",
+  "community_text": "News, questions, ideas and bug reports.",
+  "licence_terms": "Licence terms (EULA)",
+  "made_with": "NikPak is shareware. unNik is freeware.",
+  "copied": "Copied",
+  "per_seat": "/ seat",
+  "from": "from"
+ },
+ "home": {
+  "kicker": "Quantum-resistant encryption · Shareware · Windows, macOS, Linux",
+  "title": "Smaller archives than <em>7-Zip, RAR and ZIP</em>.",
+  "lead": "NikPak recognises photos, music and office documents by their content and compresses each file with the codec that suits it best. Every encrypted archive is quantum-resistant: 256-bit symmetric encryption only, with no RSA or elliptic curves for a quantum computer to break.",
+  "free_note": "Free for personal use · unNik, the archive browser, is free for everyone",
+  "stats": [
+   {
+    "v": "38.8 %",
+    "l": "smaller than RAR 7 on photographs"
+   },
+   {
+    "v": "31.7 %",
+    "l": "smaller than 7-Zip on office files"
+   },
+   {
+    "v": "60.4 %",
+    "l": "up to this much smaller than ZIP"
+   },
+   {
+    "v": "256-bit",
+    "l": "quantum-resistant encryption: no RSA, no elliptic curves"
+   }
+  ],
+  "why_title": "Why NikPak",
+  "why_sub": "One small program, designed around four ideas: compress better, go faster, protect with modern cryptography, run unchanged everywhere.",
+  "cards": [
+   {
+    "t": "Quantum-resistant",
+    "d": "Only 256-bit symmetric cryptography. There is no RSA, elliptic-curve or Diffie-Hellman code for a quantum computer to break."
+   },
+   {
+    "t": "Media-aware",
+    "d": "WAV, AIFF, ProTracker MOD and BMP files are recognised by their content, not their name. Each one is tried with several lossless filters and the smallest result wins."
+   },
+   {
+    "t": "Office and PDF recompression",
+    "d": "The Deflate streams inside docx, xlsx, pptx, odt, epub, pdf, zip and gz files are unpacked, compressed far better and rebuilt bit for bit when you extract."
+   },
+   {
+    "t": "Smallest at the maximum level",
+    "d": "At -m5 NikPak picks LZMA2 or PPMd for each block and sorts files by type. It made the smallest archive of all four tools on every test set."
+   },
+   {
+    "t": "Fast when you need it",
+    "d": "At the fast level -m2, 190 MB of source code is archived in 1.7 s on one core, 56 times faster than 7-Zip's default level."
+   },
+   {
+    "t": "Encryption done right",
+    "d": "Argon2id with 64 MiB of memory and XChaCha20-Poly1305 authenticated encryption. File names, sizes and dates are always hidden, and tampering is always detected."
+   }
+  ],
+  "chart_title": "Archive size at the maximum level",
+  "chart_sub": "Percentage of the original size: lower is better. One CPU core, every archive extracted again and compared byte for byte.",
+  "win_title": "One window. Drop, and it's done.",
+  "win_text": "Drop files or folders on the NikPak window, or click the circle to choose them. They are compressed with the best compression into one archive. The ring shows the progress and turns green when the archive is ready.",
+  "win_points": [
+   "Best compression (-m5) by default",
+   "Remembers your destination folder",
+   "Cancel at any time with Esc; nothing half-written is left behind",
+   "An existing archive is never overwritten"
+  ],
+  "unnik_title": "unNik: the free archive browser",
+  "unnik_text": "Double-click a .nik file and unNik opens it. Browse the folders, search the whole archive, view text and binary files, extract a selection, delete files or test the archive. unNik is freeware, for individuals and companies alike.",
+  "unnik_points": [
+   "Folder tree, breadcrumbs, search with Ctrl+F",
+   "Built-in viewer for text (with search) and binary files",
+   "Extract all or a selection, keep both or replace",
+   "Switch between NikPak and unNik with one button"
+  ],
+  "cli_title": "A command line RAR users already know",
+  "cli_text": "<code>a</code>, <code>x</code>, <code>e</code>, <code>l</code>, <code>t</code>, <code>@listfiles</code>, <code>-p</code>, <code>-o+</code>, <code>-y</code>: front-ends such as Total Commander can drive nikpak.exe like rar.exe. Clear exit codes make it a solid choice for scripts and backups.",
+  "lang_title": "Speaks your language",
+  "lang_text": "The ten most spoken languages in the world, with real text shaping for Hindi, Bengali and Arabic. The first time, NikPak follows the language of your system; NikPak and unNik always share the same choice.",
+  "price_title": "Free for you. Fair for companies.",
+  "price_text": "Individuals may use NikPak free of charge, without time limit, for personal use; nothing is disabled. Companies and organisations get 40 days to evaluate, then one licence per seat.",
+  "price_personal": "Personal licence",
+  "price_personal_note": "Removes the reminder, on all your computers",
+  "price_company": "Company licence",
+  "price_company_note": "Volume prices from 1 to 500+ seats",
+  "honest_title": "Honest about the limits",
+  "honest_text": "RAR still offers recovery records, multi-volume and self-extracting archives, and decades of field testing. NikPak is new and has not been independently audited yet. We say so plainly, and the roadmap shows what comes next.",
+  "cta_title": "Try NikPak now",
+  "cta_text": "One setup installs NikPak and unNik. No registration needed to start.",
+  "skins_title": "55 skins",
+  "skins_text": "Dark, bright, playful or classic: the skins button changes the colours of NikPak and unNik, and the sun / moon button switches between dark and bright in one click.",
+  "skins_link": "See all skins"
+ },
+ "app": {
+  "drop": "Drop a file or a folder to compress it",
+  "or": "or",
+  "choose_files": "choose files",
+  "choose_folder": "choose a folder",
+  "save_to": "SAVE TO",
+  "browse": "Browse",
+  "eval": "EVALUATION COPY  ·  REGISTER",
+  "compressing": "COMPRESSING",
+  "done": "DONE",
+  "of": "{} of {}",
+  "cancel": "Cancel",
+  "show": "Show in folder"
+ },
+ "features": {
+  "title": "Features",
+  "sub": "What is inside NikPak and the .nik format, explained plainly.",
+  "media_t": "Media intelligence",
+  "media_p1": "NikPak looks at what a file contains, not at its extension. WAV and AIFF audio, ProTracker MOD music and BMP images are recognised and sent through filters made for them.",
+  "media_p2": "Every media file goes through a trial: NAC, Shuffle, Shuffle+Delta and MED are tried and the smallest result is kept. When no filter helps, the file is compressed normally, so a filter never makes an archive bigger.",
+  "media_list": [
+   "<b>NAC</b>, NikPak's lossless audio codec: linear prediction and stereo decorrelation, on par with FLAC -8.",
+   "Self-verification: every NAC block is decoded again during compression and compared with the original.",
+   "Shuffle and Shuffle+Delta for samples and pixels, and a dedicated path for ProTracker MOD files.",
+   "Results against RAR 7 -m5: BMP photographs 38.8 % smaller, stereo music 14.6 %, MOD files 13.3 %."
+  ],
+  "office_t": "Office documents, PDF and gzip",
+  "office_p": "docx, xlsx, pptx, odt, ods, epub, jar, zip, pdf and gz files hide their content in Deflate streams that ordinary compressors cannot shrink any more. At levels -m4 and -m5 NikPak decodes these streams, compresses the plain data far better and rebuilds the original file bit for bit when you extract. On 60 office files the archive is 31.7 % smaller than with 7-Zip -mx9.",
+  "engine_t": "Compression levels",
+  "engine_p": "Levels -m1 to -m4 use a multi-threaded, solid Zstandard stream, with a 128 MiB window and long-distance matching at -m4. The maximum level -m5, the default, builds a multi-engine body: LZMA2 for binary data and PPMd for text, chosen by trial, with files sorted by type.",
+  "lv_col_level": "Level",
+  "lv_col_use": "What it does",
+  "levels": [
+   [
+    "-m0",
+    "Store: no compression"
+   ],
+   [
+    "-m1",
+    "Fastest"
+   ],
+   [
+    "-m2",
+    "Fast: the choice when speed matters more than size"
+   ],
+   [
+    "-m3",
+    "Good"
+   ],
+   [
+    "-m4",
+    "High: adds Deflate recompression for office files, PDF and gzip"
+   ],
+   [
+    "-m5",
+    "Maximum, the default: LZMA2 and PPMd chosen by trial"
+   ]
+  ],
+  "crypto_t": "Encryption",
+  "crypto_p": "Encrypted archives use Argon2id to turn the password into a key. It needs 64 MiB of memory for every guess, which makes password guessing on graphics cards expensive. The data is then encrypted with XChaCha20-Poly1305 in authenticated chunks of 64 KiB.",
+  "crypto_list": [
+   "File names, sizes, dates and permissions are always encrypted.",
+   "Reordering, truncation and header changes are detected cryptographically.",
+   "No password given? NikPak generates a strong one: 24 characters, about 139 bits.",
+   "There is no back door: a lost password cannot be recovered by anyone."
+  ],
+  "cmp_col": "",
+  "cmp_cipher": "Cipher",
+  "cmp_kdf": "Password hashing",
+  "cmp_names": "File names hidden",
+  "cmp_auth": "Authenticated",
+  "always": "Always",
+  "yes": "Yes",
+  "no": "No",
+  "only_with": "Only with {}",
+  "memory_hard": "memory-hard",
+  "not_memory_hard": "not memory-hard",
+  "quantum_t": "Quantum resistance",
+  "quantum_p1": "Quantum computers threaten public-key cryptography: Shor's algorithm breaks RSA and elliptic curves. NikPak uses none of them. Its encryption is 256-bit symmetric only, which keeps about 128 bits of security even against Grover's algorithm.",
+  "quantum_p2": "Archives captured today cannot simply be decrypted later by a quantum computer (\"harvest now, decrypt later\"). The strength of your password still matters most, and Argon2id makes guessing it expensive.",
+  "safety_t": "Safe by design",
+  "safety_list": [
+   "Extraction never writes outside the destination folder (zip-slip protection).",
+   "Symbolic links are refused and setuid bits are removed.",
+   "Every decoder has strict limits: a malicious archive cannot exhaust memory.",
+   "Archives are written atomically: a failed run never leaves a half-written file.",
+   "CRC32 of every file, an end marker with the entry count, and a program written in memory-safe Rust."
+  ],
+  "apps_t": "Two programs, one look",
+  "apps_p": "NikPak creates archives from a single drop window; unNik opens, browses and extracts them. Both share the language, the sounds and the settings, and one button switches from one to the other.",
+  "limits_t": "Where RAR is still ahead",
+  "limits_list": [
+   "Recovery records that can repair a damaged archive",
+   "Multi-volume and self-extracting archives",
+   "Adding or replacing files inside an existing archive",
+   "Decades of field testing and millions of existing .rar files"
+  ],
+  "roadmap_t": "Roadmap",
+  "roadmap_list": [
+   "<b>Recovery records:</b> Reed-Solomon parity to repair damaged archives.",
+   "<b>Multi-volume archives and updates:</b> splitting large archives, adding and replacing files.",
+   "<b>Sharing with public keys:</b> a hybrid of X25519 and ML-KEM, safe if either one holds.",
+   "<b>More media filters:</b> floating-point audio, XM/S3M/IT trackers, PNG recompression, TGA and TIFF.",
+   "<b>ZIP and RAR in unNik, shell integration:</b> so that NikPak can be the only archiver you need.",
+   "<b>A faster maximum level:</b> multi-threaded LZMA2 and PPMd, deduplication, a filter for executables.",
+   "<b>An external security review</b> of the cryptography and the extractor."
+  ],
+  "skins_t": "Skins",
+  "skins_p": "55 skins for NikPak and unNik: the 41 of Nikkomander plus 14 painted ones of our own. The choice is saved and shared by both programs, and you can import your own .skin.json skins."
+ },
+ "bench": {
+  "title": "Benchmarks",
+  "sub": "NikPak, RAR 7.00, 7-Zip 23.01 and Info-ZIP 3.0, run one after another on the same machine and the same files.",
+  "method_t": "Method",
+  "method_list": [
+   "Linux x86-64 virtual machine (Intel Xeon, 2.8 GHz). Every tool pinned to one CPU core and run single-threaded.",
+   "Maximum levels: nikpak -m5, RAR -m5 -s, 7-Zip -mx9, ZIP -9. Fast levels: nikpak -m2, RAR -m3 -s, 7-Zip -mx5, ZIP -6.",
+   "All 92 archives were extracted again and compared with the originals: all were identical.",
+   "Public test material: scikit-image photographs, the libxmp MOD collection, LibreOffice gallery sounds, music rendered with TiMidity++, Project Gutenberg books, office files, the Python standard library and C headers."
+  ],
+  "chart_t": "Archive size at the maximum level",
+  "chart_sub": "Percentage of the original size, lower is better.",
+  "max_t": "Maximum level: archive size in bytes",
+  "max_note": "The smallest archive in each row is highlighted.",
+  "fast_t": "Fast levels: size and creation time",
+  "fast_note": "Archive size as a percentage of the original, and creation time on one core. The smallest archive in each row is highlighted.",
+  "gen_t": "General data in detail",
+  "gen_note": "190 MB, 11,473 files: Python libraries, C headers and documentation.",
+  "col_set": "Test set",
+  "col_original": "Original",
+  "col_tool": "Tool and level",
+  "col_size": "Size (bytes)",
+  "col_pct": "% of original",
+  "col_create": "Creation",
+  "col_extract": "Extraction",
+  "sets": {
+   "bmp": "8 BMP images",
+   "mod": "16 ProTracker MOD files",
+   "wav": "35 WAV sounds (mono 16-bit)",
+   "m44": "Music 44.1 kHz stereo 16-bit",
+   "m22": "Music 22.05 kHz mono 16-bit",
+   "m22b": "Music 22.05 kHz mono 8-bit",
+   "m48": "Music 48 kHz stereo 24-bit",
+   "txt": "18 plain-text books",
+   "office": "60 office files",
+   "gen": "General data (11,473 files)"
+  },
+  "reading_t": "Reading the results honestly",
+  "reading_list": [
+   "<b>NikPak -m5 is the smallest on every set:</b> 2.4 to 31.7 % smaller than 7-Zip -mx9, 10.8 to 38.4 % smaller than RAR 7 -m5 and 19.9 to 60.4 % smaller than ZIP -9.",
+   "<b>Recorded audio:</b> on the 24-bit music 7-Zip saves 12 % and NikPak 37 %, because the NAC codec predicts what general compressors can only match.",
+   "<b>Office files, 31.7 % smaller than 7-Zip</b>, thanks to Deflate recompression. The price at -m5 is time: 81 s against 26 s.",
+   "<b>Text, 15.9 % smaller in half the time:</b> PPMd wins on prose. It decodes as slowly as it encodes, so extraction takes 2.7 s instead of 0.2 s.",
+   "<b>Fast level -m2:</b> 1.7 s for the general set, against 93.7 s for 7-Zip -mx5, 48.2 s for RAR and 7.3 s for ZIP. It is not the smallest on text and source code, which is why -m5 is the default.",
+   "<b>Extraction:</b> 0.9 s (-m2) or 5.6 s (-m5) for the general set, against 6.0 s for 7-Zip, 6.7 s for RAR and 6.9 s for ZIP.",
+   "<b>The cost:</b> -m5 is single-threaded and slower than 7-Zip on large office and source-code sets. A faster maximum level is on the roadmap."
+  ],
+  "source_note": "Figures from the NikPak technical guide (section 11.7, NikPak 1.2.0). Measure on your own files: <code>nikpak mt</code> shows what each media filter achieves without writing anything."
+ },
+ "guide": {
+  "title": "User guide",
+  "sub": "Install NikPak, compress with a drop, browse archives with unNik, register, and drive everything from the command line.",
+  "toc": "On this page",
+  "install_t": "Install",
+  "install_p1": "Run the setup. By default it installs for the current user only, without administrator rights, into <code>%LOCALAPPDATA%\\Programs\\NikPak</code>; its first page also offers to install for all users. It installs NikPak and unNik, adds them to the Start menu, puts NikPak on the desktop and makes unNik the program for .nik files. On request it adds the folder to the PATH for the command line.",
+  "install_p2": "Updates install over the previous version and keep your licence.",
+  "win_t": "Compress with the NikPak window",
+  "win_steps": [
+   "Start NikPak. Drop files or folders on the window, or click the circle and choose <b>Choose files</b> or <b>Choose a folder</b>.",
+   "They are compressed with the best compression (-m5) into one archive named after the file, the folder, or the folder they came from. An existing archive is never overwritten: report.nik becomes report (2).nik.",
+   "The ring shows the percentage, the phase (analysing, compressing, finishing), the amount processed and the time. <b>Cancel</b> or <kbd>Esc</kbd> stops at once and removes the unfinished archive.",
+   "When the ring turns green: <b>Show in folder</b>, <b>Open in unNik</b>, or <b>Compress more</b>."
+  ],
+  "win_more_t": "Also in the window",
+  "win_more": [
+   "<b>Save to:</b> the destination folder at the bottom. It is remembered; the first time it is the Desktop. The folder button next to it opens it.",
+   "<b>Switch to unNik:</b> the round button left of the <b>i</b> button closes NikPak and opens unNik, with the new archive if you just made one.",
+   "<b>Language:</b> the button at the bottom left. NikPak and unNik restart in the chosen language and share it.",
+   "<b>Sounds:</b> the speaker button in the title bar switches the sound effects on and off.",
+   "<b>Skins:</b> the palette button in the title bar opens the skins menu beside the window (click a skin to try it, <b>Apply Skin</b> to keep it, <b>Cancel</b> to go back); the sun / moon button switches between dark and bright. The choice is remembered and shared with unNik. <a href=\"skins.html\">All the skins</a>.",
+   "<b>Status and About:</b> the top left shows EVALUATION COPY · REGISTER or the licence holder; the <b>i</b> button shows the version and the licence."
+  ],
+  "admin_note": "<b>Running as administrator?</b> Windows does not allow dragging files from Explorer onto a program that runs as administrator. NikPak restarts itself once as a normal user; if that is not possible, choose the files with the buttons instead.",
+  "unnik_t": "Browse and extract with unNik",
+  "unnik_p": "Double-click a .nik file, drop it on the unNik window or pick one of the recent archives. Encrypted archives ask for their password first. The window grows into a browser with the folder tree, the files and the details of the selected file.",
+  "unnik_list": [
+   "<b>Navigate</b> with the folder tree, the breadcrumbs, Back, Forward and Up, and double-clicks. <b>Search</b> finds files by name in the whole archive.",
+   "<b>Select</b> with a click, <kbd>Ctrl</kbd>+click, <kbd>Shift</kbd>+click or the check boxes. Click a column title to sort. A right-click opens a menu with every action.",
+   "<b>Extract all</b> or the selection: choose the destination, keep the folders or not, and what to do when a file exists: replace it, keep both or skip it.",
+   "<b>View</b> text with line numbers and search, or binary files in hexadecimal. <b>Open</b> starts a file with its own program.",
+   "<b>Delete</b> removes files from the archive after a confirmation; the archive is written again safely. <b>Test</b> checks every file."
+  ],
+  "keys_t": "Keyboard shortcuts",
+  "keys_col_key": "Keys",
+  "keys_col_action": "Action",
+  "keys": [
+   [
+    "Ctrl+F",
+    "Search the whole archive"
+   ],
+   [
+    "Ctrl+E",
+    "Extract the selection (everything when nothing is selected)"
+   ],
+   [
+    "F3",
+    "View the file"
+   ],
+   [
+    "Del",
+    "Delete from the archive"
+   ],
+   [
+    "Ctrl+A",
+    "Select all"
+   ],
+   [
+    "Alt+Left / Alt+Right",
+    "Back / Forward"
+   ],
+   [
+    "Backspace",
+    "Up one folder"
+   ]
+  ],
+  "reg_t": "Register your licence",
+  "reg_steps": [
+   "<a href=\"buy.html\">Buy a licence</a>. You receive a key that starts with <code>NPK1-</code> by e-mail.",
+   "In NikPak, click <b>EVALUATION COPY · REGISTER</b> at the top left, or <b>Register</b> in the reminder.",
+   "Enter the name and the e-mail address exactly as on your licence, and paste the key. Case, extra spaces and the look-alike characters O/0 and I/L/1 do not matter."
+  ],
+  "reg_p": "Once registered, NikPak never asks again on that computer. A company can instead put a <code>nikpak.key</code> file next to nikpak.exe, which registers every user of that PC. From the command line:",
+  "cli_t": "Command line",
+  "cli_p": "NikPak follows the syntax RAR users know: <code>nikpak &lt;command&gt; [options] &lt;archive&gt; [files...]</code>. Options may come before or after the archive name; <code>--</code> ends the options.",
+  "cmd_t": "Commands",
+  "col_cmd": "Command",
+  "col_meaning": "Meaning",
+  "commands": [
+   [
+    "a",
+    "Create an archive. .nik is added when the name has no extension. Folders are always included with their contents."
+   ],
+   [
+    "x",
+    "Extract with full paths: everything, or only the names, folders and wildcards given."
+   ],
+   [
+    "e",
+    "Extract without paths: every file goes straight into the destination folder."
+   ],
+   [
+    "l",
+    "List the contents: attributes, size, date, name and totals."
+   ],
+   [
+    "v",
+    "Verbose list: adds the CRC32 of every file."
+   ],
+   [
+    "lb",
+    "Bare list: one name per line, for scripts and front-ends."
+   ],
+   [
+    "t",
+    "Test: decompress everything and check every CRC32 and, when encrypted, the authentication."
+   ],
+   [
+    "p",
+    "Print files to the standard output."
+   ],
+   [
+    "d",
+    "Delete files or folders from an archive. Encrypted archives keep their password."
+   ],
+   [
+    "mt",
+    "Media test: shows the size each media filter achieves. Writes nothing."
+   ],
+   [
+    "register",
+    "Register a licence: <code>nikpak register \"Name\" e-mail key</code>. Also <code>license</code> and <code>unregister</code>."
+   ]
+  ],
+  "opt_t": "Main options",
+  "col_rar": "RAR style",
+  "col_zip": "zip style",
+  "options": [
+   [
+    "-p",
+    "-e",
+    "Encrypt or decrypt and ask for the password. An empty entry generates a random password."
+   ],
+   [
+    "-p&lt;password&gt;",
+    "-P &lt;password&gt;",
+    "Password on the command line (visible to other users of the machine)."
+   ],
+   [
+    "-m0 … -m5",
+    "-0 … -9",
+    "Compression level: store, fastest, fast, good, high, maximum (default)."
+   ],
+   [
+    "-mt&lt;N&gt;",
+    "",
+    "Number of threads, 1 to 256 (default: all cores)."
+   ],
+   [
+    "-mc- / -mc+",
+    "",
+    "All content filters off / media filters always on. Default: automatic trial per file."
+   ],
+   [
+    "-ep",
+    "-j",
+    "Store only the file name, without its path."
+   ],
+   [
+    "-ep1",
+    "",
+    "Do not store the name of the base folder."
+   ],
+   [
+    "-o+",
+    "-o",
+    "Overwrite existing files without asking."
+   ],
+   [
+    "-o-",
+    "-n",
+    "Skip existing files without asking."
+   ],
+   [
+    "-or",
+    "",
+    "Rename extracted files that already exist: name (1).ext."
+   ],
+   [
+    "-y",
+    "",
+    "Answer Yes to every question."
+   ],
+   [
+    "-x&lt;pattern&gt;",
+    "-x &lt;pattern&gt;",
+    "Exclude files; may be repeated."
+   ],
+   [
+    "-d &lt;dir&gt;",
+    "-d &lt;dir&gt;",
+    "Destination folder for x and e."
+   ],
+   [
+    "-inul -idq",
+    "-q",
+    "Quiet: only errors are printed."
+   ],
+   [
+    "@listfile",
+    "",
+    "Read file names from a text file, one per line."
+   ],
+   [
+    "-h -help -?",
+    "",
+    "Full help. -V prints the version."
+   ]
+  ],
+  "pwd_t": "Passwords",
+  "pwd_p": "When an archive is created with <code>-p</code>, NikPak takes the password from, in this order:",
+  "pwd_list": [
+   "<code>-p&lt;password&gt;</code> or <code>-P &lt;password&gt;</code> on the command line (at least 8 characters);",
+   "the environment variable <code>NIKPAK_PASSWORD</code>, which keeps it out of the process list;",
+   "an interactive prompt, asked twice; <b>an empty entry generates a random password</b>;",
+   "without a terminal, a password piped on the standard input, else a generated one."
+  ],
+  "pwd_note": "A generated password has 24 characters from 56 unambiguous symbols, about 139 bits. It is shown once. <b>There is no recovery:</b> an archive whose password is lost cannot be opened by anyone.",
+  "exit_t": "Exit codes",
+  "col_code": "Code",
+  "col_cause": "Typical cause",
+  "exits": [
+   [
+    "0",
+    "Success",
+    ""
+   ],
+   [
+    "1",
+    "Warning",
+    "Some files were skipped (unreadable, unsafe path, symbolic link)"
+   ],
+   [
+    "2",
+    "Fatal error",
+    "Cannot create or read a file"
+   ],
+   [
+    "3",
+    "Corrupt archive or CRC error",
+    "Damaged or truncated archive"
+   ],
+   [
+    "7",
+    "Command-line error",
+    "Unknown option, missing archive name"
+   ],
+   [
+    "10",
+    "Nothing matched",
+    "No file matched the names or wildcards"
+   ],
+   [
+    "11",
+    "Wrong or missing password",
+    "Bad password, or a tampered encrypted archive"
+   ]
+  ],
+  "ex_t": "Examples",
+  "ex_comments": [
+   "create an archive",
+   "maximum level, 8 threads",
+   "encrypted, asks for the password",
+   "extract with paths",
+   "only *.jpg, without paths",
+   "extract one file",
+   "list only the PDFs",
+   "test (asks for the password)",
+   "delete entries",
+   "which media filter wins?"
+  ],
+  "tc_t": "Total Commander and other front-ends",
+  "tc_p": "Because NikPak accepts RAR's command syntax, a program that can drive an external rar.exe can drive nikpak.exe. In Total Commander, register the extension <code>nik</code> as an additional packer and point the packer and unpacker commands to nikpak.exe. Use <code>-o+</code> or <code>-y</code> for unattended extraction. Options that RAR front-ends often send (<code>-s</code>, <code>-ma5</code>, <code>-md64m</code>, <code>-ibck</code>, <code>-rr</code> and similar) are accepted and ignored.",
+  "tc_note": "<b>Folders with spaces on Windows:</b> a quoted path that ends with a backslash, such as \"C:\\My Folder\\\", is misread by Windows. Use <code>-d \"C:\\My Folder\"</code> instead.",
+  "more_t": "Going further",
+  "more_p": "The technical guide describes the .nik format, the NAC codec, the encryption design and the complete benchmarks. Questions? <a href=\"contact.html\">Write to us</a>.",
+  "install_unix": "<b>macOS and Linux:</b> unpack the archive and run <code>./install.sh</code>. It copies nikpak and unNik to <code>~/.local/bin</code> (Linux) or <code>/usr/local/bin</code> (macOS) and adds the right-click menu of the file manager (Dolphin, Nemo, Nautilus; Quick Actions in the Finder). Then start the window with <code>nikpak</code>.",
+  "skins_t": "Skins",
+  "skins_p": "NikPak and unNik share 55 skins. The menu opens beside the program, so you can see the whole interface in the skin you are trying.",
+  "skins_steps": [
+   "Click the palette button in the title bar. The window widens and the skins box appears on the right, outside the program.",
+   "Click a skin: the whole window takes its colours and its background at once.",
+   "Drag the box by its title bar if you want it elsewhere, or to compare it with the interface behind.",
+   "Click <b>Apply Skin</b> to keep it, or <b>Cancel</b> (Esc, or the ×) to go back to the skin you had."
+  ],
+  "skins_note": "The choice is saved and shared by NikPak and unNik. The painted skins (Moon, Pattaya Neons, Amiga, Chess…) are drawn by the program itself; <b>Import a skin…</b> at the bottom of the box adds a Nikkomander .skin.json."
+ },
+ "buy": {
+  "title": "Buy NikPak",
+  "sub": "One licence key, sent by e-mail. Valid for the version purchased and all later 1.x versions.",
+  "need_t": "Do I need a licence?",
+  "need": [
+   {
+    "t": "Individuals",
+    "d": "Free for personal, non-commercial use, without time limit. A personal licence ($19) removes the reminder and supports development."
+   },
+   {
+    "t": "Companies and organisations",
+    "d": "Companies, self-employed professionals, administrations, schools, associations and any commercial use: one licence per seat after a free 40-day evaluation."
+   },
+   {
+    "t": "unNik",
+    "d": "The archive browser is free for everyone, companies included. No licence needed."
+   }
+  ],
+  "personal": "Personal",
+  "company": "Company",
+  "personal_d": "Private, non-commercial use",
+  "company_d": "Commercial use, per seat",
+  "personal_list": [
+   "All the computers you own or use",
+   "Removes the reminder",
+   "All later 1.x versions"
+  ],
+  "company_list": [
+   "One seat = one computer or one user, whichever count is higher",
+   "One key for the whole organisation",
+   "Optional nikpak.key file to register every PC"
+  ],
+  "order_t": "Your order",
+  "type_label": "Licence type",
+  "seats_label": "Number of seats",
+  "seats_hint": "One seat = one computer on which NikPak is installed or one user who uses it, whichever count is higher.",
+  "per_seat_l": "Price per seat",
+  "seats_l": "Seats",
+  "total_l": "Total",
+  "saving": "You save {s} compared with the 1–9 seat price.",
+  "tiers_t": "Volume prices",
+  "tier_seats": "Seats",
+  "tier_price": "Price per seat",
+  "and_more": "{} and more",
+  "holder_label": "Licence holder",
+  "holder_ph": "Your name, or your organisation's name",
+  "email_label": "E-mail address",
+  "email_ph": "The key is sent to this address",
+  "holder_hint": "The name and the e-mail address are part of the key: enter them as you will type them in NikPak.",
+  "pay_t": "Payment",
+  "m_gpay": "Google Pay",
+  "m_gpay_d": "Pay in one tap with the cards saved in your Google account",
+  "m_card": "Card",
+  "m_card_d": "Visa, Mastercard, American Express, Apple Pay, Link (Stripe)",
+  "m_paypal": "PayPal",
+  "m_paypal_d": "PayPal balance, bank account or card",
+  "m_paddle": "Paddle",
+  "m_paddle_d": "Taxes calculated for your country, company invoices, many local payment methods",
+  "m_binance": "Binance Pay",
+  "m_binance_d": "Pay from your Binance account with USDT, BNB, BTC and other coins; the key is sent automatically",
+  "m_crypto": "Crypto transfer",
+  "m_crypto_d": "BTC, ETH, BNB, USDT and USDC on TRON, Ethereum or BNB Smart Chain (BEP-20): e-mail us the transaction",
+  "pay_btn": "Pay {amount}",
+  "continue_btn": "Continue to payment: {amount}",
+  "redirecting": "Opening the secure payment page…",
+  "fill_first": "Please enter the licence holder and a valid e-mail address first.",
+  "pay_error": "The payment could not be started. Please try again, choose another method or contact us.",
+  "gpay_unavailable": "Google Pay is not available in this browser. Please choose another method.",
+  "secure": "Payments are processed by Google Pay or Binance Pay. Nikkoid LLC never sees your card number.",
+  "tax_note": "Prices in US dollars. Taxes may be added depending on your country.",
+  "crypto_t": "Pay with crypto",
+  "crypto_intro": "Choose a coin and its network, send the amount shown to the address, then e-mail us the transaction. Your licence key is sent as soon as the transaction is confirmed. Paying from a Binance account? Binance Pay above is faster and delivers the key automatically.",
+  "coin_l": "Coin",
+  "network_l": "Network",
+  "address_l": "Address",
+  "amount_l": "Amount to send",
+  "copy": "Copy",
+  "rate_loading": "Fetching the current rate…",
+  "rate_note": "Estimated at the current rate (1 {coin} ≈ {rate}). Valid for 30 minutes; a small difference is fine.",
+  "rate_error": "The current rate could not be fetched. Contact us for the exact amount, or pay with USDT or USDC.",
+  "stable_note": "Stablecoin: 1 {coin} = 1 USD.",
+  "network_warn": "Send only {coin} on the <b>{network}</b> network to this address. Coins sent on another network are lost.",
+  "crypto_steps_t": "After sending",
+  "crypto_steps": [
+   "Copy the transaction ID (hash) from your wallet.",
+   "E-mail it to <a href=\"mailto:{email}\">{email}</a>, or use the <a href=\"contact.html?topic=crypto\">contact form</a> with the topic <b>Crypto payment</b>.",
+   "<b>The subject must contain NikPak.</b> Give the coin, the amount, the transaction ID, the licence type and seats, the licence holder and the e-mail address for the key.",
+   "You receive your licence key by e-mail once the transaction is confirmed."
+  ],
+  "mail_btn": "E-mail the transaction",
+  "form_btn": "Use the contact form",
+  "mail_subject": "NikPak - crypto payment {coin}",
+  "mail_body": "Coin: {coin} ({network})\nAmount: {amount}\nTransaction ID: \nLicence: {licence}\nLicence holder: {holder}\nE-mail for the key: {email}\n",
+  "faq_t": "Questions",
+  "faq": [
+   {
+    "q": "How do I receive my key?",
+    "a": "By e-mail, right after the payment (crypto: after confirmation on the blockchain). Open NikPak, click Register and enter the name, the e-mail address and the key."
+   },
+   {
+    "q": "Can I try NikPak before buying?",
+    "a": "Yes. The evaluation copy has no restriction. Individuals may keep using it free of charge for personal use; organisations have 40 days."
+   },
+   {
+    "q": "What counts as a seat?",
+    "a": "One computer on which NikPak is installed or one user who uses it, whichever count is higher. Every seat of an order gets the per-seat price of its volume tier."
+   },
+   {
+    "q": "Do I pay for updates?",
+    "a": "No. A licence is valid for the version purchased and, unless stated otherwise at purchase, for all later 1.x versions."
+   },
+   {
+    "q": "Do I need a licence for unNik?",
+    "a": "No. unNik is freeware for everyone, companies included."
+   },
+   {
+    "q": "I lost my key.",
+    "a": "Write to us from the e-mail address used for the purchase, with NikPak in the subject. The key is only ever sent to that address."
+   },
+   {
+    "q": "Can I get an invoice?",
+    "a": "Paddle issues invoices with your company details and handles the taxes of your country. For the other methods, ask us through the contact form."
+   }
+  ]
+ },
+ "contact": {
+  "title": "Contact",
+  "sub": "Questions, licences, crypto payments, bug reports: we read every message.",
+  "rule_t": "NikPak must be in the subject",
+  "rule": "Every e-mail sent to us must include <b>NikPak</b> in its subject, otherwise it may be filtered out. This form adds it for you. When you write from your own mail program to <a href=\"mailto:{email}\">{email}</a>, start the subject with NikPak.",
+  "crypto_t": "Paid with crypto?",
+  "crypto_p": "Choose the topic <b>Crypto payment</b> and give the transaction ID (hash). Your licence key is sent once the transaction is confirmed.",
+  "name": "Your name",
+  "email": "Your e-mail address",
+  "topic": "Topic",
+  "topics": {
+   "general": "General question",
+   "sales": "Licences and sales",
+   "crypto": "Crypto payment",
+   "support": "Technical support or bug report",
+   "press": "Press and partnerships"
+  },
+  "subject": "Subject",
+  "message": "Message",
+  "coin": "Coin",
+  "txid": "Transaction ID (hash)",
+  "amount": "Amount sent",
+  "licence": "Licence",
+  "seats": "Seats",
+  "holder": "Licence holder (name on the key)",
+  "subject_sent": "Subject of the e-mail:",
+  "send": "Send the message",
+  "sending": "Sending…",
+  "sent": "Thank you, your message has been sent. We will answer as soon as possible.",
+  "error": "The message could not be sent. Please write to {email} with NikPak in the subject.",
+  "invalid": "Please fill in your name, a valid e-mail address and a message (and the transaction ID for a crypto payment).",
+  "privacy": "Your details are only used to answer you.",
+  "direct_t": "E-mail",
+  "community_t": "Community",
+  "community_p": "News, ideas and bug reports: the author is on Telegram, X and Discord."
+ },
+ "thanks": {
+  "ok_t": "Thank you for your purchase!",
+  "ok_p": "Your payment has been received. Your licence key is on its way to your e-mail address; it can take a few minutes, so check your spam folder too.",
+  "pending_t": "Payment being processed",
+  "pending_p": "Your payment is being confirmed by the provider. Your licence key will be sent by e-mail as soon as it is confirmed.",
+  "cancel_t": "Payment cancelled",
+  "cancel_p": "No payment was made. You can try again or choose another payment method.",
+  "error_t": "Something went wrong",
+  "error_p": "The payment could not be confirmed. If you were charged, contact us with NikPak in the subject and we will sort it out.",
+  "next": "Then open NikPak, click <b>Register</b> and enter the name, the e-mail address and the key exactly as in the e-mail.",
+  "back": "Back to the shop",
+  "contact": "Contact us"
+ },
+ "skins": {
+  "title": "55 skins, one click",
+  "sub": "NikPak and unNik wear the same skins as Nikkomander, from Nikkoid Blue to Pizza, Matrix and 8-Bit Game. Pick one and both programs keep it.",
+  "how_t": "How it works",
+  "how_list": [
+   "<b>Skins button:</b> the palette button in the title bar opens the skins menu. The box opens beside the window, so the whole interface stays visible: click a skin to try it on the window.",
+   "<b>Apply or cancel:</b> the box can be dragged anywhere by its title bar. <b>Apply Skin</b> keeps the skin for NikPak and unNik; <b>Cancel</b> (or Esc) goes back to the one you had.",
+   "<b>Sun and moon:</b> the button next to it switches between Nikkoid Blue (dark) and Nikkoid Bright in one click, like in Nikkomander.",
+   "<b>Remembered:</b> the chosen skin is saved and used at the next start. NikPak and unNik share it: change it in one, the other follows within seconds.",
+   "<b>Painted and flat:</b> 41 skins from Nikkomander's CSS gradients - stripes, stars, bricks - and 14 new ones whose artwork NikPak draws itself: a storm, mountains at dusk, a neon street, old computers, a chessboard. They stay sharp at any window size."
+  ],
+  "gallery_t": "Gallery",
+  "gallery_sub": "NikPak in every skin. Click a picture to see it full size.",
+  "all": "All",
+  "dark": "Dark",
+  "bright": "Bright",
+  "count": "{n} skins",
+  "unnik_t": "unNik too",
+  "unnik_p": "The archive browser follows the same skin: folders, file icons, selection and dialogs take the skin's colours.",
+  "custom_t": "Your own skins",
+  "custom_p": "A skin is a small <code>.skin.json</code> file: a name and a list of colours, in the same format as Nikkomander. Click <b>Import a skin…</b> at the bottom of the skins menu: the file is copied to the <code>skins</code> folder next to the settings, and the × on its tile removes it again.",
+  "limits": "NikPak keeps its own fonts in every skin; the fonts and a few decorative borders of Nikkomander's skins are not used.",
+  "close": "Close",
+  "tag_dark": "Dark",
+  "tag_bright": "Bright",
+  "tag_new": "New",
+  "new_t": "Fourteen new painted skins",
+  "new_p": "Moon, America, Pattaya Neons, Burgers Tokyo, Sushi, Amiga Computer, MSX Computer, Colecovision, ZX Spectrum, Cat Life, Dog Life, Mario Bros, Counter Strike and Chess: artwork drawn by NikPak itself, not a gradient, so it stays sharp at any window size."
+ }
+}

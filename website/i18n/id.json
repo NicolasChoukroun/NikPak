@@ -1,0 +1,782 @@
+{
+ "meta": {
+  "lang_name": "Bahasa Indonesia",
+  "dir": "ltr",
+  "desc": "NikPak membuat arsip yang lebih kecil daripada 7-Zip, RAR 7, dan ZIP, dilindungi enkripsi tahan komputer kuantum: XChaCha20-Poly1305 256-bit dan Argon2id, tanpa RSA atau kurva eliptik yang bisa dipecahkan komputer kuantum. Kompresi yang mengenali media. Windows, macOS, Linux.",
+  "t_home": "NikPak: arsip lebih kecil daripada 7-Zip, RAR, dan ZIP",
+  "t_features": "Fitur",
+  "t_benchmarks": "Uji perbandingan",
+  "t_guide": "Panduan pengguna",
+  "t_buy": "Beli lisensi",
+  "t_contact": "Kontak",
+  "t_thanks": "Terima kasih",
+  "t_skins": "Skin"
+ },
+ "nav": {
+  "home": "Beranda",
+  "features": "Fitur",
+  "benchmarks": "Perbandingan",
+  "guide": "Panduan",
+  "buy": "Beli",
+  "contact": "Kontak",
+  "menu": "Menu",
+  "language": "Bahasa",
+  "skip": "Lompat ke konten",
+  "skins": "Skin"
+ },
+ "common": {
+  "download": "Unduh gratis",
+  "download_note": "Versi {v} · NikPak + unNik · Windows, macOS, Linux",
+  "buy": "Beli lisensi",
+  "see_benchmarks": "Lihat perbandingan",
+  "read_guide": "Baca panduan",
+  "all_features": "Semua fitur",
+  "tagline": "Pengarsipan cepat yang mengenali media dalam format .nik, dengan enkripsi tahan kuantum.",
+  "copyright": "© 2026 Nicolas Choukroun. Didistribusikan dan dilisensikan oleh Nikkoid LLC.",
+  "product": "Produk",
+  "support": "Dukungan",
+  "community": "Komunitas",
+  "community_text": "Berita, pertanyaan, ide, dan laporan bug.",
+  "licence_terms": "Ketentuan lisensi (EULA)",
+  "made_with": "NikPak adalah shareware. unNik adalah freeware.",
+  "copied": "Disalin",
+  "per_seat": "/ kursi",
+  "from": "mulai"
+ },
+ "home": {
+  "kicker": "Enkripsi tahan kuantum · Shareware · Windows, macOS, Linux",
+  "title": "Arsip lebih kecil daripada <em>7-Zip, RAR, dan ZIP</em>.",
+  "lead": "NikPak mengenali foto, musik, dan dokumen kantor dari isinya, lalu mengompres setiap file dengan codec yang paling cocok. Setiap arsip terenkripsi tahan komputer kuantum: hanya enkripsi simetris 256-bit, tanpa RSA atau kurva eliptik yang bisa dipecahkan komputer kuantum.",
+  "free_note": "Gratis untuk penggunaan pribadi · unNik, peramban arsip, gratis untuk semua orang",
+  "stats": [
+   {
+    "v": "38,8 %",
+    "l": "lebih kecil daripada RAR 7 untuk foto"
+   },
+   {
+    "v": "31,7 %",
+    "l": "lebih kecil daripada 7-Zip untuk file kantor"
+   },
+   {
+    "v": "60,4 %",
+    "l": "hingga sebesar ini lebih kecil daripada ZIP"
+   },
+   {
+    "v": "256-bit",
+    "l": "enkripsi tahan kuantum: tanpa RSA, tanpa kurva eliptik"
+   }
+  ],
+  "why_title": "Mengapa NikPak",
+  "why_sub": "Satu program kecil yang dirancang dengan empat gagasan: kompres lebih baik, bekerja lebih cepat, lindungi dengan kriptografi modern, dan berjalan sama di mana saja.",
+  "cards": [
+   {
+    "t": "Tahan komputer kuantum",
+    "d": "Hanya kriptografi simetris 256-bit. Tidak ada kode RSA, kurva eliptik, atau Diffie-Hellman yang bisa dipecahkan komputer kuantum."
+   },
+   {
+    "t": "Mengenali media",
+    "d": "File WAV, AIFF, ProTracker MOD, dan BMP dikenali dari isinya, bukan dari namanya. Masing-masing dicoba dengan beberapa filter lossless dan hasil terkecil yang dipilih."
+   },
+   {
+    "t": "Kompresi ulang Office dan PDF",
+    "d": "Aliran Deflate di dalam file docx, xlsx, pptx, odt, epub, pdf, zip, dan gz dibongkar, dikompres jauh lebih baik, lalu dibangun ulang bit demi bit saat diekstrak."
+   },
+   {
+    "t": "Terkecil di tingkat maksimum",
+    "d": "Pada -m5, NikPak memilih LZMA2 atau PPMd untuk setiap blok dan mengurutkan file menurut jenisnya. NikPak menghasilkan arsip terkecil dari keempat alat pada setiap set uji."
+   },
+   {
+    "t": "Cepat saat Anda butuh",
+    "d": "Pada tingkat cepat -m2, 190 MB kode sumber diarsipkan dalam 1,7 detik pada satu inti, 56 kali lebih cepat daripada tingkat bawaan 7-Zip."
+   },
+   {
+    "t": "Enkripsi yang benar",
+    "d": "Argon2id dengan memori 64 MiB dan enkripsi terautentikasi XChaCha20-Poly1305. Nama, ukuran, dan tanggal file selalu tersembunyi, dan perubahan apa pun selalu terdeteksi."
+   }
+  ],
+  "chart_title": "Ukuran arsip di tingkat maksimum",
+  "chart_sub": "Persentase dari ukuran asli: makin rendah makin baik. Satu inti CPU, setiap arsip diekstrak ulang dan dibandingkan byte demi byte.",
+  "win_title": "Satu jendela. Letakkan, selesai.",
+  "win_text": "Letakkan file atau folder di jendela NikPak, atau klik lingkaran untuk memilihnya. Semuanya dikompres dengan kompresi terbaik menjadi satu arsip. Cincin menunjukkan kemajuan dan berubah hijau saat arsip siap.",
+  "win_points": [
+   "Kompresi terbaik (-m5) secara bawaan",
+   "Mengingat folder tujuan Anda",
+   "Batalkan kapan saja dengan Esc; tidak ada yang tertinggal setengah tertulis",
+   "Arsip yang sudah ada tidak pernah ditimpa"
+  ],
+  "unnik_title": "unNik: peramban arsip gratis",
+  "unnik_text": "Klik dua kali file .nik dan unNik membukanya. Jelajahi folder, cari di seluruh arsip, lihat file teks dan biner, ekstrak pilihan, hapus file, atau uji arsip. unNik adalah freeware, untuk perorangan maupun perusahaan.",
+  "unnik_points": [
+   "Pohon folder, jejak navigasi, pencarian dengan Ctrl+F",
+   "Penampil bawaan untuk teks (dengan pencarian) dan file biner",
+   "Ekstrak semua atau pilihan, simpan keduanya atau ganti",
+   "Beralih antara NikPak dan unNik dengan satu tombol"
+  ],
+  "cli_title": "Baris perintah yang sudah dikenal pengguna RAR",
+  "cli_text": "<code>a</code>, <code>x</code>, <code>e</code>, <code>l</code>, <code>t</code>, <code>@listfiles</code>, <code>-p</code>, <code>-o+</code>, <code>-y</code>: antarmuka seperti Total Commander dapat menjalankan nikpak.exe seperti rar.exe. Kode keluar yang jelas menjadikannya pilihan andal untuk skrip dan cadangan.",
+  "lang_title": "Berbicara dalam bahasa Anda",
+  "lang_text": "Sepuluh bahasa yang paling banyak digunakan di dunia, dengan pembentukan teks yang benar untuk Hindi, Bengali, dan Arab. Pertama kali, NikPak mengikuti bahasa sistem Anda; NikPak dan unNik selalu memakai pilihan yang sama.",
+  "price_title": "Gratis untuk Anda. Adil untuk perusahaan.",
+  "price_text": "Perorangan boleh memakai NikPak secara gratis, tanpa batas waktu, untuk penggunaan pribadi; tidak ada fitur yang dimatikan. Perusahaan dan organisasi mendapat 40 hari evaluasi, lalu satu lisensi per kursi.",
+  "price_personal": "Lisensi pribadi",
+  "price_personal_note": "Menghapus pengingat, di semua komputer Anda",
+  "price_company": "Lisensi perusahaan",
+  "price_company_note": "Harga volume dari 1 hingga 500+ kursi",
+  "honest_title": "Jujur tentang batasannya",
+  "honest_text": "RAR masih menawarkan catatan pemulihan, arsip multivolume dan ekstrak-sendiri, serta puluhan tahun pengujian lapangan. NikPak masih baru dan belum diaudit secara independen. Kami mengatakannya terus terang, dan peta jalan menunjukkan langkah berikutnya.",
+  "cta_title": "Coba NikPak sekarang",
+  "cta_text": "Satu penginstal memasang NikPak dan unNik. Tidak perlu mendaftar untuk mulai.",
+  "skins_title": "55 skin",
+  "skins_text": "Gelap, terang, ceria, atau klasik: tombol skin mengubah warna NikPak dan unNik, dan tombol matahari / bulan beralih antara gelap dan terang dengan satu klik.",
+  "skins_link": "Lihat semua skin"
+ },
+ "app": {
+  "drop": "Letakkan file atau folder untuk mengompresnya",
+  "or": "atau",
+  "choose_files": "pilih file",
+  "choose_folder": "pilih folder",
+  "save_to": "SIMPAN KE",
+  "browse": "Telusuri",
+  "eval": "SALINAN EVALUASI  ·  DAFTAR",
+  "compressing": "MENGOMPRES",
+  "done": "SELESAI",
+  "of": "{} dari {}",
+  "cancel": "Batal",
+  "show": "Tampilkan di folder"
+ },
+ "features": {
+  "title": "Fitur",
+  "sub": "Apa yang ada di dalam NikPak dan format .nik, dijelaskan dengan sederhana.",
+  "media_t": "Kecerdasan media",
+  "media_p1": "NikPak melihat isi sebuah file, bukan ekstensinya. Audio WAV dan AIFF, musik ProTracker MOD, dan gambar BMP dikenali dan diproses dengan filter yang dibuat khusus untuknya.",
+  "media_p2": "Setiap file media menjalani uji coba: NAC, Shuffle, Shuffle+Delta, dan MED dicoba, lalu hasil terkecil disimpan. Jika tidak ada filter yang membantu, file dikompres seperti biasa, sehingga filter tidak pernah membuat arsip lebih besar.",
+  "media_list": [
+   "<b>NAC</b>, codec audio lossless NikPak: prediksi linear dan dekorelasi stereo, setara FLAC -8.",
+   "Verifikasi mandiri: setiap blok NAC didekode ulang selama kompresi dan dibandingkan dengan aslinya.",
+   "Shuffle dan Shuffle+Delta untuk sampel dan piksel, serta jalur khusus untuk file ProTracker MOD.",
+   "Hasil dibandingkan RAR 7 -m5: foto BMP 38,8 % lebih kecil, musik stereo 14,6 %, file MOD 13,3 %."
+  ],
+  "office_t": "Dokumen kantor, PDF, dan gzip",
+  "office_p": "File docx, xlsx, pptx, odt, ods, epub, jar, zip, pdf, dan gz menyimpan isinya dalam aliran Deflate yang tidak bisa lagi diperkecil oleh kompresor biasa. Pada tingkat -m4 dan -m5, NikPak mendekode aliran itu, mengompres data mentahnya jauh lebih baik, dan membangun ulang file asli bit demi bit saat diekstrak. Pada 60 file kantor, arsipnya 31,7 % lebih kecil daripada dengan 7-Zip -mx9.",
+  "engine_t": "Tingkat kompresi",
+  "engine_p": "Tingkat -m1 hingga -m4 memakai aliran Zstandard solid multi-thread, dengan jendela 128 MiB dan pencocokan jarak jauh pada -m4. Tingkat maksimum -m5, yang menjadi bawaan, membangun isi dengan beberapa mesin: LZMA2 untuk data biner dan PPMd untuk teks, dipilih lewat uji coba, dengan file diurutkan menurut jenisnya.",
+  "lv_col_level": "Tingkat",
+  "lv_col_use": "Fungsinya",
+  "levels": [
+   [
+    "-m0",
+    "Simpan: tanpa kompresi"
+   ],
+   [
+    "-m1",
+    "Tercepat"
+   ],
+   [
+    "-m2",
+    "Cepat: pilihan saat kecepatan lebih penting daripada ukuran"
+   ],
+   [
+    "-m3",
+    "Baik"
+   ],
+   [
+    "-m4",
+    "Tinggi: menambahkan kompresi ulang Deflate untuk file kantor, PDF, dan gzip"
+   ],
+   [
+    "-m5",
+    "Maksimum, bawaan: LZMA2 dan PPMd dipilih lewat uji coba"
+   ]
+  ],
+  "crypto_t": "Enkripsi",
+  "crypto_p": "Arsip terenkripsi memakai Argon2id untuk mengubah kata sandi menjadi kunci. Setiap tebakan membutuhkan memori 64 MiB, sehingga menebak kata sandi dengan kartu grafis menjadi mahal. Data lalu dienkripsi dengan XChaCha20-Poly1305 dalam potongan terautentikasi 64 KiB.",
+  "crypto_list": [
+   "Nama, ukuran, tanggal, dan izin file selalu dienkripsi.",
+   "Pengubahan urutan, pemotongan, dan perubahan header terdeteksi secara kriptografis.",
+   "Tidak memberi kata sandi? NikPak membuat yang kuat: 24 karakter, sekitar 139 bit.",
+   "Tidak ada pintu belakang: kata sandi yang hilang tidak bisa dipulihkan oleh siapa pun."
+  ],
+  "cmp_col": "",
+  "cmp_cipher": "Sandi",
+  "cmp_kdf": "Penurunan kata sandi",
+  "cmp_names": "Nama file disembunyikan",
+  "cmp_auth": "Terautentikasi",
+  "always": "Selalu",
+  "yes": "Ya",
+  "no": "Tidak",
+  "only_with": "Hanya dengan {}",
+  "memory_hard": "berat memori",
+  "not_memory_hard": "tidak berat memori",
+  "quantum_t": "Ketahanan kuantum",
+  "quantum_p1": "Komputer kuantum mengancam kriptografi kunci publik: algoritma Shor memecahkan RSA dan kurva eliptik. NikPak tidak memakai keduanya. Enkripsinya hanya simetris 256-bit, yang tetap memberi sekitar 128 bit keamanan bahkan terhadap algoritma Grover.",
+  "quantum_p2": "Arsip yang disadap hari ini tidak bisa begitu saja didekripsi nanti oleh komputer kuantum (\"panen sekarang, dekripsi nanti\"). Kekuatan kata sandi Anda tetap yang terpenting, dan Argon2id membuat penebakannya mahal.",
+  "safety_t": "Aman sejak rancangan",
+  "safety_list": [
+   "Ekstraksi tidak pernah menulis di luar folder tujuan (perlindungan zip-slip).",
+   "Tautan simbolik ditolak dan bit setuid dihapus.",
+   "Setiap dekoder memiliki batas ketat: arsip berbahaya tidak bisa menghabiskan memori.",
+   "Arsip ditulis secara atomik: kegagalan tidak pernah meninggalkan file setengah tertulis.",
+   "CRC32 untuk setiap file, penanda akhir dengan jumlah entri, dan program yang ditulis dengan Rust yang aman memori."
+  ],
+  "apps_t": "Dua program, satu tampilan",
+  "apps_p": "NikPak membuat arsip dari satu jendela tempat meletakkan file; unNik membuka, menjelajahi, dan mengekstraknya. Keduanya berbagi bahasa, suara, dan pengaturan, dan satu tombol berpindah dari satu ke yang lain.",
+  "limits_t": "Di mana RAR masih unggul",
+  "limits_list": [
+   "Catatan pemulihan yang dapat memperbaiki arsip rusak",
+   "Arsip multivolume dan ekstrak-sendiri",
+   "Menambah atau mengganti file di dalam arsip yang sudah ada",
+   "Puluhan tahun pengujian lapangan dan jutaan file .rar yang sudah ada"
+  ],
+  "roadmap_t": "Peta jalan",
+  "roadmap_list": [
+   "<b>Catatan pemulihan:</b> paritas Reed-Solomon untuk memperbaiki arsip rusak.",
+   "<b>Arsip multivolume dan pembaruan:</b> membagi arsip besar, menambah dan mengganti file.",
+   "<b>Berbagi dengan kunci publik:</b> gabungan X25519 dan ML-KEM, aman jika salah satunya bertahan.",
+   "<b>Lebih banyak filter media:</b> audio floating-point, tracker XM/S3M/IT, kompresi ulang PNG, TGA, dan TIFF.",
+   "<b>ZIP dan RAR di unNik, integrasi dengan Explorer:</b> agar NikPak menjadi satu-satunya pengarsip yang Anda perlukan.",
+   "<b>Tingkat maksimum yang lebih cepat:</b> LZMA2 dan PPMd multi-thread, deduplikasi, filter untuk file eksekusi.",
+   "<b>Audit keamanan eksternal</b> atas kriptografi dan pengekstrak."
+  ],
+  "skins_t": "Skin",
+  "skins_p": "55 skin untuk NikPak dan unNik: 41 dari Nikkomander dan 14 skin bergambar buatan kami. Pilihan disimpan dan dipakai bersama oleh kedua program, dan Anda dapat mengimpor skin .skin.json Anda sendiri."
+ },
+ "bench": {
+  "title": "Uji perbandingan",
+  "sub": "NikPak, RAR 7.00, 7-Zip 23.01, dan Info-ZIP 3.0, dijalankan bergantian pada mesin yang sama dan file yang sama.",
+  "method_t": "Metode",
+  "method_list": [
+   "Mesin virtual Linux x86-64 (Intel Xeon, 2,8 GHz). Setiap alat dibatasi pada satu inti CPU dan dijalankan dengan satu thread.",
+   "Tingkat maksimum: nikpak -m5, RAR -m5 -s, 7-Zip -mx9, ZIP -9. Tingkat cepat: nikpak -m2, RAR -m3 -s, 7-Zip -mx5, ZIP -6.",
+   "Ke-92 arsip diekstrak ulang dan dibandingkan dengan aslinya: semuanya identik.",
+   "Bahan uji publik: foto scikit-image, koleksi MOD libxmp, suara galeri LibreOffice, musik yang dirender dengan TiMidity++, buku Project Gutenberg, file kantor, pustaka standar Python, dan header C."
+  ],
+  "chart_t": "Ukuran arsip di tingkat maksimum",
+  "chart_sub": "Persentase dari ukuran asli, makin rendah makin baik.",
+  "max_t": "Tingkat maksimum: ukuran arsip dalam byte",
+  "max_note": "Arsip terkecil di setiap baris disorot.",
+  "fast_t": "Tingkat cepat: ukuran dan waktu pembuatan",
+  "fast_note": "Ukuran arsip sebagai persentase dari aslinya, dan waktu pembuatan pada satu inti. Arsip terkecil di setiap baris disorot.",
+  "gen_t": "Data umum secara rinci",
+  "gen_note": "190 MB, 11.473 file: pustaka Python, header C, dan dokumentasi.",
+  "col_set": "Set uji",
+  "col_original": "Asli",
+  "col_tool": "Alat dan tingkat",
+  "col_size": "Ukuran (byte)",
+  "col_pct": "% dari asli",
+  "col_create": "Pembuatan",
+  "col_extract": "Ekstraksi",
+  "sets": {
+   "bmp": "8 gambar BMP",
+   "mod": "16 file ProTracker MOD",
+   "wav": "35 suara WAV (mono 16-bit)",
+   "m44": "Musik 44,1 kHz stereo 16-bit",
+   "m22": "Musik 22,05 kHz mono 16-bit",
+   "m22b": "Musik 22,05 kHz mono 8-bit",
+   "m48": "Musik 48 kHz stereo 24-bit",
+   "txt": "18 buku teks biasa",
+   "office": "60 file kantor",
+   "gen": "Data umum (11.473 file)"
+  },
+  "reading_t": "Membaca hasil dengan jujur",
+  "reading_list": [
+   "<b>NikPak -m5 terkecil di setiap set:</b> 2,4 hingga 31,7 % lebih kecil daripada 7-Zip -mx9, 10,8 hingga 38,4 % lebih kecil daripada RAR 7 -m5, dan 19,9 hingga 60,4 % lebih kecil daripada ZIP -9.",
+   "<b>Audio rekaman:</b> pada musik 24-bit, 7-Zip menghemat 12 % dan NikPak 37 %, karena codec NAC memprediksi apa yang hanya bisa dicocokkan oleh kompresor umum.",
+   "<b>File kantor 31,7 % lebih kecil daripada 7-Zip</b>, berkat kompresi ulang Deflate. Harganya pada -m5 adalah waktu: 81 detik dibanding 26 detik.",
+   "<b>Teks 15,9 % lebih kecil dalam separuh waktu:</b> PPMd unggul untuk prosa. Ia mendekode selambat ia mengenkode, sehingga ekstraksi butuh 2,7 detik, bukan 0,2 detik.",
+   "<b>Tingkat cepat -m2:</b> 1,7 detik untuk data umum, dibanding 93,7 detik untuk 7-Zip -mx5, 48,2 detik untuk RAR, dan 7,3 detik untuk ZIP. Ia bukan yang terkecil untuk teks dan kode sumber, karena itu -m5 menjadi bawaan.",
+   "<b>Ekstraksi:</b> 0,9 detik (-m2) atau 5,6 detik (-m5) untuk data umum, dibanding 6,0 detik untuk 7-Zip, 6,7 detik untuk RAR, dan 6,9 detik untuk ZIP.",
+   "<b>Kekurangannya:</b> -m5 hanya satu thread dan lebih lambat daripada 7-Zip pada set besar file kantor dan kode sumber. Tingkat maksimum yang lebih cepat ada dalam peta jalan."
+  ],
+  "source_note": "Angka dari panduan teknis NikPak (bagian 11.7, NikPak 1.2.0). Ukur dengan file Anda sendiri: <code>nikpak mt</code> menunjukkan hasil setiap filter media tanpa menulis apa pun."
+ },
+ "guide": {
+  "title": "Panduan pengguna",
+  "sub": "Pasang NikPak, kompres dengan meletakkan file, jelajahi arsip dengan unNik, daftarkan lisensi, dan kendalikan semuanya dari baris perintah.",
+  "toc": "Di halaman ini",
+  "install_t": "Pemasangan",
+  "install_p1": "Jalankan penginstal. Secara bawaan, penginstal hanya memasang untuk pengguna saat ini, tanpa hak administrator, ke <code>%LOCALAPPDATA%\\Programs\\NikPak</code>; halaman pertamanya juga menawarkan pemasangan untuk semua pengguna. Penginstal memasang NikPak dan unNik, menambahkannya ke menu Start, menaruh NikPak di desktop, dan menjadikan unNik program untuk file .nik. Jika diminta, folder ditambahkan ke PATH untuk baris perintah.",
+  "install_p2": "Pembaruan dipasang di atas versi sebelumnya dan tetap menyimpan lisensi Anda.",
+  "win_t": "Mengompres dengan jendela NikPak",
+  "win_steps": [
+   "Jalankan NikPak. Letakkan file atau folder di jendela, atau klik lingkaran lalu pilih <b>Pilih file</b> atau <b>Pilih folder</b>.",
+   "Semuanya dikompres dengan kompresi terbaik (-m5) menjadi satu arsip yang dinamai sesuai file, folder, atau folder asalnya. Arsip yang sudah ada tidak pernah ditimpa: laporan.nik menjadi laporan (2).nik.",
+   "Cincin menunjukkan persentase, fase (menganalisis, mengompres, menyelesaikan), jumlah yang diproses, dan waktu. <b>Batal</b> atau <kbd>Esc</kbd> langsung berhenti dan menghapus arsip yang belum selesai.",
+   "Saat cincin berubah hijau: <b>Tampilkan di folder</b>, <b>Buka di unNik</b>, atau <b>Kompres lagi</b>."
+  ],
+  "win_more_t": "Juga di jendela",
+  "win_more": [
+   "<b>Simpan ke:</b> folder tujuan di bagian bawah. Folder ini diingat; pertama kali adalah Desktop. Tombol folder di sebelahnya membukanya.",
+   "<b>Beralih ke unNik:</b> tombol bulat di kiri tombol <b>i</b> menutup NikPak dan membuka unNik, beserta arsip baru jika Anda baru membuatnya.",
+   "<b>Bahasa:</b> tombol di kiri bawah. NikPak dan unNik dimulai ulang dalam bahasa pilihan dan memakai bahasa yang sama.",
+   "<b>Suara:</b> tombol speaker di bilah judul menyalakan dan mematikan efek suara.",
+   "<b>Skin:</b> tombol palet membuka menu skin di samping jendela (klik untuk mencoba, <b>Terapkan skin</b> untuk memakai, <b>Batal</b> untuk kembali); tombol matahari / bulan beralih antara gelap dan terang. Pilihan diingat dan dipakai bersama dengan unNik. <a href=\"skins.html\">Semua skin</a>.",
+   "<b>Status dan Tentang:</b> kiri atas menampilkan SALINAN EVALUASI · DAFTAR atau pemegang lisensi; tombol <b>i</b> menampilkan versi dan lisensi."
+  ],
+  "admin_note": "<b>Berjalan sebagai administrator?</b> Windows tidak mengizinkan menyeret file dari Explorer ke program yang berjalan sebagai administrator. NikPak memulai ulang dirinya sekali sebagai pengguna biasa; jika tidak bisa, pilih file dengan tombol.",
+  "unnik_t": "Menjelajah dan mengekstrak dengan unNik",
+  "unnik_p": "Klik dua kali file .nik, letakkan di jendela unNik, atau pilih salah satu arsip terbaru. Arsip terenkripsi meminta kata sandinya terlebih dahulu. Jendela berubah menjadi peramban dengan pohon folder, daftar file, dan detail file yang dipilih.",
+  "unnik_list": [
+   "<b>Navigasi</b> dengan pohon folder, jejak navigasi, Kembali, Maju, dan Naik, atau klik dua kali. <b>Pencarian</b> menemukan file berdasarkan nama di seluruh arsip.",
+   "<b>Pilih</b> dengan klik, <kbd>Ctrl</kbd>+klik, <kbd>Shift</kbd>+klik, atau kotak centang. Klik judul kolom untuk mengurutkan. Klik kanan membuka menu berisi semua tindakan.",
+   "<b>Ekstrak semua</b> atau pilihan: pilih tujuan, simpan struktur folder atau tidak, dan apa yang dilakukan jika file sudah ada: ganti, simpan keduanya, atau lewati.",
+   "<b>Lihat</b> teks dengan nomor baris dan pencarian, atau file biner dalam heksadesimal. <b>Buka</b> menjalankan file dengan programnya sendiri.",
+   "<b>Hapus</b> mengeluarkan file dari arsip setelah konfirmasi; arsip ditulis ulang dengan aman. <b>Uji</b> memeriksa setiap file."
+  ],
+  "keys_t": "Pintasan keyboard",
+  "keys_col_key": "Tombol",
+  "keys_col_action": "Tindakan",
+  "keys": [
+   [
+    "Ctrl+F",
+    "Cari di seluruh arsip"
+   ],
+   [
+    "Ctrl+E",
+    "Ekstrak pilihan (semuanya jika tidak ada yang dipilih)"
+   ],
+   [
+    "F3",
+    "Lihat file"
+   ],
+   [
+    "Del",
+    "Hapus dari arsip"
+   ],
+   [
+    "Ctrl+A",
+    "Pilih semua"
+   ],
+   [
+    "Alt+Kiri / Alt+Kanan",
+    "Kembali / Maju"
+   ],
+   [
+    "Backspace",
+    "Naik satu folder"
+   ]
+  ],
+  "reg_t": "Mendaftarkan lisensi Anda",
+  "reg_steps": [
+   "<a href=\"buy.html\">Beli lisensi</a>. Anda menerima kunci yang diawali <code>NPK1-</code> melalui email.",
+   "Di NikPak, klik <b>SALINAN EVALUASI · DAFTAR</b> di kiri atas, atau <b>Daftar</b> pada pengingat.",
+   "Masukkan nama dan alamat email persis seperti pada lisensi Anda, lalu tempelkan kuncinya. Huruf besar-kecil, spasi berlebih, dan karakter mirip O/0 serta I/L/1 tidak berpengaruh."
+  ],
+  "reg_p": "Setelah terdaftar, NikPak tidak akan bertanya lagi di komputer itu. Perusahaan juga bisa menaruh file <code>nikpak.key</code> di samping nikpak.exe, yang mendaftarkan setiap pengguna PC tersebut. Dari baris perintah:",
+  "cli_t": "Baris perintah",
+  "cli_p": "NikPak mengikuti sintaks yang dikenal pengguna RAR: <code>nikpak &lt;perintah&gt; [opsi] &lt;arsip&gt; [file...]</code>. Opsi boleh ditulis sebelum atau sesudah nama arsip; <code>--</code> mengakhiri opsi.",
+  "cmd_t": "Perintah",
+  "col_cmd": "Perintah",
+  "col_meaning": "Arti",
+  "commands": [
+   [
+    "a",
+    "Membuat arsip. .nik ditambahkan jika nama tidak memiliki ekstensi. Folder selalu disertakan beserta isinya."
+   ],
+   [
+    "x",
+    "Mengekstrak dengan jalur lengkap: semuanya, atau hanya nama, folder, dan wildcard yang diberikan."
+   ],
+   [
+    "e",
+    "Mengekstrak tanpa jalur: setiap file langsung masuk ke folder tujuan."
+   ],
+   [
+    "l",
+    "Menampilkan isi: atribut, ukuran, tanggal, nama, dan total."
+   ],
+   [
+    "v",
+    "Daftar rinci: menambahkan CRC32 setiap file."
+   ],
+   [
+    "lb",
+    "Daftar polos: satu nama per baris, untuk skrip dan antarmuka."
+   ],
+   [
+    "t",
+    "Uji: mendekompres semuanya dan memeriksa setiap CRC32 serta, jika terenkripsi, autentikasinya."
+   ],
+   [
+    "p",
+    "Mencetak file ke keluaran standar."
+   ],
+   [
+    "d",
+    "Menghapus file atau folder dari arsip. Arsip terenkripsi tetap memakai kata sandinya."
+   ],
+   [
+    "mt",
+    "Uji media: menampilkan ukuran yang dicapai setiap filter media. Tidak menulis apa pun."
+   ],
+   [
+    "register",
+    "Mendaftarkan lisensi: <code>nikpak register \"Nama\" email kunci</code>. Juga <code>license</code> dan <code>unregister</code>."
+   ]
+  ],
+  "opt_t": "Opsi utama",
+  "col_rar": "Gaya RAR",
+  "col_zip": "Gaya zip",
+  "options": [
+   [
+    "-p",
+    "-e",
+    "Enkripsi atau dekripsi dan meminta kata sandi. Isian kosong membuat kata sandi acak."
+   ],
+   [
+    "-p&lt;password&gt;",
+    "-P &lt;password&gt;",
+    "Kata sandi di baris perintah (terlihat oleh pengguna lain di mesin itu)."
+   ],
+   [
+    "-m0 … -m5",
+    "-0 … -9",
+    "Tingkat kompresi: simpan, tercepat, cepat, baik, tinggi, maksimum (bawaan)."
+   ],
+   [
+    "-mt&lt;N&gt;",
+    "",
+    "Jumlah thread, 1 hingga 256 (bawaan: semua inti)."
+   ],
+   [
+    "-mc- / -mc+",
+    "",
+    "Semua filter konten mati / filter media selalu aktif. Bawaan: uji coba otomatis per file."
+   ],
+   [
+    "-ep",
+    "-j",
+    "Hanya menyimpan nama file, tanpa jalurnya."
+   ],
+   [
+    "-ep1",
+    "",
+    "Tidak menyimpan nama folder dasar."
+   ],
+   [
+    "-o+",
+    "-o",
+    "Menimpa file yang ada tanpa bertanya."
+   ],
+   [
+    "-o-",
+    "-n",
+    "Melewati file yang ada tanpa bertanya."
+   ],
+   [
+    "-or",
+    "",
+    "Mengganti nama file hasil ekstrak yang sudah ada: nama (1).ext."
+   ],
+   [
+    "-y",
+    "",
+    "Menjawab Ya untuk setiap pertanyaan."
+   ],
+   [
+    "-x&lt;pattern&gt;",
+    "-x &lt;pattern&gt;",
+    "Mengecualikan file; boleh diulang."
+   ],
+   [
+    "-d &lt;dir&gt;",
+    "-d &lt;dir&gt;",
+    "Folder tujuan untuk x dan e."
+   ],
+   [
+    "-inul -idq",
+    "-q",
+    "Senyap: hanya galat yang ditampilkan."
+   ],
+   [
+    "@listfile",
+    "",
+    "Membaca nama file dari file teks, satu per baris."
+   ],
+   [
+    "-h -help -?",
+    "",
+    "Bantuan lengkap. -V menampilkan versi."
+   ]
+  ],
+  "pwd_t": "Kata sandi",
+  "pwd_p": "Saat arsip dibuat dengan <code>-p</code>, NikPak mengambil kata sandi dari, berurutan:",
+  "pwd_list": [
+   "<code>-p&lt;password&gt;</code> atau <code>-P &lt;password&gt;</code> di baris perintah (minimal 8 karakter);",
+   "variabel lingkungan <code>NIKPAK_PASSWORD</code>, yang menjauhkannya dari daftar proses;",
+   "permintaan interaktif, ditanyakan dua kali; <b>isian kosong membuat kata sandi acak</b>;",
+   "tanpa terminal, kata sandi yang dikirim lewat masukan standar; jika tidak ada, kata sandi dibuatkan."
+  ],
+  "pwd_note": "Kata sandi buatan memiliki 24 karakter dari 56 simbol yang tidak ambigu, sekitar 139 bit. Kata sandi ini hanya ditampilkan sekali. <b>Tidak ada pemulihan:</b> arsip yang kata sandinya hilang tidak bisa dibuka oleh siapa pun.",
+  "exit_t": "Kode keluar",
+  "col_code": "Kode",
+  "col_cause": "Penyebab umum",
+  "exits": [
+   [
+    "0",
+    "Berhasil",
+    ""
+   ],
+   [
+    "1",
+    "Peringatan",
+    "Beberapa file dilewati (tidak terbaca, jalur tidak aman, tautan simbolik)"
+   ],
+   [
+    "2",
+    "Galat fatal",
+    "Tidak dapat membuat atau membaca file"
+   ],
+   [
+    "3",
+    "Arsip rusak atau galat CRC",
+    "Arsip rusak atau terpotong"
+   ],
+   [
+    "7",
+    "Galat baris perintah",
+    "Opsi tidak dikenal, nama arsip tidak ada"
+   ],
+   [
+    "10",
+    "Tidak ada yang cocok",
+    "Tidak ada file yang cocok dengan nama atau wildcard"
+   ],
+   [
+    "11",
+    "Kata sandi salah atau tidak ada",
+    "Kata sandi keliru, atau arsip terenkripsi telah diubah"
+   ]
+  ],
+  "ex_t": "Contoh",
+  "ex_comments": [
+   "membuat arsip",
+   "tingkat maksimum, 8 thread",
+   "terenkripsi, meminta kata sandi",
+   "ekstrak dengan jalur",
+   "hanya *.jpg, tanpa jalur",
+   "ekstrak satu file",
+   "daftar PDF saja",
+   "uji (meminta kata sandi)",
+   "hapus entri",
+   "filter media mana yang menang?"
+  ],
+  "tc_t": "Total Commander dan antarmuka lain",
+  "tc_p": "Karena NikPak menerima sintaks perintah RAR, program yang bisa menjalankan rar.exe eksternal juga bisa menjalankan nikpak.exe. Di Total Commander, daftarkan ekstensi <code>nik</code> sebagai pengarsip tambahan dan arahkan perintah pengemas dan pembongkar ke nikpak.exe. Gunakan <code>-o+</code> atau <code>-y</code> untuk ekstraksi tanpa pengawasan. Opsi yang sering dikirim antarmuka RAR (<code>-s</code>, <code>-ma5</code>, <code>-md64m</code>, <code>-ibck</code>, <code>-rr</code>, dan sejenisnya) diterima lalu diabaikan.",
+  "tc_note": "<b>Folder berspasi di Windows:</b> jalur bertanda kutip yang diakhiri garis miring terbalik, seperti \"C:\\Folder Saya\\\", dibaca keliru oleh Windows. Gunakan <code>-d \"C:\\Folder Saya\"</code>.",
+  "more_t": "Lebih lanjut",
+  "more_p": "Panduan teknis menjelaskan format .nik, codec NAC, rancangan enkripsi, dan semua uji perbandingan. Ada pertanyaan? <a href=\"contact.html\">Hubungi kami</a>.",
+  "install_unix": "<b>macOS dan Linux:</b> ekstrak arsipnya lalu jalankan <code>./install.sh</code>. Skrip ini menyalin nikpak dan unNik ke <code>~/.local/bin</code> (Linux) atau <code>/usr/local/bin</code> (macOS) dan menambahkan menu klik kanan pengelola berkas (Dolphin, Nemo, Nautilus; Tindakan Cepat di Finder). Lalu buka jendelanya dengan <code>nikpak</code>.",
+  "skins_t": "Skin",
+  "skins_p": "NikPak dan unNik berbagi 55 skin. Menu terbuka di samping program, sehingga seluruh antarmuka terlihat dalam skin yang sedang dicoba.",
+  "skins_steps": [
+   "Klik tombol palet di bilah judul. Jendela melebar dan kotak skin muncul di kanan, di luar program.",
+   "Klik satu skin: seluruh jendela langsung mengambil warna dan latarnya.",
+   "Geser kotak lewat bilah judulnya bila ingin memindahkannya, atau membandingkannya dengan antarmuka di belakang.",
+   "Klik <b>Terapkan skin</b> untuk memakainya, atau <b>Batal</b> (Esc atau ×) untuk kembali ke skin sebelumnya."
+  ],
+  "skins_note": "Pilihan disimpan dan dipakai bersama oleh NikPak dan unNik. Skin bergambar (Bulan, Pattaya Neon, Amiga, Catur…) dilukis oleh program itu sendiri; <b>Impor skin…</b> di bagian bawah kotak menambahkan .skin.json dari Nikkomander."
+ },
+ "buy": {
+  "title": "Beli NikPak",
+  "sub": "Satu kunci lisensi, dikirim melalui email. Berlaku untuk versi yang dibeli dan semua versi 1.x berikutnya.",
+  "need_t": "Apakah saya perlu lisensi?",
+  "need": [
+   {
+    "t": "Perorangan",
+    "d": "Gratis untuk penggunaan pribadi non-komersial, tanpa batas waktu. Lisensi pribadi ($19) menghapus pengingat dan mendukung pengembangan."
+   },
+   {
+    "t": "Perusahaan dan organisasi",
+    "d": "Perusahaan, pekerja lepas, instansi pemerintah, sekolah, asosiasi, dan setiap penggunaan komersial: satu lisensi per kursi setelah evaluasi gratis 40 hari."
+   },
+   {
+    "t": "unNik",
+    "d": "Peramban arsip ini gratis untuk semua orang, termasuk perusahaan. Tidak perlu lisensi."
+   }
+  ],
+  "personal": "Pribadi",
+  "company": "Perusahaan",
+  "personal_d": "Penggunaan pribadi, non-komersial",
+  "company_d": "Penggunaan komersial, per kursi",
+  "personal_list": [
+   "Semua komputer yang Anda miliki atau gunakan",
+   "Menghapus pengingat",
+   "Semua versi 1.x berikutnya"
+  ],
+  "company_list": [
+   "Satu kursi = satu komputer atau satu pengguna, mana yang lebih banyak",
+   "Satu kunci untuk seluruh organisasi",
+   "File nikpak.key opsional untuk mendaftarkan setiap PC"
+  ],
+  "order_t": "Pesanan Anda",
+  "type_label": "Jenis lisensi",
+  "seats_label": "Jumlah kursi",
+  "seats_hint": "Satu kursi = satu komputer tempat NikPak dipasang atau satu pengguna yang memakainya, mana yang lebih banyak.",
+  "per_seat_l": "Harga per kursi",
+  "seats_l": "Kursi",
+  "total_l": "Total",
+  "saving": "Anda hemat {s} dibanding harga untuk 1–9 kursi.",
+  "tiers_t": "Harga volume",
+  "tier_seats": "Kursi",
+  "tier_price": "Harga per kursi",
+  "and_more": "{} atau lebih",
+  "holder_label": "Pemegang lisensi",
+  "holder_ph": "Nama Anda, atau nama organisasi Anda",
+  "email_label": "Alamat email",
+  "email_ph": "Kunci dikirim ke alamat ini",
+  "holder_hint": "Nama dan alamat email menjadi bagian dari kunci: tulis persis seperti yang akan Anda ketik di NikPak.",
+  "pay_t": "Pembayaran",
+  "m_gpay": "Google Pay",
+  "m_gpay_d": "Bayar sekali ketuk dengan kartu yang tersimpan di akun Google Anda",
+  "m_card": "Kartu",
+  "m_card_d": "Visa, Mastercard, American Express, Apple Pay, Link (Stripe)",
+  "m_paypal": "PayPal",
+  "m_paypal_d": "Saldo PayPal, rekening bank, atau kartu",
+  "m_paddle": "Paddle",
+  "m_paddle_d": "Pajak dihitung untuk negara Anda, faktur untuk perusahaan, banyak metode pembayaran lokal",
+  "m_binance": "Binance Pay",
+  "m_binance_d": "Bayar dari akun Binance Anda dengan USDT, BNB, BTC, dan koin lain; kunci dikirim otomatis",
+  "m_crypto": "Transfer kripto",
+  "m_crypto_d": "BTC, ETH, BNB, USDT, dan USDC di TRON, Ethereum, atau BNB Smart Chain (BEP-20): kirimkan transaksinya kepada kami lewat email",
+  "pay_btn": "Bayar {amount}",
+  "continue_btn": "Lanjut ke pembayaran: {amount}",
+  "redirecting": "Membuka halaman pembayaran aman…",
+  "fill_first": "Isi dulu pemegang lisensi dan alamat email yang valid.",
+  "pay_error": "Pembayaran tidak dapat dimulai. Coba lagi, pilih metode lain, atau hubungi kami.",
+  "gpay_unavailable": "Google Pay tidak tersedia di browser ini. Silakan pilih metode lain.",
+  "secure": "Pembayaran diproses oleh Google Pay atau Binance Pay. Nikkoid LLC tidak pernah melihat nomor kartu Anda.",
+  "tax_note": "Harga dalam dolar AS. Pajak dapat ditambahkan tergantung negara Anda.",
+  "crypto_t": "Bayar dengan kripto",
+  "crypto_intro": "Pilih koin dan jaringannya, kirim jumlah yang ditampilkan ke alamat tersebut, lalu kirimkan transaksinya kepada kami lewat email. Kunci lisensi Anda dikirim segera setelah transaksi terkonfirmasi. Membayar dari akun Binance? Binance Pay di atas lebih cepat dan mengirim kunci secara otomatis.",
+  "coin_l": "Koin",
+  "network_l": "Jaringan",
+  "address_l": "Alamat",
+  "amount_l": "Jumlah yang dikirim",
+  "copy": "Salin",
+  "rate_loading": "Mengambil kurs saat ini…",
+  "rate_note": "Perkiraan dengan kurs saat ini (1 {coin} ≈ {rate}). Berlaku 30 menit; selisih kecil tidak masalah.",
+  "rate_error": "Kurs saat ini tidak dapat diambil. Hubungi kami untuk jumlah pastinya, atau bayar dengan USDT atau USDC.",
+  "stable_note": "Stablecoin: 1 {coin} = 1 USD.",
+  "network_warn": "Kirim hanya {coin} di jaringan <b>{network}</b> ke alamat ini. Koin yang dikirim di jaringan lain akan hilang.",
+  "crypto_steps_t": "Setelah mengirim",
+  "crypto_steps": [
+   "Salin ID transaksi (hash) dari dompet Anda.",
+   "Kirimkan lewat email ke <a href=\"mailto:{email}\">{email}</a>, atau gunakan <a href=\"contact.html?topic=crypto\">formulir kontak</a> dengan topik <b>Pembayaran kripto</b>.",
+   "<b>Subjek harus berisi NikPak.</b> Sebutkan koin, jumlah, ID transaksi, jenis lisensi dan jumlah kursi, pemegang lisensi, serta alamat email untuk kunci.",
+   "Anda menerima kunci lisensi melalui email setelah transaksi terkonfirmasi."
+  ],
+  "mail_btn": "Kirim transaksi lewat email",
+  "form_btn": "Gunakan formulir kontak",
+  "mail_subject": "NikPak - pembayaran kripto {coin}",
+  "mail_body": "Koin: {coin} ({network})\nJumlah: {amount}\nID transaksi: \nLisensi: {licence}\nPemegang lisensi: {holder}\nEmail untuk kunci: {email}\n",
+  "faq_t": "Pertanyaan",
+  "faq": [
+   {
+    "q": "Bagaimana saya menerima kunci?",
+    "a": "Melalui email, segera setelah pembayaran (kripto: setelah konfirmasi di blockchain). Buka NikPak, klik Daftar, lalu masukkan nama, alamat email, dan kuncinya."
+   },
+   {
+    "q": "Bisakah saya mencoba NikPak sebelum membeli?",
+    "a": "Bisa. Salinan evaluasi tidak dibatasi. Perorangan boleh terus memakainya gratis untuk penggunaan pribadi; organisasi mendapat 40 hari."
+   },
+   {
+    "q": "Apa yang dihitung sebagai satu kursi?",
+    "a": "Satu komputer tempat NikPak dipasang atau satu pengguna yang memakainya, mana yang lebih banyak. Setiap kursi dalam pesanan mendapat harga per kursi sesuai tingkat volumenya."
+   },
+   {
+    "q": "Apakah pembaruan berbayar?",
+    "a": "Tidak. Lisensi berlaku untuk versi yang dibeli dan, kecuali dinyatakan lain saat pembelian, untuk semua versi 1.x berikutnya."
+   },
+   {
+    "q": "Apakah unNik perlu lisensi?",
+    "a": "Tidak. unNik adalah freeware untuk semua orang, termasuk perusahaan."
+   },
+   {
+    "q": "Kunci saya hilang.",
+    "a": "Tulis kepada kami dari alamat email yang dipakai saat membeli, dengan NikPak di subjek. Kunci hanya dikirim ke alamat tersebut."
+   },
+   {
+    "q": "Bisakah saya mendapat faktur?",
+    "a": "Paddle menerbitkan faktur dengan data perusahaan Anda dan mengurus pajak negara Anda. Untuk metode lain, mintalah melalui formulir kontak."
+   }
+  ]
+ },
+ "contact": {
+  "title": "Kontak",
+  "sub": "Pertanyaan, lisensi, pembayaran kripto, laporan bug: kami membaca setiap pesan.",
+  "rule_t": "Subjek harus berisi NikPak",
+  "rule": "Setiap email yang dikirim kepada kami harus menyertakan <b>NikPak</b> di subjeknya; jika tidak, email bisa tersaring. Formulir ini menambahkannya untuk Anda. Jika menulis dari program email Anda sendiri ke <a href=\"mailto:{email}\">{email}</a>, awali subjek dengan NikPak.",
+  "crypto_t": "Membayar dengan kripto?",
+  "crypto_p": "Pilih topik <b>Pembayaran kripto</b> dan cantumkan ID transaksi (hash). Kunci lisensi Anda dikirim setelah transaksi terkonfirmasi.",
+  "name": "Nama Anda",
+  "email": "Alamat email Anda",
+  "topic": "Topik",
+  "topics": {
+   "general": "Pertanyaan umum",
+   "sales": "Lisensi dan penjualan",
+   "crypto": "Pembayaran kripto",
+   "support": "Dukungan teknis atau laporan bug",
+   "press": "Pers dan kemitraan"
+  },
+  "subject": "Subjek",
+  "message": "Pesan",
+  "coin": "Koin",
+  "txid": "ID transaksi (hash)",
+  "amount": "Jumlah yang dikirim",
+  "licence": "Lisensi",
+  "seats": "Kursi",
+  "holder": "Pemegang lisensi (nama pada kunci)",
+  "subject_sent": "Subjek email:",
+  "send": "Kirim pesan",
+  "sending": "Mengirim…",
+  "sent": "Terima kasih, pesan Anda telah terkirim. Kami akan membalas secepatnya.",
+  "error": "Pesan tidak dapat dikirim. Silakan tulis ke {email} dengan NikPak di subjek.",
+  "invalid": "Isi nama Anda, alamat email yang valid, dan pesan (serta ID transaksi untuk pembayaran kripto).",
+  "privacy": "Data Anda hanya dipakai untuk membalas Anda.",
+  "direct_t": "Email",
+  "community_t": "Komunitas",
+  "community_p": "Berita, ide, dan laporan bug: pembuatnya ada di Telegram, X, dan Discord."
+ },
+ "thanks": {
+  "ok_t": "Terima kasih atas pembelian Anda!",
+  "ok_p": "Pembayaran Anda telah diterima. Kunci lisensi sedang dikirim ke alamat email Anda; mungkin butuh beberapa menit, jadi periksa juga folder spam.",
+  "pending_t": "Pembayaran sedang diproses",
+  "pending_p": "Pembayaran Anda sedang dikonfirmasi oleh penyedia. Kunci lisensi akan dikirim lewat email segera setelah terkonfirmasi.",
+  "cancel_t": "Pembayaran dibatalkan",
+  "cancel_p": "Tidak ada pembayaran yang dilakukan. Anda bisa mencoba lagi atau memilih metode pembayaran lain.",
+  "error_t": "Terjadi kesalahan",
+  "error_p": "Pembayaran tidak dapat dikonfirmasi. Jika Anda sudah ditagih, hubungi kami dengan NikPak di subjek dan kami akan menyelesaikannya.",
+  "next": "Lalu buka NikPak, klik <b>Daftar</b>, dan masukkan nama, alamat email, serta kunci persis seperti di email.",
+  "back": "Kembali ke toko",
+  "contact": "Hubungi kami"
+ },
+ "skins": {
+  "title": "55 skin, satu klik",
+  "sub": "NikPak dan unNik memakai skin yang sama dengan Nikkomander, dari Nikkoid Blue hingga Pizza, Matrix, dan 8-Bit Game. Pilih satu dan kedua program menyimpannya.",
+  "how_t": "Cara kerjanya",
+  "how_list": [
+   "<b>Tombol skin:</b> tombol palet di bilah judul membuka menu skin. Kotaknya terbuka di samping jendela, jadi seluruh antarmuka tetap terlihat: klik satu skin untuk mencobanya.",
+   "<b>Terapkan atau batal:</b> kotak dapat digeser lewat bilah judulnya. <b>Terapkan skin</b> menyimpannya untuk NikPak dan unNik; <b>Batal</b> (atau Esc) kembali ke skin sebelumnya.",
+   "<b>Matahari dan bulan:</b> tombol di sebelahnya beralih antara Nikkoid Blue (gelap) dan Nikkoid Bright dengan satu klik, seperti di Nikkomander.",
+   "<b>Diingat:</b> skin yang dipilih disimpan dan dipakai saat program dibuka lagi. NikPak dan unNik berbagi skin: ubah di satu program, yang lain mengikuti dalam beberapa detik.",
+   "<b>Bergambar dan datar:</b> 41 skin dari gradien CSS Nikkomander — garis, bintang, bata — dan 14 skin baru yang gambarnya dilukis NikPak sendiri: badai, gunung saat senja, jalan neon, komputer lama, papan catur. Tetap tajam di ukuran jendela apa pun."
+  ],
+  "gallery_t": "Galeri",
+  "gallery_sub": "NikPak dalam setiap skin. Klik gambar untuk melihatnya dalam ukuran penuh.",
+  "all": "Semua",
+  "dark": "Gelap",
+  "bright": "Terang",
+  "count": "{n} skin",
+  "unnik_t": "unNik juga",
+  "unnik_p": "Penjelajah arsip mengikuti skin yang sama: folder, ikon berkas, pilihan, dan dialog memakai warnanya.",
+  "custom_t": "Skin Anda sendiri",
+  "custom_p": "Skin adalah berkas <code>.skin.json</code> kecil: sebuah nama dan daftar warna, dalam format yang sama dengan Nikkomander. Klik <b>Impor skin…</b> di bagian bawah menu skin: berkas disalin ke folder <code>skins</code> di samping pengaturan, dan tanda × pada kotaknya menghapusnya lagi.",
+  "limits": "NikPak tetap memakai fontnya sendiri di setiap skin; font dan beberapa bingkai dekoratif dari skin Nikkomander tidak dipakai.",
+  "close": "Tutup",
+  "tag_dark": "Gelap",
+  "tag_bright": "Terang",
+  "tag_new": "Baru",
+  "new_t": "Empat belas skin bergambar baru",
+  "new_p": "Bulan, Amerika, Pattaya Neon, Burger Tokyo, Sushi, Amiga, MSX, Colecovision, ZX Spectrum, Kehidupan Kucing, Kehidupan Anjing, Mario Bros, Counter Strike dan Catur: gambar dilukis oleh NikPak sendiri, bukan gradien, tajam di ukuran jendela apa pun."
+ }
+}

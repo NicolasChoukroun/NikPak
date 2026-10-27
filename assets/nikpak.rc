@@ -1,0 +1,3 @@
+// Windows resources of nikpak.exe (compiled by build.rs): the program icon
+1 ICON "nikpak.ico"
+2 ICON "nikfile.ico"

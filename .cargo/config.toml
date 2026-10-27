@@ -1,0 +1,7 @@
+# Windows: link the C runtime statically so nikpak.exe runs on any PC without
+# needing the "Visual C++ Redistributable" to be installed.
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]
+
+[target.aarch64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]

@@ -1,0 +1,3 @@
+// Windows resources of unNik.exe (compiled by build.rs): the program icon
+1 ICON "unnik.ico"
+2 ICON "nikfile.ico"

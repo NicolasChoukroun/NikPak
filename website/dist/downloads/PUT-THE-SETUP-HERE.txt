@@ -1,0 +1,5 @@
+Upload these files into this folder (see site.json, downloads):
+  nikpak-1.6.2-setup.exe
+  nikpak-1.6.2-macos.zip
+  nikpak-1.6.2-linux-x86_64.tar.gz
+  nikpak_1.6.2_amd64.deb

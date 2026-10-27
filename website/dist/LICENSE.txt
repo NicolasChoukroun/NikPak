@@ -1,0 +1,107 @@
+NikPak - END USER LICENCE AGREEMENT (EULA)
+==========================================
+
+NikPak (c) 2026 Nicolas Choukroun. All rights reserved.
+Distributed and licensed by Nikkoid LLC ("Nikkoid").
+Web site and licences: https://nikpak.nikkoid.com/buy.php
+
+NikPak is distributed as SHAREWARE. By installing, copying or using NikPak you
+accept this licence. If you do not accept it, delete NikPak.
+
+1. OWNERSHIP
+   NikPak (the program nikpak and nikpak.exe, its graphical interface, its
+   documentation and the .nik archive format specification) is the
+   property of Nicolas Choukroun and is distributed and licensed by
+   Nikkoid LLC. You receive a right to use it, not
+   ownership. All rights not expressly granted here are reserved.
+
+2. FREE USE BY INDIVIDUALS
+   A private individual may use the unregistered (evaluation) copy of
+   NikPak free of charge, without time limit, for personal and
+   non-commercial purposes. The program shows a reminder that asks you to
+   register. Registering with a personal licence (USD 19) removes the
+   reminder and supports development.
+
+2a. UNNIK IS FREEWARE
+   unNik (unNik.exe), the archive browser and extractor included in the
+   NikPak package, is free for everyone - individuals, companies and
+   organisations - with no registration and no time limit. The licence
+   fees in sections 2 to 4 apply to NikPak (nikpak and nikpak.exe), which
+   creates archives, not to unNik. Sections 1 and 5 to 11 also apply to
+   unNik; it may be distributed on its own under the conditions of
+   section 5.
+
+3. USE BY COMPANIES AND ORGANISATIONS
+   Companies, self-employed professionals, public administrations,
+   associations, schools and every other organisation, and any
+   commercial use, need one company licence per seat. Prices per seat
+   (USD): 1-9 seats 19, 10-24 seats 15, 25-49 seats 12, 50-99 seats 9,
+   100-199 seats 7, 200-499 seats 6, 500 seats and more 5. A seat is
+   one computer on which NikPak is installed or one user who uses it,
+   whichever count is higher. Organisations may evaluate NikPak free of
+   charge for 40 days. After this period they must buy licences or stop
+   using NikPak.
+
+4. REGISTERED VERSION
+   A licence key is issued for a name and an e-mail address and is
+   personal to its holder (the person, or the organisation for a company
+   licence).
+   - Personal licence: the holder may use NikPak on all the computers they
+     personally own or use.
+   - Company licence: the organisation may use NikPak on the number of
+     seats shown in the licence.
+   The licence key must not be published, shared outside its holder,
+   sold or given away. A key that is published may be revoked in future
+   versions. A licence is valid for the version purchased and, unless
+   stated otherwise at purchase, for all later 1.x versions.
+
+5. DISTRIBUTION
+   You may copy and distribute the unregistered evaluation copy freely,
+   for example on shareware and download sites, CD/DVD compilations and
+   magazines, provided that:
+   a) the package is distributed complete and unmodified, with this
+      LICENSE.txt and THIRD-PARTY-NOTICES.txt;
+   b) no licence key, key file (nikpak.key, license.txt), key generator,
+      patch or crack is added to it;
+   c) no fee is charged for NikPak itself (a reasonable fee for the media
+      or the distribution service is allowed);
+   d) NikPak is not presented as your own product, and it is not bundled
+      with software that installs itself without the user's clear
+      consent (adware, toolbars and the like).
+   Nikkoid may withdraw this permission from any distributor.
+
+6. RESTRICTIONS
+   You may not modify, translate, decompile or disassemble NikPak,
+   except where the law expressly allows it despite this restriction (for
+   example to obtain the information needed for interoperability). You may
+   not remove or bypass the registration check or the reminder, or
+   distribute modified copies.
+
+7. YOUR ARCHIVES
+   Archives (.nik files) created with NikPak belong to you. No fee or
+   royalty is due for creating, distributing or selling .nik archives,
+   whether NikPak is registered or not.
+
+8. ENCRYPTION
+   NikPak contains strong encryption (Argon2id, XChaCha20-Poly1305). You are
+   responsible for complying with the export and use laws of your country.
+   A lost password cannot be recovered by Nikkoid or anyone else.
+
+9. NO WARRANTY
+   NikPak is provided "AS IS", without warranty of any kind, express or
+   implied, including fitness for a particular purpose. Keep backups of
+   important data. To the extent permitted by law, Nikkoid is not liable for
+   any loss of data, profit or other damage resulting from the use or the
+   inability to use NikPak. Nothing in this licence limits rights that
+   consumers have under mandatory law.
+
+10. THIRD-PARTY COMPONENTS
+   NikPak contains open-source components (zstd, liblzma, preflate-rs,
+   egui and others) used under their own licences. Their notices are in
+   THIRD-PARTY-NOTICES.txt. Those licences apply to those components only.
+
+11. TERMINATION AND LAW
+   This licence ends automatically if you break its terms; you must then
+   delete every copy of NikPak. This licence is governed by French law.
+
+Nikkoid LLC - https://nikpak.nikkoid.com

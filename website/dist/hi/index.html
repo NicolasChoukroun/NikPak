@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="hi" dir="ltr" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NikPak: 7-Zip, RAR और ZIP से छोटे आर्काइव</title>
+<meta name="description" content="NikPak, 7-Zip, RAR 7 और ZIP से छोटे आर्काइव बनाता है, जो क्वांटम-प्रतिरोधी एन्क्रिप्शन से सुरक्षित होते हैं: 256-बिट XChaCha20-Poly1305 और Argon2id, बिना किसी RSA या एलिप्टिक कर्व के जिसे क्वांटम कंप्यूटर तोड़ सके। मीडिया को पहचानने वाला कंप्रेशन। Windows, macOS, Linux।">
+<meta name="theme-color" content="#102658">
+<link rel="canonical" href="https://nikpak.nikkoid.com/hi/index.html">
+<link rel="alternate" hreflang="en" href="https://nikpak.nikkoid.com/en/index.html"><link rel="alternate" hreflang="zh-Hans" href="https://nikpak.nikkoid.com/zh/index.html"><link rel="alternate" hreflang="hi" href="https://nikpak.nikkoid.com/hi/index.html"><link rel="alternate" hreflang="es" href="https://nikpak.nikkoid.com/es/index.html"><link rel="alternate" hreflang="ar" href="https://nikpak.nikkoid.com/ar/index.html"><link rel="alternate" hreflang="fr" href="https://nikpak.nikkoid.com/fr/index.html"><link rel="alternate" hreflang="bn" href="https://nikpak.nikkoid.com/bn/index.html"><link rel="alternate" hreflang="pt" href="https://nikpak.nikkoid.com/pt/index.html"><link rel="alternate" hreflang="ru" href="https://nikpak.nikkoid.com/ru/index.html"><link rel="alternate" hreflang="id" href="https://nikpak.nikkoid.com/id/index.html"><link rel="alternate" hreflang="x-default" href="https://nikpak.nikkoid.com/en/index.html">
+<meta property="og:title" content="NikPak: 7-Zip, RAR और ZIP से छोटे आर्काइव">
+<meta property="og:description" content="NikPak, 7-Zip, RAR 7 और ZIP से छोटे आर्काइव बनाता है, जो क्वांटम-प्रतिरोधी एन्क्रिप्शन से सुरक्षित होते हैं: 256-बिट XChaCha20-Poly1305 और Argon2id, बिना किसी RSA या एलिप्टिक कर्व के जिसे क्वांटम कंप्यूटर तोड़ सके। मीडिया को पहचानने वाला कंप्रेशन। Windows, macOS, Linux।">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://nikpak.nikkoid.com/hi/index.html">
+<meta property="og:image" content="https://nikpak.nikkoid.com/assets/img/nikpak-drop.webp">
+<link rel="icon" href="../assets/favicon.ico" sizes="any">
+<link rel="icon" href="../assets/img/favicon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&family=JetBrains+Mono:wght@400&family=Noto+Sans+Devanagari:wght@300;400;500;600&display=swap">
+<link rel="stylesheet" href="../assets/css/site.css">
+
+</head>
+<body data-page="index" data-lang="hi">
+<a class="skip" href="#main">सामग्री पर जाएँ</a>
+<header class="top" id="top">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="../assets/img/favicon.png" alt="" width="30" height="30">NikPak</a>
+    <details class="apps">
+      <summary aria-label="Our Apps"><svg class="apps-ico" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><rect x="1.5" y="1.5" width="5" height="5" rx="1.3" fill="currentColor"/><rect x="9.5" y="1.5" width="5" height="5" rx="1.3" fill="currentColor"/><rect x="1.5" y="9.5" width="5" height="5" rx="1.3" fill="currentColor"/><rect x="9.5" y="9.5" width="5" height="5" rx="1.3" fill="currentColor"/></svg><span class="apps-name">Our Apps</span><svg class="chev" viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+      <div class="apps-menu" role="list"><a class="apps-home" href="https://nikkoid.com">Nikkoid Network</a><hr><a href="https://nikkomander.nikkoid.com/index.html">Nikkomander</a><a href="https://nikedit.nikkoid.com/index.html">NikEDIT</a><a href="https://niksql.nikkoid.com/index.html">NikSQL</a><a href="https://nikpak.nikkoid.com/en/index.html" aria-current="true">NikPak</a><a href="https://hexawar.nikkoid.com/website/">Hexawar</a></div>
+    </details>
+    <nav class="nav" aria-label="मेनू"><a href="index.html" aria-current="page">होम</a><a href="features.html">सुविधाएँ</a><a href="benchmarks.html">बेंचमार्क</a><a href="guide.html">गाइड</a><a href="skins.html">स्किन</a><a href="buy.html">खरीदें</a><a href="contact.html">संपर्क</a></nav>
+    <div class="lang" id="lang">
+      <button type="button" aria-haspopup="true" aria-expanded="false" aria-label="भाषा"><svg class="flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#fff"/><rect width="30" height="6.67" fill="#FF9933"/><rect y="13.33" width="30" height="6.67" fill="#138808"/><circle cx="15" cy="10" r="2.6" fill="none" stroke="#000080" stroke-width=".7"/><circle cx="15" cy="10" r=".6" fill="#000080"/></svg><span>हिन्दी</span><i class="caret"></i></button>
+      <div class="lang-menu" role="menu"><span class="label">भाषा</span><a href="../en/index.html" hreflang="en" lang="en" data-lang="en"><svg class="flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#012169"/><path d="M0 0 30 20M30 0 0 20" stroke="#fff" stroke-width="4"/><path d="M0 0 30 20M30 0 0 20" stroke="#C8102E" stroke-width="1.6"/><path d="M15 0v20M0 10h30" stroke="#fff" stroke-width="6"/><path d="M15 0v20M0 10h30" stroke="#C8102E" stroke-width="3.4"/></svg><span>English</span></a><a href="../zh/index.html" hreflang="zh-Hans" lang="zh-Hans" data-lang="zh"><svg class="flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#DE2910"/><path fill="#FFDE00" d="m6 3 .9 2.8h2.9L7.5 7.5l.9 2.8L6 8.6l-2.4 1.7.9-2.8-2.3-1.7h2.9z"/><circle cx="11" cy="2.6" r=".8" fill="#FFDE00"/><circle cx="12.6" cy="4.6" r=".8" fill="#FFDE00"/><circle cx="12.6" cy="7.2" r=".8" fill="#FFDE00"/><circle cx="11" cy="9.2" r=".8" fill="#FFDE00"/></svg><span>中文</span></a><a href="../hi/index.html" hreflang="hi" lang="hi" data-lang="hi" aria-current="true"><svg class="flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#fff"/><rect width="30" height="6.67" fill="#FF9933"/><rect y="13.33" width="30" height="6.67" fill="#138808"/><circle cx="15" cy="10" r="2.6" fill="none" stroke="#000080" stroke-width=".7"/><circle cx="15" cy="10" r=".6" fill="#000080"/></svg><span>हिन्दी</span></a><a href="../es/index.html" hreflang="es" lang="es" data-lang="es"><svg class="flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#AA151B"/><rect y="5" width="30" height="10" fill="#F1BF00"/></svg><span>Español</span></a><a href="../ar/index.html" hreflang="ar" lang="ar" data-lang="ar"><svg class="flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#006C35"/><path d="M8 12.5h14" stroke="#fff" stroke-width="1.2"/><path d="M9 8.3h12" stroke="#fff" stroke-width="1.6" stroke-dasharray="1.2 .7"/></svg><span>العربية</span></a><a href="../fr/index.html" hreflang="fr" lang="fr" data-lang="fr"><svg class="flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#fff"/><rect width="10" height="20" fill="#002395"/><rect x="20" width="10" height="20" fill="#ED2939"/></svg><span>Français</span></a><a href="../bn/index.html" hreflang="bn" lang="bn" data-lang="bn"><svg class="flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#006A4E"/><circle cx="13.3" cy="10" r="5.2" fill="#F42A41"/></svg><span>বাংলা</span></a><a href="../pt/index.html" hreflang="pt" lang="pt" data-lang="pt"><svg class="flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#009C3B"/><path d="M15 2.5 27 10 15 17.5 3 10z" fill="#FFDF00"/><circle cx="15" cy="10" r="4.2" fill="#002776"/><path d="M11 9.4c2.6-.6 5.4-.2 8 1.2" stroke="#fff" stroke-width=".7" fill="none"/></svg><span>Português</span></a><a href="../ru/index.html" hreflang="ru" lang="ru" data-lang="ru"><svg class="flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#fff"/><rect y="6.67" width="30" height="6.67" fill="#0039A6"/><rect y="13.33" width="30" height="6.67" fill="#D52B1E"/></svg><span>Русский</span></a><a href="../id/index.html" hreflang="id" lang="id" data-lang="id"><svg class="flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#fff"/><rect width="30" height="10" fill="#CE1126"/></svg><span>Bahasa Indonesia</span></a></div>
+    </div>
+    <button type="button" class="menu-toggle" aria-label="मेनू" aria-expanded="false"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke-linecap="round"/></svg></button>
+  </div>
+</header>
+<main id="main">
+
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <span class="label">क्वांटम-प्रतिरोधी एन्क्रिप्शन · शेयरवेयर · Windows, macOS, Linux</span>
+      <h1><em>7-Zip, RAR और ZIP</em> से छोटे आर्काइव।</h1>
+      <p class="lead">NikPak फ़ोटो, संगीत और ऑफ़िस दस्तावेज़ों को उनकी सामग्री से पहचानता है और हर फ़ाइल को उसके लिए सबसे उपयुक्त कोडेक से कंप्रेस करता है। हर एन्क्रिप्टेड आर्काइव क्वांटम-प्रतिरोधी है: केवल 256-बिट सिमेट्रिक एन्क्रिप्शन, बिना किसी RSA या एलिप्टिक कर्व के जिसे क्वांटम कंप्यूटर तोड़ सके।</p>
+      <div class="dl" id="download"><span class="label">मुफ़्त डाउनलोड</span><div class="dl-row"><a class="btn dl-btn btn-primary" data-os="win" href="../downloads/nikpak-1.6.2-setup.exe" download title="मुफ़्त डाउनलोड · Windows"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/></svg><span><b>Windows</b><small>setup .exe</small></span></a><a class="btn dl-btn" data-os="mac" href="../downloads/nikpak-1.6.2-macos.zip" download title="मुफ़्त डाउनलोड · macOS"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="4" y="5" width="16" height="10.5" rx="1.5"/><path d="M2 19h20l-1.5-3.5h-17z" stroke-linejoin="round"/></svg><span><b>macOS</b><small>.zip</small></span></a><a class="btn dl-btn" data-os="linux" href="../downloads/nikpak-1.6.2-linux-x86_64.tar.gz" download title="मुफ़्त डाउनलोड · Linux / Unix"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3M12.5 15h4.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>Linux / Unix</b><small>.tar.gz</small></span></a><a class="btn dl-btn" data-os="linux" href="../downloads/nikpak_1.6.2_amd64.deb" download title="मुफ़्त डाउनलोड · Debian / Ubuntu"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3M12.5 15h4.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>Debian / Ubuntu</b><small>.deb</small></span></a></div></div><div class="btn-row"><a class="btn" href="buy.html"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.5 12h11.5l2-8H6.2" stroke-linejoin="round"/></svg>लाइसेंस खरीदें</a></div>
+      <p class="small">संस्करण 1.6.2 · NikPak + unNik · Windows, macOS, Linux<br>व्यक्तिगत उपयोग के लिए मुफ़्त · आर्काइव ब्राउज़र unNik सभी के लिए मुफ़्त है</p>
+    </div>
+    <div><div class="appwin" data-state="idle" id="appwin" aria-hidden="true"
+  data-of="{} / {}">
+  <div class="bar"><span class="label">मूल्यांकन संस्करण  ·  रजिस्टर करें</span><span class="wbtns"><i>i</i><span>–</span><span>×</span></span></div>
+  <div class="ttl">NikPak</div>
+  <div class="ring">
+    <svg viewBox="0 0 200 200">
+      <defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5FC4FF"/><stop offset="1" stop-color="#1E9BFF"/></linearGradient></defs>
+      <circle cx="100" cy="100" r="96" fill="none" stroke="rgba(95,196,255,.14)" stroke-width="1.5"/>
+      <circle class="track" cx="100" cy="100" r="86" fill="none" stroke="#122244" stroke-width="10" opacity="0"/>
+      <circle class="dash" cx="100" cy="100" r="78" fill="rgba(4,11,34,.55)" stroke="rgba(95,196,255,.55)" stroke-width="1.6" stroke-dasharray="7 6"/>
+      <circle class="prog" cx="100" cy="100" r="86" fill="none" stroke="url(#rg)" stroke-width="10" stroke-linecap="round" stroke-dasharray="0 541" transform="rotate(-90 100 100)"/>
+      <g class="arrow" stroke="#5FC4FF" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round" style="filter:drop-shadow(0 0 6px rgba(30,155,255,.9))">
+        <path d="M100 58v54M80 94l20 20 20-20"/><path d="M70 112v18h60v-18"/></g>
+      <g class="check" stroke="#3DDC97" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0"><path d="m74 102 18 18 36-38"/></g>
+    </svg>
+    <div class="pct"><span><b>0</b><small>%</small></span></div>
+  </div>
+  <div class="msg">
+    <div class="state s-idle"><div class="big">कंप्रेस करने के लिए कोई फ़ाइल या फ़ोल्डर यहाँ छोड़ें</div><div class="links">या <u>फ़ाइलें चुनें</u> · <u>फ़ोल्डर चुनें</u></div></div>
+    <div class="state s-run"><div class="phase">कंप्रेस हो रहा है</div><div class="file">holiday-photos</div><div class="meta"><span class="amt"></span></div></div>
+    <div class="state s-done"><div class="phase ok">पूरा हुआ</div><div class="file">holiday-photos.nik</div><div class="meta">3.6 MB / 7.0 MB · 0.4 s</div></div>
+  </div>
+  <div class="save"><span class="label">यहाँ सेव करें</span>
+    <div class="row"><div class="fld">C:\Users\Jane\Desktop</div><div class="bbtn">ब्राउज़ करें</div></div></div>
+  <div class="foot"><span class="pill"><svg class="flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#fff"/><rect width="30" height="6.67" fill="#FF9933"/><rect y="13.33" width="30" height="6.67" fill="#138808"/><circle cx="15" cy="10" r="2.6" fill="none" stroke="#000080" stroke-width=".7"/><circle cx="15" cy="10" r=".6" fill="#000080"/></svg>हिन्दी <i class="caret" style="width:0;height:0;border-inline:4px solid transparent;border-top:5px solid #1E9BFF"></i></span><span class="soc"><span class="soc-tg"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M20.7 4.3 2.9 11.2c-1.2.5-1.2 1.2-.2 1.5l4.6 1.4 1.7 5.4c.2.6.4.8.9.8.4 0 .6-.2.9-.5l2.2-2.1 4.6 3.4c.8.5 1.4.2 1.6-.8l3-14.1c.3-1.3-.5-1.8-1.5-1.4zM9.4 14.4l8.4-5.3c.4-.2.7-.1.4.2l-7 6.3-.3 3z"/></svg></span><span class="soc-x"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M17.8 3h3.1l-6.8 7.7L22 21h-6.2l-4.9-6.3L5.3 21H2.2l7.3-8.3L2 3h6.4l4.4 5.8zm-1.1 16.2h1.7L7.4 4.7H5.6z"/></svg></span><span class="soc-dc"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M19.3 5.3A17 17 0 0 0 15 4l-.5 1a15.7 15.7 0 0 0-5 0L9 4a17 17 0 0 0-4.3 1.3C2 9.4 1.3 13.3 1.6 17.2A17.2 17.2 0 0 0 6.9 20l1.1-1.8c-.6-.2-1.2-.5-1.7-.9l.4-.3a12.3 12.3 0 0 0 10.6 0l.4.3c-.5.4-1.1.7-1.7.9l1.1 1.8a17.1 17.1 0 0 0 5.3-2.8c.4-4.5-.7-8.4-3.1-11.9zM8.5 14.8c-1 0-1.9-1-1.9-2.2s.8-2.2 1.9-2.2 1.9 1 1.9 2.2-.8 2.2-1.9 2.2zm7 0c-1 0-1.9-1-1.9-2.2s.8-2.2 1.9-2.2 1.9 1 1.9 2.2-.8 2.2-1.9 2.2z"/></svg></span></span></div>
+</div></div>
+  </div>
+</section>
+<section class="stats"><div class="wrap grid g4"><div class="panel stat reveal"><b>38.8 %</b><span>फ़ोटो पर RAR 7 से छोटा</span></div><div class="panel stat reveal"><b>31.7 %</b><span>ऑफ़िस फ़ाइलों पर 7-Zip से छोटा</span></div><div class="panel stat reveal"><b>60.4 %</b><span>ZIP से इतना तक छोटा</span></div><div class="panel stat reveal"><b>256-बिट</b><span>क्वांटम-प्रतिरोधी एन्क्रिप्शन: न RSA, न एलिप्टिक कर्व</span></div></div></section>
+<section>
+  <div class="wrap">
+    <div class="section-head"><h2>NikPak क्यों</h2><p>एक छोटा प्रोग्राम, चार विचारों पर बना: बेहतर कंप्रेस करना, तेज़ चलना, आधुनिक क्रिप्टोग्राफ़ी से सुरक्षा देना और हर जगह एक जैसा चलना।</p></div>
+    <div class="grid g3"><div class="panel card reveal"><div class="ico"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="1.6"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg></div><h3>क्वांटम-प्रतिरोधी</h3><p>सिर्फ़ 256-बिट सिमेट्रिक क्रिप्टोग्राफ़ी। इसमें कोई RSA, एलिप्टिक-कर्व या Diffie-Hellman कोड नहीं है जिसे क्वांटम कंप्यूटर तोड़ सके।</p></div><div class="panel card reveal"><div class="ico"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M2 12h2m3-5v10m4-14v18m4-12v6m4-9v12m3-6h0" stroke-linecap="round"/></svg></div><h3>मीडिया को पहचानता है</h3><p>WAV, AIFF, ProTracker MOD और BMP फ़ाइलें नाम से नहीं, सामग्री से पहचानी जाती हैं। हर फ़ाइल पर कई लॉसलेस फ़िल्टर आज़माए जाते हैं और सबसे छोटा परिणाम चुना जाता है।</p></div><div class="panel card reveal"><div class="ico"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg></div><h3>Office और PDF का री-कंप्रेशन</h3><p>docx, xlsx, pptx, odt, epub, pdf, zip और gz फ़ाइलों के अंदर की Deflate स्ट्रीम खोली जाती हैं, कहीं बेहतर कंप्रेस होती हैं और एक्सट्रैक्ट करते समय बिट-दर-बिट दोबारा बनती हैं।</p></div><div class="panel card reveal"><div class="ico"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></svg></div><h3>अधिकतम स्तर पर सबसे छोटा</h3><p>-m5 पर NikPak हर ब्लॉक के लिए LZMA2 या PPMd चुनता है और फ़ाइलों को प्रकार के अनुसार क्रम में रखता है। हर टेस्ट सेट पर इसने चारों टूल में सबसे छोटा आर्काइव बनाया।</p></div><div class="panel card reveal"><div class="ico"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z" stroke-linejoin="round"/></svg></div><h3>ज़रूरत हो तो तेज़</h3><p>तेज़ स्तर -m2 पर 190 MB सोर्स कोड एक कोर पर 1.7 सेकंड में आर्काइव हो जाता है, जो 7-Zip के डिफ़ॉल्ट स्तर से 56 गुना तेज़ है।</p></div><div class="panel card reveal"><div class="ico"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15.5" r="1.4"/></svg></div><h3>सही तरीके से एन्क्रिप्शन</h3><p>64 MiB मेमोरी के साथ Argon2id और XChaCha20-Poly1305 ऑथेंटिकेटेड एन्क्रिप्शन। फ़ाइलों के नाम, आकार और तारीखें हमेशा छिपी रहती हैं, और कोई भी छेड़छाड़ हमेशा पकड़ी जाती है।</p></div></div>
+  </div>
+</section>
+<section>
+  <div class="wrap split">
+    <div>
+      <h2>अधिकतम स्तर पर आर्काइव का आकार</h2>
+      <p>मूल आकार का प्रतिशत: जितना कम, उतना बेहतर। एक CPU कोर, हर आर्काइव को फिर से एक्सट्रैक्ट करके बाइट-दर-बाइट मिलाया गया।</p>
+      <p><a class="btn" href="benchmarks.html">बेंचमार्क देखें</a></p>
+    </div>
+    <div class="panel"><div class="chart"><div class="set"><h4>8 BMP इमेज</h4><div class="bars"><div class="bar me"><span class="n">NikPak -m5</span><span class="t"><span class="f" data-w="50.9"></span></span><span class="v">50.9 %</span></div><div class="bar"><span class="n">RAR 7 -m5</span><span class="t"><span class="f" data-w="62.9"></span></span><span class="v">62.9 %</span></div><div class="bar"><span class="n">7-Zip -mx9</span><span class="t"><span class="f" data-w="60.0"></span></span><span class="v">60.0 %</span></div><div class="bar"><span class="n">ZIP -9</span><span class="t"><span class="f" data-w="71.2"></span></span><span class="v">71.2 %</span></div></div></div><div class="set"><h4>संगीत 48 kHz स्टीरियो 24-बिट</h4><div class="bars"><div class="bar me"><span class="n">NikPak -m5</span><span class="t"><span class="f" data-w="62.8"></span></span><span class="v">62.8 %</span></div><div class="bar"><span class="n">RAR 7 -m5</span><span class="t"><span class="f" data-w="73.2"></span></span><span class="v">73.2 %</span></div><div class="bar"><span class="n">7-Zip -mx9</span><span class="t"><span class="f" data-w="88.1"></span></span><span class="v">88.1 %</span></div><div class="bar"><span class="n">ZIP -9</span><span class="t"><span class="f" data-w="93.0"></span></span><span class="v">93.0 %</span></div></div></div><div class="set"><h4>60 ऑफ़िस फ़ाइलें</h4><div class="bars"><div class="bar me"><span class="n">NikPak -m5</span><span class="t"><span class="f" data-w="17.6"></span></span><span class="v">17.6 %</span></div><div class="bar"><span class="n">RAR 7 -m5</span><span class="t"><span class="f" data-w="28.6"></span></span><span class="v">28.6 %</span></div><div class="bar"><span class="n">7-Zip -mx9</span><span class="t"><span class="f" data-w="25.8"></span></span><span class="v">25.8 %</span></div><div class="bar"><span class="n">ZIP -9</span><span class="t"><span class="f" data-w="44.5"></span></span><span class="v">44.5 %</span></div></div></div><div class="set"><h4>सामान्य डेटा (11,473 फ़ाइलें)</h4><div class="bars"><div class="bar me"><span class="n">NikPak -m5</span><span class="t"><span class="f" data-w="14.8"></span></span><span class="v">14.8 %</span></div><div class="bar"><span class="n">RAR 7 -m5</span><span class="t"><span class="f" data-w="17.6"></span></span><span class="v">17.6 %</span></div><div class="bar"><span class="n">7-Zip -mx9</span><span class="t"><span class="f" data-w="15.2"></span></span><span class="v">15.2 %</span></div><div class="bar"><span class="n">ZIP -9</span><span class="t"><span class="f" data-w="32.7"></span></span><span class="v">32.7 %</span></div></div></div></div></div>
+  </div>
+</section>
+<section>
+  <div class="wrap split rev">
+    <div>
+      <h2>एक विंडो। छोड़िए, और काम पूरा।</h2>
+      <p>फ़ाइलें या फ़ोल्डर NikPak की विंडो पर छोड़ें, या उन्हें चुनने के लिए गोले पर क्लिक करें। वे सबसे अच्छे कंप्रेशन के साथ एक आर्काइव में कंप्रेस होते हैं। रिंग प्रगति दिखाती है और आर्काइव तैयार होने पर हरी हो जाती है।</p>
+      <ul class="checks"><li>डिफ़ॉल्ट रूप से सबसे अच्छा कंप्रेशन (-m5)</li><li>आपका गंतव्य फ़ोल्डर याद रखता है</li><li>Esc से कभी भी रद्द करें; आधी लिखी फ़ाइल नहीं बचती</li><li>मौजूदा आर्काइव कभी ओवरराइट नहीं होता</li></ul>
+    </div>
+    <div class="shots"><img class="shot" src="../assets/img/nikpak-drop.webp" alt="NikPak" width="500" height="560" loading="lazy"><img class="shot" src="../assets/img/nikpak-compress.webp" alt="NikPak" width="500" height="560" loading="lazy"></div>
+  </div>
+</section>
+<section>
+  <div class="wrap split">
+    <div>
+      <h2>unNik: मुफ़्त आर्काइव ब्राउज़र</h2>
+      <p>.nik फ़ाइल पर डबल-क्लिक करें और unNik उसे खोल देता है। फ़ोल्डर ब्राउज़ करें, पूरे आर्काइव में खोजें, टेक्स्ट और बाइनरी फ़ाइलें देखें, चुनी हुई फ़ाइलें एक्सट्रैक्ट करें, फ़ाइलें हटाएँ या आर्काइव जाँचें। unNik व्यक्तियों और कंपनियों दोनों के लिए फ़्रीवेयर है।</p>
+      <ul class="checks"><li>फ़ोल्डर ट्री, पाथ नेविगेशन, Ctrl+F से खोज</li><li>टेक्स्ट (खोज के साथ) और बाइनरी फ़ाइलों के लिए अंतर्निहित व्यूअर</li><li>सब या चुनी हुई फ़ाइलें एक्सट्रैक्ट करें, दोनों रखें या बदलें</li><li>एक बटन से NikPak और unNik के बीच स्विच करें</li></ul>
+    </div>
+    <figure><img class="shot" src="../assets/img/unnik-browser.webp" alt="unNik" width="1120" height="720" loading="lazy"></figure>
+  </div>
+</section>
+<section>
+  <div class="wrap split rev">
+    <div>
+      <h2>55 स्किन</h2>
+      <p>गहरी, हल्की, मज़ेदार या क्लासिक: स्किन बटन NikPak और unNik के रंग बदलता है, और सूरज / चाँद बटन एक क्लिक में गहरे और हल्के रंगों के बीच बदलता है।</p>
+      <p><a class="btn" href="skins.html">सभी स्किन देखें</a></p>
+    </div>
+    <a class="skin-strip" href="skins.html" aria-label="सभी स्किन देखें"><img src="../assets/img/skins/nikkoid-thumb.webp" alt="Nikkoid Blue (default)" title="Nikkoid Blue (default)" width="250" height="280" loading="lazy"><img src="../assets/img/skins/nikkoid-light-thumb.webp" alt="Nikkoid Bright" title="Nikkoid Bright" width="250" height="280" loading="lazy"><img src="../assets/img/skins/moon-thumb.webp" alt="Moon" title="Moon" width="250" height="280" loading="lazy"><img src="../assets/img/skins/pattaya-thumb.webp" alt="Pattaya Neons" title="Pattaya Neons" width="250" height="280" loading="lazy"><img src="../assets/img/skins/sushi-thumb.webp" alt="Sushi" title="Sushi" width="250" height="280" loading="lazy"><img src="../assets/img/skins/chess-thumb.webp" alt="Chess" title="Chess" width="250" height="280" loading="lazy"><img src="../assets/img/skins/dracula-thumb.webp" alt="Dracula" title="Dracula" width="250" height="280" loading="lazy"><img src="../assets/img/skins/8bit-thumb.webp" alt="8-Bit Game" title="8-Bit Game" width="250" height="280" loading="lazy"></a>
+  </div>
+</section>
+<section>
+  <div class="wrap split rev">
+    <div>
+      <h2>आपकी भाषा बोलता है</h2>
+      <p>दुनिया की दस सबसे ज़्यादा बोली जाने वाली भाषाएँ, हिन्दी, बांग्ला और अरबी के लिए सही टेक्स्ट शेपिंग के साथ। पहली बार NikPak आपके सिस्टम की भाषा अपनाता है; NikPak और unNik हमेशा एक ही भाषा साझा करते हैं।</p>
+      <p class="dim" style="font-size:1.05rem;line-height:2"><span lang="en">English</span> · <span lang="zh-Hans">中文</span> · <span lang="hi">हिन्दी</span> · <span lang="es">Español</span> · <span lang="ar">العربية</span> · <span lang="fr">Français</span> · <span lang="bn">বাংলা</span> · <span lang="pt">Português</span> · <span lang="ru">Русский</span> · <span lang="id">Bahasa Indonesia</span></p>
+    </div>
+    <figure><img class="shot" src="../assets/img/lang-quad.webp" alt="" width="1066" height="1186" loading="lazy" style="max-width:520px"></figure>
+  </div>
+</section>
+<section>
+  <div class="wrap split">
+    <div>
+      <h2>ऐसी कमांड लाइन जिसे RAR उपयोगकर्ता पहले से जानते हैं</h2>
+      <p><code>a</code>, <code>x</code>, <code>e</code>, <code>l</code>, <code>t</code>, <code>@listfiles</code>, <code>-p</code>, <code>-o+</code>, <code>-y</code>: Total Commander जैसे फ़्रंट-एंड nikpak.exe को rar.exe की तरह चला सकते हैं। स्पष्ट एग्ज़िट कोड इसे स्क्रिप्ट और बैकअप के लिए भरोसेमंद बनाते हैं।</p>
+      <p><a class="btn" href="guide.html#cli">उपयोगकर्ता गाइड पढ़ें</a></p>
+    </div>
+    <pre>nikpak a backup.nik C:\Docs\ Photos\
+nikpak a -p secret.nik Taxes2026\
+nikpak x backup.nik C:\Restore\
+nikpak l backup.nik *.pdf
+nikpak t secret.nik
+nikpak mt song.wav tracker.mod photo.bmp</pre>
+  </div>
+</section>
+<section>
+  <div class="wrap">
+    <div class="section-head"><h2>आपके लिए मुफ़्त। कंपनियों के लिए उचित।</h2><p>व्यक्ति NikPak को व्यक्तिगत उपयोग के लिए मुफ़्त में, बिना समय-सीमा के इस्तेमाल कर सकते हैं; कुछ भी बंद नहीं है। कंपनियों और संगठनों को 40 दिन का मूल्यांकन समय मिलता है, फिर हर सीट के लिए एक लाइसेंस।</p></div>
+    <div class="grid g2" style="max-width:820px;margin:0 auto">
+      <a class="panel price-card" href="buy.html?type=personal" style="color:inherit;text-decoration:none"><span class="label">व्यक्तिगत लाइसेंस</span><div class="amount">$19</div><span class="dim">आपके सभी कंप्यूटरों पर रिमाइंडर हटाता है</span></a>
+      <a class="panel price-card featured" href="buy.html?type=company" style="color:inherit;text-decoration:none"><span class="label">कंपनी लाइसेंस</span><div class="amount"><small>शुरुआत</small> $5 <small>/ सीट</small></div><span class="dim">1 से 500+ सीटों तक वॉल्यूम कीमतें</span></a>
+    </div>
+  </div>
+</section>
+<section>
+  <div class="wrap">
+    <div class="panel-flat" style="max-width:820px;margin:0 auto">
+      <h3>सीमाओं के बारे में ईमानदार</h3>
+      <p class="dim" style="margin:0">RAR अब भी रिकवरी रिकॉर्ड, मल्टी-वॉल्यूम और सेल्फ़-एक्सट्रैक्टिंग आर्काइव और दशकों का व्यावहारिक अनुभव देता है। NikPak नया है और अभी तक इसका स्वतंत्र ऑडिट नहीं हुआ है। हम यह साफ़ कहते हैं, और रोडमैप बताता है कि आगे क्या आ रहा है। <a href="features.html#roadmap">रोडमैप →</a></p>
+    </div>
+  </div>
+</section>
+<section>
+  <div class="wrap">
+    <div class="panel cta">
+      <h2 class="glow-title">अभी NikPak आज़माएँ</h2>
+      <p class="dim">एक ही सेटअप NikPak और unNik दोनों इंस्टॉल करता है। शुरू करने के लिए रजिस्ट्रेशन ज़रूरी नहीं।</p>
+      <div class="dl"><span class="label">मुफ़्त डाउनलोड</span><div class="dl-row"><a class="btn dl-btn btn-primary" data-os="win" href="../downloads/nikpak-1.6.2-setup.exe" download title="मुफ़्त डाउनलोड · Windows"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/></svg><span><b>Windows</b><small>setup .exe</small></span></a><a class="btn dl-btn" data-os="mac" href="../downloads/nikpak-1.6.2-macos.zip" download title="मुफ़्त डाउनलोड · macOS"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="4" y="5" width="16" height="10.5" rx="1.5"/><path d="M2 19h20l-1.5-3.5h-17z" stroke-linejoin="round"/></svg><span><b>macOS</b><small>.zip</small></span></a><a class="btn dl-btn" data-os="linux" href="../downloads/nikpak-1.6.2-linux-x86_64.tar.gz" download title="मुफ़्त डाउनलोड · Linux / Unix"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3M12.5 15h4.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>Linux / Unix</b><small>.tar.gz</small></span></a><a class="btn dl-btn" data-os="linux" href="../downloads/nikpak_1.6.2_amd64.deb" download title="मुफ़्त डाउनलोड · Debian / Ubuntu"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3M12.5 15h4.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>Debian / Ubuntu</b><small>.deb</small></span></a></div></div><div class="btn-row"><a class="btn" href="buy.html"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.5 12h11.5l2-8H6.2" stroke-linejoin="round"/></svg>लाइसेंस खरीदें</a></div>
+    </div>
+  </div>
+</section>
+</main>
+<footer>
+  <div class="wrap">
+    <div class="cols">
+      <div>
+        <a class="brand" href="index.html"><img src="../assets/img/favicon.png" alt="" width="30" height="30">NikPak</a>
+        <p class="dim" style="margin-top:12px">.nik फ़ॉर्मैट के लिए तेज़, मीडिया को पहचानने वाली आर्काइविंग, क्वांटम-प्रतिरोधी एन्क्रिप्शन के साथ।</p>
+        <p class="dim">NikPak एक शेयरवेयर है। unNik एक फ़्रीवेयर है।</p>
+      </div>
+      <div>
+        <span class="label">उत्पाद</span>
+        <a href="features.html">सुविधाएँ</a>
+        <a href="benchmarks.html">बेंचमार्क</a>
+        <a href="index.html#download">मुफ़्त डाउनलोड</a>
+        <a href="buy.html">लाइसेंस खरीदें</a>
+      </div>
+      <div>
+        <span class="label">सहायता</span>
+        <a href="guide.html">गाइड</a>
+        <a href="contact.html">संपर्क</a>
+        <a href="../LICENSE.txt">लाइसेंस की शर्तें (EULA)</a>
+      </div>
+      <div>
+        <span class="label">समुदाय</span>
+        <p class="dim">समाचार, सवाल, सुझाव और बग रिपोर्ट।</p>
+        <div class="soc-row"><a class="soc-btn soc-tg" href="https://t.me/cryptonikko" target="_blank" rel="noopener" aria-label="Telegram" title="Telegram"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M20.7 4.3 2.9 11.2c-1.2.5-1.2 1.2-.2 1.5l4.6 1.4 1.7 5.4c.2.6.4.8.9.8.4 0 .6-.2.9-.5l2.2-2.1 4.6 3.4c.8.5 1.4.2 1.6-.8l3-14.1c.3-1.3-.5-1.8-1.5-1.4zM9.4 14.4l8.4-5.3c.4-.2.7-.1.4.2l-7 6.3-.3 3z"/></svg></a><a class="soc-btn soc-x" href="https://x.com/cryptonikkoid" target="_blank" rel="noopener" aria-label="X" title="X"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M17.8 3h3.1l-6.8 7.7L22 21h-6.2l-4.9-6.3L5.3 21H2.2l7.3-8.3L2 3h6.4l4.4 5.8zm-1.1 16.2h1.7L7.4 4.7H5.6z"/></svg></a><a class="soc-btn soc-dc" href="https://discord.com/users/1537826350759415811" target="_blank" rel="noopener" aria-label="Discord" title="Discord"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M19.3 5.3A17 17 0 0 0 15 4l-.5 1a15.7 15.7 0 0 0-5 0L9 4a17 17 0 0 0-4.3 1.3C2 9.4 1.3 13.3 1.6 17.2A17.2 17.2 0 0 0 6.9 20l1.1-1.8c-.6-.2-1.2-.5-1.7-.9l.4-.3a12.3 12.3 0 0 0 10.6 0l.4.3c-.5.4-1.1.7-1.7.9l1.1 1.8a17.1 17.1 0 0 0 5.3-2.8c.4-4.5-.7-8.4-3.1-11.9zM8.5 14.8c-1 0-1.9-1-1.9-2.2s.8-2.2 1.9-2.2 1.9 1 1.9 2.2-.8 2.2-1.9 2.2zm7 0c-1 0-1.9-1-1.9-2.2s.8-2.2 1.9-2.2 1.9 1 1.9 2.2-.8 2.2-1.9 2.2z"/></svg></a></div>
+      </div>
+    </div>
+    <div class="copy"><span>© 2026 Nicolas Choukroun. Nikkoid LLC द्वारा वितरित और लाइसेंस प्राप्त।</span><span>nikpak.nikkoid.com</span></div>
+  </div>
+</footer>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="../assets/js/site.js" defer></script>
+
+</body>
+</html>

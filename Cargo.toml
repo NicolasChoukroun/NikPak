@@ -1,0 +1,72 @@
+[package]
+name = "nikpak"
+# Version policy: every delivered build gets a new number (see CHANGELOG.md).
+version = "1.6.2"
+edition = "2021"
+description = "nikpak + unNik - fast, encrypted archiver for the .nik format (zstd / LZMA2 / PPMd + Deflate recompression + Argon2id + XChaCha20-Poly1305)"
+rust-version = "1.89"
+
+[dependencies]
+zstd = { version = "0.13", features = ["zstdmt"] }
+chacha20poly1305 = { version = "0.10", features = ["stream"] }
+argon2 = "0.5"
+rand = "0.8"
+zeroize = "1"
+rpassword = "7"
+crc32fast = "1"
+glob = "0.3"
+# Maximum level (-m5): LZMA2 for binary data, PPMd (variant I) for text
+liblzma = { version = "0.4.9", default-features = false, features = ["static"] }
+ppmd-rust = "1.5.1"
+# Bit-exact Deflate recompression for ZIP containers (docx, xlsx, ...), PDF and gzip
+# vendored copy (Apache-2.0) with its LGPL `cabac` dependency replaced by our own range coder
+preflate-rs = { path = "vendor/preflate-rs" }
+# Shareware licence keys: Ed25519 signatures (nikpak only holds the public key)
+ed25519-dalek = "2"
+
+# Graphical interface (nikpak started without arguments). Optional: build a
+# command-line-only binary with  cargo build --release --no-default-features
+eframe = { version = "0.33.3", default-features = false, features = ["glow", "x11", "wayland"], optional = true }
+# copy & paste in text fields (licence key) - eframe 0.33 has no own switch for it
+egui-winit = { version = "0.33.3", default-features = false, features = ["clipboard"], optional = true }
+rfd = { version = "0.15", optional = true }
+# Hindi, Bengali and Arabic in the window: shaping (HarfBuzz port), bidi ordering, rasterising
+rustybuzz = { version = "0.20", optional = true }
+unicode-bidi = { version = "0.3", optional = true }
+ab_glyph = { version = "0.2", optional = true }
+
+[features]
+default = ["gui"]
+gui = ["dep:eframe", "dep:rfd", "dep:egui-winit", "dep:rustybuzz", "dep:unicode-bidi", "dep:ab_glyph"]
+# Nikkoid's private licence tool; never shipped:  cargo run --release --features keygen --bin nikpak-keygen -- ...
+keygen = []
+
+[[bin]]
+name = "nikpak"
+path = "src/main.rs"
+
+# the free archive browser (window only); needs the "gui" feature
+[[bin]]
+name = "unNik"
+path = "src/bin/unnik.rs"
+required-features = ["gui"]
+
+[[bin]]
+name = "nikpak-keygen"
+path = "src/bin/nikpak-keygen.rs"
+required-features = ["keygen"]
+
+[dev-dependencies]
+flate2 = "1"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+# unwind (not abort): panics inside preflate-rs on malformed data are caught
+# and turned into clean errors (see recomp.rs)
+panic = "unwind"
+strip = true
+
+[build-dependencies]
+embed-resource = "3"

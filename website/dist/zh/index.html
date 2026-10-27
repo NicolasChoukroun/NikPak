@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="zh-Hans" dir="ltr" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NikPak：比 7-Zip、RAR 和 ZIP 更小的压缩包</title>
+<meta name="description" content="NikPak 生成的压缩包比 7-Zip、RAR 7 和 ZIP 更小，并采用抗量子计算的加密保护：256 位 XChaCha20-Poly1305 与 Argon2id，不含任何可被量子计算机破解的 RSA 或椭圆曲线。识别媒体内容的压缩。支持 Windows、macOS、Linux。">
+<meta name="theme-color" content="#102658">
+<link rel="canonical" href="https://nikpak.nikkoid.com/zh/index.html">
+<link rel="alternate" hreflang="en" href="https://nikpak.nikkoid.com/en/index.html"><link rel="alternate" hreflang="zh-Hans" href="https://nikpak.nikkoid.com/zh/index.html"><link rel="alternate" hreflang="hi" href="https://nikpak.nikkoid.com/hi/index.html"><link rel="alternate" hreflang="es" href="https://nikpak.nikkoid.com/es/index.html"><link rel="alternate" hreflang="ar" href="https://nikpak.nikkoid.com/ar/index.html"><link rel="alternate" hreflang="fr" href="https://nikpak.nikkoid.com/fr/index.html"><link rel="alternate" hreflang="bn" href="https://nikpak.nikkoid.com/bn/index.html"><link rel="alternate" hreflang="pt" href="https://nikpak.nikkoid.com/pt/index.html"><link rel="alternate" hreflang="ru" href="https://nikpak.nikkoid.com/ru/index.html"><link rel="alternate" hreflang="id" href="https://nikpak.nikkoid.com/id/index.html"><link rel="alternate" hreflang="x-default" href="https://nikpak.nikkoid.com/en/index.html">
+<meta property="og:title" content="NikPak：比 7-Zip、RAR 和 ZIP 更小的压缩包">
+<meta property="og:description" content="NikPak 生成的压缩包比 7-Zip、RAR 7 和 ZIP 更小，并采用抗量子计算的加密保护：256 位 XChaCha20-Poly1305 与 Argon2id，不含任何可被量子计算机破解的 RSA 或椭圆曲线。识别媒体内容的压缩。支持 Windows、macOS、Linux。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://nikpak.nikkoid.com/zh/index.html">
+<meta property="og:image" content="https://nikpak.nikkoid.com/assets/img/nikpak-drop.webp">
+<link rel="icon" href="../assets/favicon.ico" sizes="any">
+<link rel="icon" href="../assets/img/favicon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&family=JetBrains+Mono:wght@400&family=Noto+Sans+SC:wght@300;400;500&display=swap">
+<link rel="stylesheet" href="../assets/css/site.css">
+
+</head>
+<body data-page="index" data-lang="zh">
+<a class="skip" href="#main">跳到正文</a>
+<header class="top" id="top">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="../assets/img/favicon.png" alt="" width="30" height="30">NikPak</a>
+    <details class="apps">
+      <summary aria-label="Our Apps"><svg class="apps-ico" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><rect x="1.5" y="1.5" width="5" height="5" rx="1.3" fill="currentColor"/><rect x="9.5" y="1.5" width="5" height="5" rx="1.3" fill="currentColor"/><rect x="1.5" y="9.5" width="5" height="5" rx="1.3" fill="currentColor"/><rect x="9.5" y="9.5" width="5" height="5" rx="1.3" fill="currentColor"/></svg><span class="apps-name">Our Apps</span><svg class="chev" viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+      <div class="apps-menu" role="list"><a class="apps-home" href="https://nikkoid.com">Nikkoid Network</a><hr><a href="https://nikkomander.nikkoid.com/index.html">Nikkomander</a><a href="https://nikedit.nikkoid.com/index.html">NikEDIT</a><a href="https://niksql.nikkoid.com/index.html">NikSQL</a><a href="https://nikpak.nikkoid.com/en/index.html" aria-current="true">NikPak</a><a href="https://hexawar.nikkoid.com/website/">Hexawar</a></div>
+    </details>
+    <nav class="nav" aria-label="菜单"><a href="index.html" aria-current="page">首页</a><a href="features.html">功能</a><a href="benchmarks.html">基准测试</a><a href="guide.html">用户指南</a><a href="skins.html">皮肤</a><a href="buy.html">购买</a><a href="contact.html">联系我们</a></nav>
+    <div class="lang" id="lang">
+      <button type="button" aria-haspopup="true" aria-expanded="false" aria-label="语言"><svg class="flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#DE2910"/><path fill="#FFDE00" d="m6 3 .9 2.8h2.9L7.5 7.5l.9 2.8L6 8.6l-2.4 1.7.9-2.8-2.3-1.7h2.9z"/><circle cx="11" cy="2.6" r=".8" fill="#FFDE00"/><circle cx="12.6" cy="4.6" r=".8" fill="#FFDE00"/><circle cx="12.6" cy="7.2" r=".8" fill="#FFDE00"/><circle cx="11" cy="9.2" r=".8" fill="#FFDE00"/></svg><span>中文</span><i class="caret"></i></button>
+      <div class="lang-menu" role="menu"><span class="label">语言</span><a href="../en/index.html" hreflang="en" lang="en" data-lang="en"><svg class="flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#012169"/><path d="M0 0 30 20M30 0 0 20" stroke="#fff" stroke-width="4"/><path d="M0 0 30 20M30 0 0 20" stroke="#C8102E" stroke-width="1.6"/><path d="M15 0v20M0 10h30" stroke="#fff" stroke-width="6"/><path d="M15 0v20M0 10h30" stroke="#C8102E" stroke-width="3.4"/></svg><span>English</span></a><a href="../zh/index.html" hreflang="zh-Hans" lang="zh-Hans" data-lang="zh" aria-current="true"><svg class="flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#DE2910"/><path fill="#FFDE00" d="m6 3 .9 2.8h2.9L7.5 7.5l.9 2.8L6 8.6l-2.4 1.7.9-2.8-2.3-1.7h2.9z"/><circle cx="11" cy="2.6" r=".8" fill="#FFDE00"/><circle cx="12.6" cy="4.6" r=".8" fill="#FFDE00"/><circle cx="12.6" cy="7.2" r=".8" fill="#FFDE00"/><circle cx="11" cy="9.2" r=".8" fill="#FFDE00"/></svg><span>中文</span></a><a href="../hi/index.html" hreflang="hi" lang="hi" data-lang="hi"><svg class="flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#fff"/><rect width="30" height="6.67" fill="#FF9933"/><rect y="13.33" width="30" height="6.67" fill="#138808"/><circle cx="15" cy="10" r="2.6" fill="none" stroke="#000080" stroke-width=".7"/><circle cx="15" cy="10" r=".6" fill="#000080"/></svg><span>हिन्दी</span></a><a href="../es/index.html" hreflang="es" lang="es" data-lang="es"><svg class="flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#AA151B"/><rect y="5" width="30" height="10" fill="#F1BF00"/></svg><span>Español</span></a><a href="../ar/index.html" hreflang="ar" lang="ar" data-lang="ar"><svg class="flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#006C35"/><path d="M8 12.5h14" stroke="#fff" stroke-width="1.2"/><path d="M9 8.3h12" stroke="#fff" stroke-width="1.6" stroke-dasharray="1.2 .7"/></svg><span>العربية</span></a><a href="../fr/index.html" hreflang="fr" lang="fr" data-lang="fr"><svg class="flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#fff"/><rect width="10" height="20" fill="#002395"/><rect x="20" width="10" height="20" fill="#ED2939"/></svg><span>Français</span></a><a href="../bn/index.html" hreflang="bn" lang="bn" data-lang="bn"><svg class="flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#006A4E"/><circle cx="13.3" cy="10" r="5.2" fill="#F42A41"/></svg><span>বাংলা</span></a><a href="../pt/index.html" hreflang="pt" lang="pt" data-lang="pt"><svg class="flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#009C3B"/><path d="M15 2.5 27 10 15 17.5 3 10z" fill="#FFDF00"/><circle cx="15" cy="10" r="4.2" fill="#002776"/><path d="M11 9.4c2.6-.6 5.4-.2 8 1.2" stroke="#fff" stroke-width=".7" fill="none"/></svg><span>Português</span></a><a href="../ru/index.html" hreflang="ru" lang="ru" data-lang="ru"><svg class="flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#fff"/><rect y="6.67" width="30" height="6.67" fill="#0039A6"/><rect y="13.33" width="30" height="6.67" fill="#D52B1E"/></svg><span>Русский</span></a><a href="../id/index.html" hreflang="id" lang="id" data-lang="id"><svg class="flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#fff"/><rect width="30" height="10" fill="#CE1126"/></svg><span>Bahasa Indonesia</span></a></div>
+    </div>
+    <button type="button" class="menu-toggle" aria-label="菜单" aria-expanded="false"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke-linecap="round"/></svg></button>
+  </div>
+</header>
+<main id="main">
+
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <span class="label">抗量子加密 · 共享软件 · Windows、macOS、Linux</span>
+      <h1>压缩包比 <em>7-Zip、RAR 和 ZIP</em> 更小。</h1>
+      <p class="lead">NikPak 根据内容识别照片、音乐和办公文档，并为每个文件选用最合适的编解码器进行压缩。每个加密压缩包都能抵御量子计算机：只使用 256 位对称加密，没有任何可被量子计算机破解的 RSA 或椭圆曲线。</p>
+      <div class="dl" id="download"><span class="label">免费下载</span><div class="dl-row"><a class="btn dl-btn btn-primary" data-os="win" href="../downloads/nikpak-1.6.2-setup.exe" download title="免费下载 · Windows"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/></svg><span><b>Windows</b><small>setup .exe</small></span></a><a class="btn dl-btn" data-os="mac" href="../downloads/nikpak-1.6.2-macos.zip" download title="免费下载 · macOS"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="4" y="5" width="16" height="10.5" rx="1.5"/><path d="M2 19h20l-1.5-3.5h-17z" stroke-linejoin="round"/></svg><span><b>macOS</b><small>.zip</small></span></a><a class="btn dl-btn" data-os="linux" href="../downloads/nikpak-1.6.2-linux-x86_64.tar.gz" download title="免费下载 · Linux / Unix"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3M12.5 15h4.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>Linux / Unix</b><small>.tar.gz</small></span></a><a class="btn dl-btn" data-os="linux" href="../downloads/nikpak_1.6.2_amd64.deb" download title="免费下载 · Debian / Ubuntu"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3M12.5 15h4.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>Debian / Ubuntu</b><small>.deb</small></span></a></div></div><div class="btn-row"><a class="btn" href="buy.html"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.5 12h11.5l2-8H6.2" stroke-linejoin="round"/></svg>购买许可证</a></div>
+      <p class="small">版本 1.6.2 · NikPak + unNik · Windows、macOS、Linux<br>个人使用免费 · 压缩包浏览器 unNik 对所有人免费</p>
+    </div>
+    <div><div class="appwin" data-state="idle" id="appwin" aria-hidden="true"
+  data-of="{} / {}">
+  <div class="bar"><span class="label">试用版  ·  注册</span><span class="wbtns"><i>i</i><span>–</span><span>×</span></span></div>
+  <div class="ttl">NikPak</div>
+  <div class="ring">
+    <svg viewBox="0 0 200 200">
+      <defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5FC4FF"/><stop offset="1" stop-color="#1E9BFF"/></linearGradient></defs>
+      <circle cx="100" cy="100" r="96" fill="none" stroke="rgba(95,196,255,.14)" stroke-width="1.5"/>
+      <circle class="track" cx="100" cy="100" r="86" fill="none" stroke="#122244" stroke-width="10" opacity="0"/>
+      <circle class="dash" cx="100" cy="100" r="78" fill="rgba(4,11,34,.55)" stroke="rgba(95,196,255,.55)" stroke-width="1.6" stroke-dasharray="7 6"/>
+      <circle class="prog" cx="100" cy="100" r="86" fill="none" stroke="url(#rg)" stroke-width="10" stroke-linecap="round" stroke-dasharray="0 541" transform="rotate(-90 100 100)"/>
+      <g class="arrow" stroke="#5FC4FF" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round" style="filter:drop-shadow(0 0 6px rgba(30,155,255,.9))">
+        <path d="M100 58v54M80 94l20 20 20-20"/><path d="M70 112v18h60v-18"/></g>
+      <g class="check" stroke="#3DDC97" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0"><path d="m74 102 18 18 36-38"/></g>
+    </svg>
+    <div class="pct"><span><b>0</b><small>%</small></span></div>
+  </div>
+  <div class="msg">
+    <div class="state s-idle"><div class="big">拖放文件或文件夹即可压缩</div><div class="links">或 <u>选择文件</u> · <u>选择文件夹</u></div></div>
+    <div class="state s-run"><div class="phase">正在压缩</div><div class="file">holiday-photos</div><div class="meta"><span class="amt"></span></div></div>
+    <div class="state s-done"><div class="phase ok">完成</div><div class="file">holiday-photos.nik</div><div class="meta">3.6 MB / 7.0 MB · 0.4 s</div></div>
+  </div>
+  <div class="save"><span class="label">保存到</span>
+    <div class="row"><div class="fld">C:\Users\Jane\Desktop</div><div class="bbtn">浏览</div></div></div>
+  <div class="foot"><span class="pill"><svg class="flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#DE2910"/><path fill="#FFDE00" d="m6 3 .9 2.8h2.9L7.5 7.5l.9 2.8L6 8.6l-2.4 1.7.9-2.8-2.3-1.7h2.9z"/><circle cx="11" cy="2.6" r=".8" fill="#FFDE00"/><circle cx="12.6" cy="4.6" r=".8" fill="#FFDE00"/><circle cx="12.6" cy="7.2" r=".8" fill="#FFDE00"/><circle cx="11" cy="9.2" r=".8" fill="#FFDE00"/></svg>中文 <i class="caret" style="width:0;height:0;border-inline:4px solid transparent;border-top:5px solid #1E9BFF"></i></span><span class="soc"><span class="soc-tg"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M20.7 4.3 2.9 11.2c-1.2.5-1.2 1.2-.2 1.5l4.6 1.4 1.7 5.4c.2.6.4.8.9.8.4 0 .6-.2.9-.5l2.2-2.1 4.6 3.4c.8.5 1.4.2 1.6-.8l3-14.1c.3-1.3-.5-1.8-1.5-1.4zM9.4 14.4l8.4-5.3c.4-.2.7-.1.4.2l-7 6.3-.3 3z"/></svg></span><span class="soc-x"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M17.8 3h3.1l-6.8 7.7L22 21h-6.2l-4.9-6.3L5.3 21H2.2l7.3-8.3L2 3h6.4l4.4 5.8zm-1.1 16.2h1.7L7.4 4.7H5.6z"/></svg></span><span class="soc-dc"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M19.3 5.3A17 17 0 0 0 15 4l-.5 1a15.7 15.7 0 0 0-5 0L9 4a17 17 0 0 0-4.3 1.3C2 9.4 1.3 13.3 1.6 17.2A17.2 17.2 0 0 0 6.9 20l1.1-1.8c-.6-.2-1.2-.5-1.7-.9l.4-.3a12.3 12.3 0 0 0 10.6 0l.4.3c-.5.4-1.1.7-1.7.9l1.1 1.8a17.1 17.1 0 0 0 5.3-2.8c.4-4.5-.7-8.4-3.1-11.9zM8.5 14.8c-1 0-1.9-1-1.9-2.2s.8-2.2 1.9-2.2 1.9 1 1.9 2.2-.8 2.2-1.9 2.2zm7 0c-1 0-1.9-1-1.9-2.2s.8-2.2 1.9-2.2 1.9 1 1.9 2.2-.8 2.2-1.9 2.2z"/></svg></span></span></div>
+</div></div>
+  </div>
+</section>
+<section class="stats"><div class="wrap grid g4"><div class="panel stat reveal"><b>38.8 %</b><span>照片比 RAR 7 更小</span></div><div class="panel stat reveal"><b>31.7 %</b><span>办公文件比 7-Zip 更小</span></div><div class="panel stat reveal"><b>60.4 %</b><span>最多比 ZIP 小这么多</span></div><div class="panel stat reveal"><b>256 位</b><span>抗量子加密：不使用 RSA 和椭圆曲线</span></div></div></section>
+<section>
+  <div class="wrap">
+    <div class="section-head"><h2>为什么选择 NikPak</h2><p>一个小巧的程序，围绕四个理念设计：压缩得更小、运行得更快、用现代密码学保护、在各处表现一致。</p></div>
+    <div class="grid g3"><div class="panel card reveal"><div class="ico"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="1.6"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg></div><h3>抗量子计算</h3><p>只使用 256 位对称密码学。没有任何 RSA、椭圆曲线或 Diffie-Hellman 代码可供量子计算机破解。</p></div><div class="panel card reveal"><div class="ico"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M2 12h2m3-5v10m4-14v18m4-12v6m4-9v12m3-6h0" stroke-linecap="round"/></svg></div><h3>识别媒体</h3><p>WAV、AIFF、ProTracker MOD 和 BMP 文件根据内容而非文件名识别。每个文件都会尝试多种无损过滤器，取最小的结果。</p></div><div class="panel card reveal"><div class="ico"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg></div><h3>Office 与 PDF 再压缩</h3><p>docx、xlsx、pptx、odt、epub、pdf、zip 和 gz 文件中的 Deflate 数据流会被解开、以更高效率压缩，并在解压时逐位重建。</p></div><div class="panel card reveal"><div class="ico"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></svg></div><h3>最高级别下最小</h3><p>在 -m5 下，NikPak 为每个数据块选择 LZMA2 或 PPMd，并按类型排序文件。在每一组测试中，它都生成了四款工具中最小的压缩包。</p></div><div class="panel card reveal"><div class="ico"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z" stroke-linejoin="round"/></svg></div><h3>需要时足够快</h3><p>在快速级别 -m2 下，190 MB 源代码在单核上 1.7 秒即可归档，比 7-Zip 的默认级别快 56 倍。</p></div><div class="panel card reveal"><div class="ico"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15.5" r="1.4"/></svg></div><h3>正确的加密</h3><p>Argon2id（64 MiB 内存）与 XChaCha20-Poly1305 认证加密。文件名、大小和日期始终隐藏，任何篡改都会被发现。</p></div></div>
+  </div>
+</section>
+<section>
+  <div class="wrap split">
+    <div>
+      <h2>最高级别下的压缩包大小</h2>
+      <p>占原始大小的百分比：越低越好。单个 CPU 核心，每个压缩包都重新解压并逐字节比对。</p>
+      <p><a class="btn" href="benchmarks.html">查看基准测试</a></p>
+    </div>
+    <div class="panel"><div class="chart"><div class="set"><h4>8 张 BMP 图像</h4><div class="bars"><div class="bar me"><span class="n">NikPak -m5</span><span class="t"><span class="f" data-w="50.9"></span></span><span class="v">50.9 %</span></div><div class="bar"><span class="n">RAR 7 -m5</span><span class="t"><span class="f" data-w="62.9"></span></span><span class="v">62.9 %</span></div><div class="bar"><span class="n">7-Zip -mx9</span><span class="t"><span class="f" data-w="60.0"></span></span><span class="v">60.0 %</span></div><div class="bar"><span class="n">ZIP -9</span><span class="t"><span class="f" data-w="71.2"></span></span><span class="v">71.2 %</span></div></div></div><div class="set"><h4>音乐 48 kHz 立体声 24 位</h4><div class="bars"><div class="bar me"><span class="n">NikPak -m5</span><span class="t"><span class="f" data-w="62.8"></span></span><span class="v">62.8 %</span></div><div class="bar"><span class="n">RAR 7 -m5</span><span class="t"><span class="f" data-w="73.2"></span></span><span class="v">73.2 %</span></div><div class="bar"><span class="n">7-Zip -mx9</span><span class="t"><span class="f" data-w="88.1"></span></span><span class="v">88.1 %</span></div><div class="bar"><span class="n">ZIP -9</span><span class="t"><span class="f" data-w="93.0"></span></span><span class="v">93.0 %</span></div></div></div><div class="set"><h4>60 个办公文件</h4><div class="bars"><div class="bar me"><span class="n">NikPak -m5</span><span class="t"><span class="f" data-w="17.6"></span></span><span class="v">17.6 %</span></div><div class="bar"><span class="n">RAR 7 -m5</span><span class="t"><span class="f" data-w="28.6"></span></span><span class="v">28.6 %</span></div><div class="bar"><span class="n">7-Zip -mx9</span><span class="t"><span class="f" data-w="25.8"></span></span><span class="v">25.8 %</span></div><div class="bar"><span class="n">ZIP -9</span><span class="t"><span class="f" data-w="44.5"></span></span><span class="v">44.5 %</span></div></div></div><div class="set"><h4>通用数据（11,473 个文件）</h4><div class="bars"><div class="bar me"><span class="n">NikPak -m5</span><span class="t"><span class="f" data-w="14.8"></span></span><span class="v">14.8 %</span></div><div class="bar"><span class="n">RAR 7 -m5</span><span class="t"><span class="f" data-w="17.6"></span></span><span class="v">17.6 %</span></div><div class="bar"><span class="n">7-Zip -mx9</span><span class="t"><span class="f" data-w="15.2"></span></span><span class="v">15.2 %</span></div><div class="bar"><span class="n">ZIP -9</span><span class="t"><span class="f" data-w="32.7"></span></span><span class="v">32.7 %</span></div></div></div></div></div>
+  </div>
+</section>
+<section>
+  <div class="wrap split rev">
+    <div>
+      <h2>一个窗口。拖进去，就完成了。</h2>
+      <p>把文件或文件夹拖放到 NikPak 窗口，或点击圆环进行选择。它们会以最佳压缩打包成一个压缩包。圆环显示进度，压缩包完成时变为绿色。</p>
+      <ul class="checks"><li>默认使用最佳压缩（-m5）</li><li>记住你的保存位置</li><li>随时按 Esc 取消，不会留下写了一半的文件</li><li>绝不覆盖已有的压缩包</li></ul>
+    </div>
+    <div class="shots"><img class="shot" src="../assets/img/nikpak-drop.webp" alt="NikPak" width="500" height="560" loading="lazy"><img class="shot" src="../assets/img/nikpak-compress.webp" alt="NikPak" width="500" height="560" loading="lazy"></div>
+  </div>
+</section>
+<section>
+  <div class="wrap split">
+    <div>
+      <h2>unNik：免费的压缩包浏览器</h2>
+      <p>双击 .nik 文件，unNik 就会打开它。浏览文件夹、在整个压缩包中搜索、查看文本和二进制文件、解压所选内容、删除文件或测试压缩包。unNik 是免费软件，个人和企业都可使用。</p>
+      <ul class="checks"><li>文件夹树、路径导航、Ctrl+F 搜索</li><li>内置文本（可搜索）和二进制文件查看器</li><li>全部或部分解压，可保留两者或替换</li><li>一键在 NikPak 和 unNik 之间切换</li></ul>
+    </div>
+    <figure><img class="shot" src="../assets/img/unnik-browser.webp" alt="unNik" width="1120" height="720" loading="lazy"></figure>
+  </div>
+</section>
+<section>
+  <div class="wrap split rev">
+    <div>
+      <h2>55 款皮肤</h2>
+      <p>深色、浅色、活泼或经典：皮肤按钮可更改 NikPak 和 unNik 的颜色，太阳 / 月亮按钮一键切换深色与浅色。</p>
+      <p><a class="btn" href="skins.html">查看全部皮肤</a></p>
+    </div>
+    <a class="skin-strip" href="skins.html" aria-label="查看全部皮肤"><img src="../assets/img/skins/nikkoid-thumb.webp" alt="Nikkoid Blue (default)" title="Nikkoid Blue (default)" width="250" height="280" loading="lazy"><img src="../assets/img/skins/nikkoid-light-thumb.webp" alt="Nikkoid Bright" title="Nikkoid Bright" width="250" height="280" loading="lazy"><img src="../assets/img/skins/moon-thumb.webp" alt="Moon" title="Moon" width="250" height="280" loading="lazy"><img src="../assets/img/skins/pattaya-thumb.webp" alt="Pattaya Neons" title="Pattaya Neons" width="250" height="280" loading="lazy"><img src="../assets/img/skins/sushi-thumb.webp" alt="Sushi" title="Sushi" width="250" height="280" loading="lazy"><img src="../assets/img/skins/chess-thumb.webp" alt="Chess" title="Chess" width="250" height="280" loading="lazy"><img src="../assets/img/skins/dracula-thumb.webp" alt="Dracula" title="Dracula" width="250" height="280" loading="lazy"><img src="../assets/img/skins/8bit-thumb.webp" alt="8-Bit Game" title="8-Bit Game" width="250" height="280" loading="lazy"></a>
+  </div>
+</section>
+<section>
+  <div class="wrap split rev">
+    <div>
+      <h2>说你的语言</h2>
+      <p>支持全球使用人数最多的十种语言，并为印地语、孟加拉语和阿拉伯语提供正确的文字排版。首次启动时，NikPak 跟随系统语言；NikPak 和 unNik 始终共用同一设置。</p>
+      <p class="dim" style="font-size:1.05rem;line-height:2"><span lang="en">English</span> · <span lang="zh-Hans">中文</span> · <span lang="hi">हिन्दी</span> · <span lang="es">Español</span> · <span lang="ar">العربية</span> · <span lang="fr">Français</span> · <span lang="bn">বাংলা</span> · <span lang="pt">Português</span> · <span lang="ru">Русский</span> · <span lang="id">Bahasa Indonesia</span></p>
+    </div>
+    <figure><img class="shot" src="../assets/img/lang-quad.webp" alt="" width="1066" height="1186" loading="lazy" style="max-width:520px"></figure>
+  </div>
+</section>
+<section>
+  <div class="wrap split">
+    <div>
+      <h2>RAR 用户熟悉的命令行</h2>
+      <p><code>a</code>、<code>x</code>、<code>e</code>、<code>l</code>、<code>t</code>、<code>@listfiles</code>、<code>-p</code>、<code>-o+</code>、<code>-y</code>：Total Commander 等前端可以像调用 rar.exe 一样调用 nikpak.exe。清晰的退出代码使它非常适合脚本和备份。</p>
+      <p><a class="btn" href="guide.html#cli">阅读用户指南</a></p>
+    </div>
+    <pre>nikpak a backup.nik C:\Docs\ Photos\
+nikpak a -p secret.nik Taxes2026\
+nikpak x backup.nik C:\Restore\
+nikpak l backup.nik *.pdf
+nikpak t secret.nik
+nikpak mt song.wav tracker.mod photo.bmp</pre>
+  </div>
+</section>
+<section>
+  <div class="wrap">
+    <div class="section-head"><h2>对你免费，对企业公平。</h2><p>个人用户可免费使用 NikPak，无时间限制，仅限个人用途；没有任何功能被禁用。企业和组织有 40 天评估期，之后每个席位需要一个许可证。</p></div>
+    <div class="grid g2" style="max-width:820px;margin:0 auto">
+      <a class="panel price-card" href="buy.html?type=personal" style="color:inherit;text-decoration:none"><span class="label">个人许可证</span><div class="amount">$19</div><span class="dim">去除提醒，适用于你的所有电脑</span></a>
+      <a class="panel price-card featured" href="buy.html?type=company" style="color:inherit;text-decoration:none"><span class="label">企业许可证</span><div class="amount"><small>低至</small> $5 <small>/ 席位</small></div><span class="dim">1 到 500 个以上席位的批量价格</span></a>
+    </div>
+  </div>
+</section>
+<section>
+  <div class="wrap">
+    <div class="panel-flat" style="max-width:820px;margin:0 auto">
+      <h3>坦诚面对不足</h3>
+      <p class="dim" style="margin:0">RAR 仍然提供恢复记录、分卷和自解压压缩包，以及数十年的实际使用验证。NikPak 是新软件，尚未经过独立审计。我们如实说明，路线图展示了接下来的计划。 <a href="features.html#roadmap">路线图 →</a></p>
+    </div>
+  </div>
+</section>
+<section>
+  <div class="wrap">
+    <div class="panel cta">
+      <h2 class="glow-title">立即试用 NikPak</h2>
+      <p class="dim">一个安装程序即可安装 NikPak 和 unNik。无需注册即可开始使用。</p>
+      <div class="dl"><span class="label">免费下载</span><div class="dl-row"><a class="btn dl-btn btn-primary" data-os="win" href="../downloads/nikpak-1.6.2-setup.exe" download title="免费下载 · Windows"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/></svg><span><b>Windows</b><small>setup .exe</small></span></a><a class="btn dl-btn" data-os="mac" href="../downloads/nikpak-1.6.2-macos.zip" download title="免费下载 · macOS"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="4" y="5" width="16" height="10.5" rx="1.5"/><path d="M2 19h20l-1.5-3.5h-17z" stroke-linejoin="round"/></svg><span><b>macOS</b><small>.zip</small></span></a><a class="btn dl-btn" data-os="linux" href="../downloads/nikpak-1.6.2-linux-x86_64.tar.gz" download title="免费下载 · Linux / Unix"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3M12.5 15h4.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>Linux / Unix</b><small>.tar.gz</small></span></a><a class="btn dl-btn" data-os="linux" href="../downloads/nikpak_1.6.2_amd64.deb" download title="免费下载 · Debian / Ubuntu"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3M12.5 15h4.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>Debian / Ubuntu</b><small>.deb</small></span></a></div></div><div class="btn-row"><a class="btn" href="buy.html"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.5 12h11.5l2-8H6.2" stroke-linejoin="round"/></svg>购买许可证</a></div>
+    </div>
+  </div>
+</section>
+</main>
+<footer>
+  <div class="wrap">
+    <div class="cols">
+      <div>
+        <a class="brand" href="index.html"><img src="../assets/img/favicon.png" alt="" width="30" height="30">NikPak</a>
+        <p class="dim" style="margin-top:12px">快速、识别媒体的 .nik 格式归档工具，采用抗量子加密。</p>
+        <p class="dim">NikPak 是共享软件。unNik 是免费软件。</p>
+      </div>
+      <div>
+        <span class="label">产品</span>
+        <a href="features.html">功能</a>
+        <a href="benchmarks.html">基准测试</a>
+        <a href="index.html#download">免费下载</a>
+        <a href="buy.html">购买许可证</a>
+      </div>
+      <div>
+        <span class="label">支持</span>
+        <a href="guide.html">用户指南</a>
+        <a href="contact.html">联系我们</a>
+        <a href="../LICENSE.txt">许可条款（EULA）</a>
+      </div>
+      <div>
+        <span class="label">社区</span>
+        <p class="dim">新闻、问题、想法和错误报告。</p>
+        <div class="soc-row"><a class="soc-btn soc-tg" href="https://t.me/cryptonikko" target="_blank" rel="noopener" aria-label="Telegram" title="Telegram"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M20.7 4.3 2.9 11.2c-1.2.5-1.2 1.2-.2 1.5l4.6 1.4 1.7 5.4c.2.6.4.8.9.8.4 0 .6-.2.9-.5l2.2-2.1 4.6 3.4c.8.5 1.4.2 1.6-.8l3-14.1c.3-1.3-.5-1.8-1.5-1.4zM9.4 14.4l8.4-5.3c.4-.2.7-.1.4.2l-7 6.3-.3 3z"/></svg></a><a class="soc-btn soc-x" href="https://x.com/cryptonikkoid" target="_blank" rel="noopener" aria-label="X" title="X"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M17.8 3h3.1l-6.8 7.7L22 21h-6.2l-4.9-6.3L5.3 21H2.2l7.3-8.3L2 3h6.4l4.4 5.8zm-1.1 16.2h1.7L7.4 4.7H5.6z"/></svg></a><a class="soc-btn soc-dc" href="https://discord.com/users/1537826350759415811" target="_blank" rel="noopener" aria-label="Discord" title="Discord"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M19.3 5.3A17 17 0 0 0 15 4l-.5 1a15.7 15.7 0 0 0-5 0L9 4a17 17 0 0 0-4.3 1.3C2 9.4 1.3 13.3 1.6 17.2A17.2 17.2 0 0 0 6.9 20l1.1-1.8c-.6-.2-1.2-.5-1.7-.9l.4-.3a12.3 12.3 0 0 0 10.6 0l.4.3c-.5.4-1.1.7-1.7.9l1.1 1.8a17.1 17.1 0 0 0 5.3-2.8c.4-4.5-.7-8.4-3.1-11.9zM8.5 14.8c-1 0-1.9-1-1.9-2.2s.8-2.2 1.9-2.2 1.9 1 1.9 2.2-.8 2.2-1.9 2.2zm7 0c-1 0-1.9-1-1.9-2.2s.8-2.2 1.9-2.2 1.9 1 1.9 2.2-.8 2.2-1.9 2.2z"/></svg></a></div>
+      </div>
+    </div>
+    <div class="copy"><span>© 2026 Nicolas Choukroun。由 Nikkoid LLC 发行并授权。</span><span>nikpak.nikkoid.com</span></div>
+  </div>
+</footer>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="../assets/js/site.js" defer></script>
+
+</body>
+</html>
