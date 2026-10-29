@@ -631,9 +631,15 @@ def page_guide(L):
 
 
 def page_tech(L):
-    toc = open(os.path.join(ROOT, "tech-toc.html"), encoding="utf-8").read()
-    content = open(os.path.join(ROOT, "tech-body.html"), encoding="utf-8").read()
-    head = page_head(L, L("nav.tech_full"), "The complete technical guide: architecture and the .nik format, the compression engine and the media codecs, the encryption design and quantum resistance, hardening, the full benchmarks, and the build, test and roadmap notes.")
+    toc_path = os.path.join(ROOT, f"tech-toc.{L.code}.html")
+    if not os.path.exists(toc_path):
+        toc_path = os.path.join(ROOT, "tech-toc.html")
+    toc = open(toc_path, encoding="utf-8").read()
+    body_path = os.path.join(ROOT, f"tech-body.{L.code}.html")
+    if not os.path.exists(body_path):
+        body_path = os.path.join(ROOT, "tech-body.html")
+    content = open(body_path, encoding="utf-8").read()
+    head = page_head(L, L("nav.tech_full"), L("guide.tech_sub"))
     body = f'<div class="wrap doc tech-doc"><aside class="toc"><span class="label">{esc(L("guide.toc"))}</span>{toc}</aside><div class="tech-content">{content}</div></div>'
     return layout(L, "tech", head + body)
 

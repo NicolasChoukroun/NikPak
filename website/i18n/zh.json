@@ -601,7 +601,8 @@
    "这些命令通过 unNik.exe 运行，因此不会闪现控制台窗口；标签会跟随 NikPak 的语言。Windows 10 直接显示子菜单，Windows 11 则在 <b>显示更多选项</b>（Shift+F10）下。",
    "该菜单使用 <code>nikpak --add</code> 和 <code>--add-here</code>，以及 <code>unNik --extract</code>、<code>--extract-here</code> 和 <code>--extract-to</code>。"
   ],
-  "menu_note": "第二个安装程序 <code>unnik-&lt;version&gt;-setup.exe</code> 只安装 unNik——这个免费的压缩包浏览器——供只接收 .nik 压缩包的用户使用。"
+  "menu_note": "第二个安装程序 <code>unnik-&lt;version&gt;-setup.exe</code> 只安装 unNik——这个免费的压缩包浏览器——供只接收 .nik 压缩包的用户使用。",
+  "tech_sub": "完整的技术指南：架构与 .nik 格式、压缩引擎与媒体编解码器、加密设计与量子抗性、加固、全部基准测试，以及构建、测试和路线图说明。"
  },
  "buy": {
   "title": "购买 NikPak",

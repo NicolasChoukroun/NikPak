@@ -601,7 +601,8 @@
    "تعمل الأوامر عبر unNik.exe، فلا تومض نافذة طرفية؛ وتتبع التسميات لغة NikPak. يعرض Windows 10 القائمة الفرعية مباشرة، أما Windows 11 فيعرضها ضمن <b>إظهار المزيد من الخيارات</b> (Shift+F10).",
    "تستخدم القائمة <code>nikpak --add</code> و<code>--add-here</code>، و<code>unNik --extract</code> و<code>--extract-here</code> و<code>--extract-to</code>."
   ],
-  "menu_note": "المثبّت الثاني، <code>unnik-&lt;version&gt;-setup.exe</code>، يثبّت unNik وحده — متصفح الأرشيف المجاني — لمن يستقبلون أرشيفات .nik فقط."
+  "menu_note": "المثبّت الثاني، <code>unnik-&lt;version&gt;-setup.exe</code>، يثبّت unNik وحده — متصفح الأرشيف المجاني — لمن يستقبلون أرشيفات .nik فقط.",
+  "tech_sub": "الدليل التقني الكامل: البنية وصيغة .nik، ومحرك الضغط وترميزات الوسائط، وتصميم التشفير والمقاومة الكمومية، والتقوية، وكل الاختبارات المعيارية، وملاحظات البناء والاختبار وخارطة الطريق."
  },
  "buy": {
   "title": "شراء NikPak",

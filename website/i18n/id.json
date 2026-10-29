@@ -601,7 +601,8 @@
    "Perintah berjalan melalui unNik.exe, jadi tidak ada jendela konsol yang berkedip; label mengikuti bahasa NikPak. Windows 10 menampilkan submenu langsung, Windows 11 di bawah <b>Tampilkan opsi lainnya</b> (Shift+F10).",
    "Menu ini memakai <code>nikpak --add</code> dan <code>--add-here</code>, serta <code>unNik --extract</code>, <code>--extract-here</code> dan <code>--extract-to</code>."
   ],
-  "menu_note": "Penginstal kedua, <code>unnik-&lt;version&gt;-setup.exe</code>, memasang unNik saja — penjelajah arsip gratis — untuk orang yang hanya menerima arsip .nik."
+  "menu_note": "Penginstal kedua, <code>unnik-&lt;version&gt;-setup.exe</code>, memasang unNik saja — penjelajah arsip gratis — untuk orang yang hanya menerima arsip .nik.",
+  "tech_sub": "Panduan teknis lengkap: arsitektur dan format .nik, mesin kompresi dan codec media, desain enkripsi dan ketahanan kuantum, pengerasan, semua benchmark, serta catatan build, pengujian, dan peta jalan."
  },
  "buy": {
   "title": "Beli NikPak",

@@ -1,0 +1,101 @@
+<a href="#1-introduction">1 مقدمة</a>
+<a href="#1-1-design-goals" class="sub">1.1 أهداف التصميم</a>
+<a href="#1-2-results-at-a-glance" class="sub">1.2 النتائج في لمحة</a>
+<a href="#1-3-who-is-it-for" class="sub">1.3 لمن هو موجَّه؟</a>
+<a href="#1-4-how-to-read-this-guide" class="sub">1.4 كيف تقرأ هذا الدليل</a>
+<a href="#1-5-community-and-contact" class="sub">1.5 المجتمع والتواصل</a>
+<a href="#2-feature-overview">2 نظرة عامة على الميزات</a>
+<a href="#2-1-capabilities" class="sub">2.1 الإمكانات</a>
+<a href="#2-2-nikpak-and-rar-side-by-side" class="sub">2.2 nikpak وRAR جنباً إلى جنب</a>
+<a href="#3-command-line-reference">3 مرجع سطر الأوامر</a>
+<a href="#3-1-commands" class="sub">3.1 الأوامر</a>
+<a href="#3-2-options" class="sub">3.2 الخيارات</a>
+<a href="#3-3-passwords-in-detail" class="sub">3.3 كلمات المرور بالتفصيل</a>
+<a href="#3-4-exit-codes" class="sub">3.4 أكواد الخروج</a>
+<a href="#3-5-examples" class="sub">3.5 أمثلة</a>
+<a href="#3-6-integration-with-total-commander-and-other-front-ends" class="sub">3.6 التكامل مع Total Commander والواجهات الأمامية الأخرى</a>
+<a href="#3-7-the-graphical-interface" class="sub">3.7 الواجهة الرسومية</a>
+<a href="#3-8-licence-and-registration-shareware" class="sub">3.8 الترخيص والتسجيل (برنامج shareware)</a>
+<a href="#3-9-unnik-the-free-archive-browser" class="sub">3.9 unNik، متصفح الأرشيف المجاني</a>
+<a href="#3-10-skins" class="sub">3.10 الواجهات الجلدية</a>
+<a href="#3-11-the-file-manager-menu" class="sub">3.11 قائمة مدير الملفات</a>
+<a href="#4-architecture">4 البنية</a>
+<a href="#4-1-data-flow-when-creating-an-archive" class="sub">4.1 تدفق البيانات عند إنشاء أرشيف</a>
+<a href="#4-2-source-code-map" class="sub">4.2 خريطة الكود المصدري</a>
+<a href="#4-3-creating-an-archive-step-by-step" class="sub">4.3 إنشاء أرشيف خطوة بخطوة</a>
+<a href="#4-4-extracting-an-archive-step-by-step" class="sub">4.4 استخراج أرشيف خطوة بخطوة</a>
+<a href="#4-5-memory-and-threading" class="sub">4.5 الذاكرة والخيوط</a>
+<a href="#5-the-nik-container-format">5 صيغة الحاوية .nik</a>
+<a href="#5-1-header" class="sub">5.1 الترويسة</a>
+<a href="#5-2-entry-records" class="sub">5.2 سجلات العناصر</a>
+<a href="#5-3-encrypted-body-framing" class="sub">5.3 تأطير الجسم المشفر</a>
+<a href="#5-4-why-a-solid-stream" class="sub">5.4 لماذا التدفق solid؟</a>
+<a href="#5-5-versioning" class="sub">5.5 التحكم في الإصدارات</a>
+<a href="#5-6-multi-engine-body-version-3" class="sub">5.6 الجسم متعدد المحركات (الإصدار 3)</a>
+<a href="#6-the-compression-engine">6 محرك الضغط</a>
+<a href="#6-1-why-zstandard" class="sub">6.1 لماذا Zstandard</a>
+<a href="#6-2-level-mapping" class="sub">6.2 ربط المستويات</a>
+<a href="#6-3-large-window-and-long-distance-matching" class="sub">6.3 النافذة الكبيرة ومطابقة المسافات الطويلة</a>
+<a href="#6-4-multi-threading" class="sub">6.4 تعدد الخيوط</a>
+<a href="#6-5-integrity-inside-the-stream" class="sub">6.5 السلامة داخل التدفق</a>
+<a href="#6-6-store-mode" class="sub">6.6 وضع التخزين (store)</a>
+<a href="#6-7-the-maximum-level-lzma2-and-ppmd" class="sub">6.7 المستوى الأقصى: LZMA2 وPPMd</a>
+<a href="#7-media-intelligence">7 ذكاء الوسائط</a>
+<a href="#7-1-detection-by-content" class="sub">7.1 الاكتشاف بالمحتوى</a>
+<a href="#7-2-the-trial-choosing-the-best-filter-per-file" class="sub">7.2 التجربة: اختيار أفضل مرشِّح لكل ملف</a>
+<a href="#7-3-the-nac-audio-codec" class="sub">7.3 مرمّز NAC الصوتي</a>
+<a href="#7-4-self-verification" class="sub">7.4 التحقق الذاتي</a>
+<a href="#7-5-shuffle-and-shuffle-delta" class="sub">7.5 Shuffle وShuffle+Delta</a>
+<a href="#7-6-protracker-mod-files" class="sub">7.6 ملفات ProTracker MOD</a>
+<a href="#7-7-bmp-images" class="sub">7.7 صور BMP</a>
+<a href="#7-8-why-this-beats-rar" class="sub">7.8 لماذا يتفوق هذا على RAR</a>
+<a href="#7-9-office-documents-pdf-and-gzip-deflate-recompression" class="sub">7.9 مستندات Office وPDF وgzip: إعادة ضغط Deflate</a>
+<a href="#8-encryption">8 التشفير</a>
+<a href="#8-1-threat-model" class="sub">8.1 نموذج التهديد</a>
+<a href="#8-2-from-password-to-key-argon2id" class="sub">8.2 من كلمة المرور إلى المفتاح: Argon2id</a>
+<a href="#8-3-xchacha20-poly1305-in-the-stream-construction" class="sub">8.3 XChaCha20-Poly1305 في بنية STREAM</a>
+<a href="#8-4-what-an-observer-can-and-cannot-see" class="sub">8.4 ما يستطيع المراقب رؤيته وما لا يستطيعه</a>
+<a href="#8-5-password-handling" class="sub">8.5 التعامل مع كلمات المرور</a>
+<a href="#8-6-attack-tests" class="sub">8.6 اختبارات الهجوم</a>
+<a href="#9-quantum-resistance">9 مقاومة الحوسبة الكمومية</a>
+<a href="#9-1-what-quantum-computers-change" class="sub">9.1 ما الذي تغيره الحواسيب الكمومية</a>
+<a href="#9-2-nikpak-s-position" class="sub">9.2 موقف nikpak</a>
+<a href="#9-3-what-about-the-password" class="sub">9.3 وماذا عن كلمة المرور؟</a>
+<a href="#9-4-harvest-now-decrypt-later" class="sub">9.4 &quot;اجمع الآن، وفك التشفير لاحقاً&quot;</a>
+<a href="#9-5-honest-limits-and-the-road-ahead" class="sub">9.5 الحدود الصادقة والطريق إلى الأمام</a>
+<a href="#10-hardening-and-robustness">10 التحصين والمتانة</a>
+<a href="#10-1-safe-extraction" class="sub">10.1 الاستخراج الآمن</a>
+<a href="#10-2-bounded-decoders" class="sub">10.2 مفكِّكات محدودة الموارد</a>
+<a href="#10-3-safe-creation-and-honest-errors" class="sub">10.3 الإنشاء الآمن والأخطاء الصادقة</a>
+<a href="#11-benchmarks">11 الاختبارات المعيارية</a>
+<a href="#11-1-method" class="sub">11.1 المنهجية</a>
+<a href="#11-2-media-files" class="sub">11.2 ملفات الوسائط</a>
+<a href="#11-3-general-data" class="sub">11.3 البيانات العامة</a>
+<a href="#11-4-speed-on-a-single-large-media-file" class="sub">11.4 السرعة على ملف وسائط كبير واحد</a>
+<a href="#11-5-encryption-overhead" class="sub">11.5 تكلفة التشفير</a>
+<a href="#11-6-reproducing-the-results" class="sub">11.6 إعادة إنتاج النتائج</a>
+<a href="#11-7-second-run-nikpak-rar-7-7-zip-and-zip" class="sub">11.7 الجولة الثانية: nikpak وRAR 7 و7-Zip وZIP</a>
+<a href="#12-nikpak-and-rar-compared">12 مقارنة nikpak وRAR</a>
+<a href="#12-1-where-nikpak-is-ahead" class="sub">12.1 أين يتفوق nikpak</a>
+<a href="#12-2-where-rar-is-ahead" class="sub">12.2 أين يتقدم RAR</a>
+<a href="#12-3-quantum-resistance-in-perspective" class="sub">12.3 مقاومة الحوسبة الكمومية في منظورها</a>
+<a href="#12-4-which-one-to-choose" class="sub">12.4 أيهما تختار</a>
+<a href="#12-5-and-7-zip-and-zip" class="sub">12.5 وماذا عن 7-Zip وZIP؟</a>
+<a href="#13-building-deploying-and-integrating">13 البناء والنشر والتكامل</a>
+<a href="#13-1-windows-with-powershell" class="sub">13.1 نظام Windows مع PowerShell</a>
+<a href="#13-2-building-with-npm" class="sub">13.2 البناء باستخدام npm</a>
+<a href="#13-3-a-self-contained-executable" class="sub">13.3 ملف تنفيذي قائم بذاته</a>
+<a href="#13-4-macos-and-linux" class="sub">13.4 نظاما macOS وLinux</a>
+<a href="#13-5-dependencies" class="sub">13.5 الاعتماديات</a>
+<a href="#13-6-scripting" class="sub">13.6 البرمجة النصية</a>
+<a href="#13-7-total-commander" class="sub">13.7 Total Commander</a>
+<a href="#14-testing-and-verification">14 الاختبار والتحقق</a>
+<a href="#14-1-unit-tests" class="sub">14.1 اختبارات الوحدة</a>
+<a href="#14-2-end-to-end-tests" class="sub">14.2 الاختبارات الشاملة</a>
+<a href="#14-3-attack-tests" class="sub">14.3 اختبارات الهجوم</a>
+<a href="#14-4-defects-found-by-testing" class="sub">14.4 عيوب وجدها الاختبار</a>
+<a href="#15-limitations-and-roadmap">15 القيود وخارطة الطريق</a>
+<a href="#15-1-current-limitations" class="sub">15.1 القيود الحالية</a>
+<a href="#15-2-roadmap" class="sub">15.2 خارطة الطريق</a>
+<a href="#a-appendix-a-format-constants-and-limits">أ الملحق أ: ثوابت الصيغة وحدودها</a>
+<a href="#b-appendix-b-glossary">ب الملحق ب: المسرد</a>

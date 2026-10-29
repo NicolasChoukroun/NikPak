@@ -1,0 +1,1169 @@
+<h2 class="ch" id="1-introduction"><body><x>1 مقدمة</x></body></h2>
+<p><body><x><b>nikpak</b> برنامج أرشفة من سطر الأوامر لصيغة <code>.nik</code>. وقد صُمِّم حول أربعة أفكار: ضغط أفضل من الأدوات الراسخة، وأداء أسرع، وحماية البيانات بتشفير حديث، والعمل دون تغيير على Windows وmacOS وLinux كملف تنفيذي واحد صغير.</x></body></p>
+<h3 class="se" id="1-1-design-goals"><body><x>1.1 أهداف التصميم</x></body></h3>
+<ul><li><body><x><b>الحجم الصغير.</b> التفوق على RAR 7 في البيانات التي يؤرشفها الناس فعلاً بكميات كبيرة. يُكتشف الصوت والصور وموسيقى tracker من المحتوى وتُضغَط بمرمّزات ضغط بلا فقدان متخصصة؛ أما البقية فتستخدم تدفق Zstandard مُعدَّلاً ومتعدد الخيوط.</x></body></li><li><body><x><b>السرعة.</b> يجب أن يكون القيد في الضغط والاستخراج هو القرص، لا المعالج. عند مستوى السرعة -m2 يضغط nikpak نحو 200 MB من ملفات المصدر في أقل من ثانية على نواة واحدة.</x></body></li><li><body><x><b>الأمان.</b> تشفير موثَّق مع دالة اشتقاق مفتاح مستهلكة للذاكرة، وأسماء الملفات مخفية دائماً، واكتشاف العبث دائماً، ومستخرِج لا يمكن خداعه ليكتب خارج مجلد الوجهة.</x></body></li><li><body><x><b>مقاومة الحوسبة الكمومية.</b> يُستخدم تشفير متماثل بطول 256 بتاً فقط. لا توجد أي شيفرة RSA أو منحنيات إهليلجية أو Diffie-Hellman في أي مكان داخل nikpak، لذلك لا يوجد ما يمكن لخوارزمية Shor كسره.</x></body></li><li><body><x><b>قابل للنقل والبرمجة النصية.</b> ملف تنفيذي واحد مرتبط استاتيكياً، وسطر أوامر متوافق مع RAR، وأكواد خروج يمكن التنبؤ بها، وخيار <code>-help</code> يوثق كل خيار.</x></body></li></ul>
+<h3 class="se" id="1-2-results-at-a-glance"><body><x>1.2 النتائج في لمحة</x></body></h3>
+<table class="tech-table"><thead><tr><th><body><x><b>المقياس</b></x></body></th><th><body><x><b>النتيجة</b></x></body></th><th><body><x><b>مقارنةً بـ</b></x></body></th></tr></thead><tbody><tr><td><body><x>صور BMP فوتوغرافية</x></body></td><td><body><x><b>أصغر بنسبة 38.8 %</b></x></body></td><td><body><x>RAR 7.00 -m5</x></body></td></tr><tr><td><body><x>موسيقى ستيريو، 44.1 kHz و16 بتاً</x></body></td><td><body><x><b>أصغر بنسبة 14.6 %</b> (على قدم المساواة مع FLAC -8)</x></body></td><td><body><x>RAR 7.00 -m5</x></body></td></tr><tr><td><body><x>ملفات ProTracker MOD</x></body></td><td><body><x><b>أصغر بنسبة 13.3 %</b></x></body></td><td><body><x>RAR 7.00 -m5</x></body></td></tr><tr><td><body><x>صوت أحادي، 8 بتات و16 بتاً</x></body></td><td><body><x><b>أصغر بنسبة 12.2 % و15.3 %</b></x></body></td><td><body><x>RAR 7.00 -m5</x></body></td></tr><tr><td><body><x>197 MB من ملفات المصدر، المستوى الأقصى</x></body></td><td><body><x><b>أصغر بنسبة 5.5 %</b> (24.4 MB مقابل 25.9 MB)</x></body></td><td><body><x>RAR 7.00 -m5 -s -md256m</x></body></td></tr><tr><td><body><x>البيانات نفسها، مستوى السرعة -m2</x></body></td><td>
+				<b>0.9
+				s</b></td><td><body><x>RAR 7.00 -m3 solid: 16.7 ثانية</x></body></td></tr><tr><td><body><x>التشفير</x></body></td><td><body><x>Argon2id + XChaCha20-Poly1305</x></body></td><td><body><x>RAR5: AES-256-CBC + PBKDF2</x></body></td></tr><tr><td><body><x>جميع مجموعات الاختبار العشر، المستوى الأقصى، مقابل 7-Zip</x></body></td><td><body><x>أصغر بنسبة 2.4 إلى 31.7 %</x></body></td><td><body><x>7-Zip 23.01 -mx9 (القسم 11.7)</x></body></td></tr><tr><td><body><x>ملفات Office (doc وdocx وxls وxlsx وcsv وpdf)</x></body></td><td><body><x>أصغر بنسبة 31.7 %</x></body></td><td><body><x>7-Zip 23.01 -mx9 (القسم 11.7)</x></body></td></tr><tr><td><body><x>جميع مجموعات الاختبار العشر، المستوى الأقصى، مقابل ZIP</x></body></td><td><body><x>أصغر بنسبة 19.9 إلى 60.4 %</x></body></td><td><body><x>ZIP -9، Info-ZIP 3.0 (القسم 11.7)</x></body></td></tr><tr><td><body><x>الملف التنفيذي</x></body></td><td><body><x>ملف واحد، بلا اعتماديات؛ نحو 9 MB مع النافذة، و2.3 MB لسطر الأوامر فقط</x></body></td><td><body><x>Windows, macOS, Linux</x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<table class="tech-table"><tbody><tr><td><body><x><b>كيف حُصل على الأرقام</b><br>جميع القياسات جاءت من جهاز واحد (آلة افتراضية Linux x86-64، نواة معالج واحدة) باستخدام RAR 7.00 وnikpak 1.1.0. واستُخرج كل أرشيف مرة أخرى وقورن بالأصل بايتاً ببايت. الطريقة الكاملة، ومجموعات البيانات، والحالات التي يكون فيها RAR أسرع موصوفة في الفصل 11.</x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="1-3-who-is-it-for"><body><x>1.3 لمن هو موجَّه؟</x></body></h3>
+<p><body><x>يستهدف nikpak الأشخاص الذين يؤرشفون كميات كبيرة من الوسائط أو الكود المصدري ويهتمون بالحجم والسرعة، والمطورين الذين يريدون أرشيفياً قابلاً للبرمجة النصية بأكواد خروج سليمة وصيغة موثَّقة، وأي شخص يحتاج تشفيراً قوياً دون الوثوق بتطبيق مغلق. ولأن سطر الأوامر يتبع اصطلاحات RAR، يمكن للواجهات الأمامية مثل Total Commander تشغيله دون إعادة تهيئة تُذكر.</x></body></p>
+<h3 class="se" id="1-4-how-to-read-this-guide"><body><x>1.4 كيف تقرأ هذا الدليل</x></body></h3>
+<p><body><x>يصف الفصلان 2 و3 ما يفعله nikpak وكيفية استخدامه. وتشرح الفصول من 4 إلى 7 البنية، وصيغة الملف، ومحرك الضغط، ومرمّزات الوسائط. وتغطي الفصول من 8 إلى 10 التشفير ومقاومة الحوسبة الكمومية والتحصين. ويعرض الفصل 11 الاختبارات المعيارية، ويقارن الفصل 12 بين nikpak وRAR بصدق، وتتناول الفصول من 13 إلى 15 البناء والاختبار وخارطة الطريق.</x></body></p>
+<h3 class="se" id="1-5-community-and-contact"><body><x>1.5 المجتمع والتواصل</x></body></h3>
+<p><body><x>الأخبار والأسئلة والأفكار وتقارير الأخطاء: يمكن التواصل مع مؤلف nikpak عبر</x></body></p>
+<ul><li><body><x><b>Telegram</b>https://t.me/cryptonikko</x></body></li><li><body><x><b>X</b>https://x.com/cryptonikkoid</x></body></li><li><body><x><b>Discord</b>https://discord.com/users/1537826350759415811</x></body></li></ul>
+<p><body><x>تظهر الروابط الثلاثة نفسها كأزرار دائرية ملوَّنة أسفل نافذة nikpak، تحت مجلد الوجهة (القسم 3.7)، وفي نهاية nikpak -help.</x></body></p>
+<h2 class="ch" id="2-feature-overview"><body><x>2 نظرة عامة على الميزات</x></body></h2>
+<h3 class="se" id="2-1-capabilities"><body><x>2.1 الإمكانات</x></body></h3>
+<table class="tech-table"><thead><tr><th><body><x><b>المجال</b></x></body></th><th><body><x><b>ما يقدمه nikpak</b></x></body></th></tr></thead><tbody><tr><td><body><x>الضغط</x></body></td><td><body><x>Zstandard (متعدد الخيوط، solid) من -m1 إلى -m4، مع نافذة 128 MiB ومطابقة المسافات الطويلة عند -m4. وعند -m5 جسم متعدد المحركات: LZMA2 للبيانات الثنائية وPPMd للنصوص، يُختار بالتجربة؛ وتُرتَّب الملفات حسب النوع كما في 7-Zip.</x></body></td></tr><tr><td><body><x>ذكاء الوسائط</x></body></td><td><body><x>اكتشاف يعتمد على المحتوى لملفات WAV وAIFF وProTracker MOD وBMP؛ تجربة لكل ملف بين أربعة مرشِّحات (NAC وShuffle وShuffle+Delta وMED)؛ وعودة تلقائية إلى الضغط العادي.</x></body></td></tr><tr><td><body><x>ملفات Office وPDF وgzip</x></body></td><td><body><x>إعادة ضغط Deflate (preflate): تُفكَّك تدفقات Deflate داخل ملفات docx وxlsx وpptx وodt وods وepub وjar وzip وpdf وgz وتُضغَط بشكل أفضل بكثير ثم يُعاد بناؤها بتاً ببت عند الاستخراج (-m4 و-m5).</x></body></td></tr><tr><td><body><x>التشفير</x></body></td><td><body><x>اشتقاق مفتاح Argon2id (بذاكرة 64 MiB)، وXChaCha20-Poly1305 في مقاطع موثَّقة بحجم 64 KiB؛ وتُشفَّر الأسماء والأحجام والتواريخ والصلاحيات.</x></body></td></tr><tr><td><body><x>كلمات المرور</x></body></td><td><body><x>مطالبة تفاعلية مع تأكيد، ومتغير بيئة، وstdin، وسطر الأوامر؛ وتوليد تلقائي لكلمة مرور عشوائية قوية عند عدم إمداد أي كلمة.</x></body></td></tr><tr><td><body><x>السلامة</x></body></td><td><body><x>CRC32 لبايتات كل ملف الأصلية؛ توثيق AEAD للأرشيفات المشفرة؛ علامة نهاية مع عدد العناصر؛ ومرمّز صوتي يتحقق من نفسه.</x></body></td></tr><tr><td><body><x>سطر الأوامر</x></body></td><td><body><x>أوامر بنمط RAR (a x e l v lb t p d)، واستخراج ملفات مفردة أو مجلدات أو أحرف بدل، ومفاتيح تبديل، وأسماء بديلة بنمط zip، وأحرف بدل، و@listfiles، واستثناءات، وسياسات الكتابة فوق الملفات، ووضع الصمت، وأكواد خروج صريحة.</x></body></td></tr><tr><td><body><x>الأمان التشغيلي</x></body></td><td><body><x>الحماية من هجمات zip-slip، ورفض الروابط الرمزية، وتجريد بتات setuid، ومفكِّكات محدودة الموارد، وكتابة أرشيف ذرّية، وسلامة ذاكرة Rust.</x></body></td></tr><tr><td><body><x>القابلية للنقل</x></body></td><td><body><x>Windows (PowerShell وcmd) وmacOS وLinux؛ ملف تنفيذي استاتيكي واحد؛ ونتائج مطابقة بايتاً ببايت على كل منصة.</x></body></td></tr><tr><td><body><x>الواجهة الرسومية</x></body></td><td><body><x>عند تشغيله دون وسائط، يفتح nikpak نافذة إفلات بسيطة: أفلِت (أو اختر) ملفات أو مجلدات لضغطها بأفضل ضغط؛ مع حلقة تقدّم ومجلد وجهة يتم تذكره (القسم 3.7).</x></body></td></tr><tr><td><body><x>متصفح الأرشيف</x></body></td><td><body><x>unNik.exe، مجاني للجميع: تصفُّح المجلدات، والبحث، وعرض الملفات النصية والثنائية، واستخراج تحديد، وحذف ملفات من أرشيفات .nik (القسم 3.9).</x></body></td></tr><tr><td><body><x>الواجهات الجلدية</x></body></td><td><body><x>55 واجهة جلدية للنافذة، منها 14 واجهة مشهدية مرسومة؛ وصندوق واجهات جلدية يقف بجانب النافذة مع زرَّي Apply Skin وCancel؛ واستيراد ملفات .skin.json الخاصة بك من Nikkomander (القسم 3.10).</x></body></td></tr><tr><td><body><x>قائمة مدير الملفات</x></body></td><td><body><x>قائمة فرعية “NikPak” في Explorer وDolphin وNemo وNautilus وFinder: Add to archive وExtract here وExtract to its own folder وOpen with unNik؛ أرشيف واحد لتحديد عدة عناصر (القسم 3.11).</x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="2-2-nikpak-and-rar-side-by-side"><body><x>2.2 nikpak وRAR جنباً إلى جنب</x></body></h3>
+<p><body><x>يقارن الجدول أدناه nikpak 1.1 مع RAR 7 كما قيست في هذا المشروع، ويذكر بوضوح أين يتفوق RAR. ويناقش الفصل 12 النقاط الفردية.</x></body></p>
+<table class="tech-table"><thead><tr><th>
+				<br>
+
+				</th><th><body><x><b>nikpak 1.1</b></x></body></th><th><body><x><b>RAR 7</b></x></body></th></tr></thead><tbody><tr><td><body><x>ضغط الوسائط</x></body></td><td><body><x>مرمّزات ضغط بلا فقدان متخصصة تُختار لكل ملف بالتجربة</x></body></td><td><body><x>خوارزمية عامة مع مرشِّحات مدمجة</x></body></td></tr><tr><td><body><x>الكود المصدري، المستوى الأقصى</x></body></td><td><body><x><b>24.4 MB</b> (أصغر)، 45.6 ثانية</x></body></td><td><body><x>25.9 MB، من 26.7 إلى 36.2 ثانية</x></body></td></tr><tr><td><body><x>السرعة عند المستويات السريعة</x></body></td><td><body><x><b>0.9 ثانية</b> لـ197 MB (-m2)</x></body></td><td>
+				9.7
+				- 16.7 s (-m3)</td></tr><tr><td><body><x>التشفير</x></body></td><td><body><x>Argon2id + XChaCha20-Poly1305 (موثَّق)</x></body></td><td><body><x>AES-256-CBC + PBKDF2-HMAC-SHA256</x></body></td></tr><tr><td><body><x>أسماء الملفات مشفَّرة دائماً</x></body></td><td><body><x><b>نعم</b></x></body></td><td><body><x>فقط مع -hp</x></body></td></tr><tr><td><body><x>تهشير كلمة المرور المستهلك للذاكرة</x></body></td><td><body><x><b>نعم</b> (64 MiB)</x></body></td><td><body><x>لا</x></body></td></tr><tr><td><body><x>مولِّد كلمات مرور عشوائية</x></body></td><td><body><x><b>مدمج</b></x></body></td><td><body><x>غير مدمج</x></body></td></tr><tr><td><body><x>الكود المصدري، اللغة</x></body></td><td><body><x><b>المصدر الكامل</b>، Rust (آمنة الذاكرة)</x></body></td><td><body><x>ملكية خاصة، C++</x></body></td></tr><tr><td><body><x>سجلات الاسترداد، والأحجام المتعددة، وSFX، والتحديث في المكان</x></body></td><td><body><x>ليس بعد</x></body></td><td><body><x><b>نعم (WinRAR)</b></x></body></td></tr><tr><td><body><x>السجل الحافل</x></body></td><td><body><x>جديد، ولم يُدقَّق بعد</x></body></td><td><body><x><b>عقود</b></x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h2 class="ch" id="3-command-line-reference"><body><x>3 مرجع سطر الأوامر</x></body></h2>
+<p><body><x>يتبع nikpak الصياغة التي يعرفها مستخدمو RAR: <code>nikpak [options] [files...]</code>. يمكن أن تظهر الخيارات في أي مكان قبل اسم الأرشيف أو بعده؛ وينهي <code>--</code> تحليل الخيارات.</x></body></p>
+<h3 class="se" id="3-1-commands"><body><x>3.1 الأوامر</x></body></h3>
+<table class="tech-table"><thead><tr><th><body><x><b>الأمر</b></x></body></th><th><body><x><b>المعنى</b></x></body></th></tr></thead><tbody><tr><td>
+				<code>a</code></td><td><body><x>إنشاء أرشيف جديد. تُلحَق <code>.nik</code> عندما لا يكون للاسم امتداد. وتُجتاز المجلدات دائماً بشكل تكراري.</x></body></td></tr><tr><td>
+				<code>x</code></td><td><body><x>الاستخراج بالمسارات الكاملة: كل شيء، أو فقط الأسماء والمجلدات وأحرف البدل المعطاة بعد اسم الأرشيف (nikpak x backup.nik Docs/report.pdf يستخرج ملفاً واحداً). يحدد فاصل المسار في النهاية (أو <code>-d dir</code>) الوجهة.</x></body></td></tr><tr><td>
+				<code>e</code></td><td><body><x>الاستخراج بدون مسارات: يذهب كل ملف مباشرة إلى مجلد الوجهة.</x></body></td></tr><tr><td>
+				<code>l</code></td><td><body><x>عرض المحتويات (كلها، أو الأسماء المطابقة فقط): السمات والحجم والتاريخ (UTC) والاسم والإجماليات.</x></body></td></tr><tr><td>
+				<code>v</code></td><td><body><x>قائمة مطوَّلة: تضيف CRC32 لكل ملف.</x></body></td></tr><tr><td><body><x><code>lb</code></x></body></td><td><body><x>قائمة مجرَّدة: اسم واحد في كل سطر، مصمَّمة للسكربتات والواجهات الرسومية الأمامية.</x></body></td></tr><tr><td>
+				<code>t</code></td><td><body><x>الاختبار: يفك ضغط كل شيء، ويفحص كل CRC32، وبالنسبة للأرشيفات المشفرة يتحقق من التوثيق.</x></body></td></tr><tr><td>
+				<code>p</code></td><td><body><x>طباعة الملفات إلى المخرجات القياسية: كلها، أو المذكورة بالاسم (nikpak p notes.nik todo.txt | more).</x></body></td></tr><tr><td>
+				<code>d</code></td><td><body><x>حذف ملفات أو مجلدات (يُحذف المجلد مع محتوياته) من أرشيف. يُعاد كتابة الأرشيف بدونها؛ وتحتفظ الأرشيفات المشفرة بكلمة مرورها. الأسماء مطلوبة.</x></body></td></tr><tr><td><body><x><code>mt</code></x></body></td><td><body><x>اختبار الوسائط: يكتشف ملفات WAV/AIFF/MOD/BMP ويعرض الحجم الذي يحققه كل مرشِّح وسائط. ولا يكتب شيئاً.</x></body></td></tr><tr><td><body><x><code>(none)</code></x></body></td><td><body><x>عند تشغيله دون أي وسيطة (على سبيل المثال بالنقر المزدوج على nikpak.exe)، يفتح nikpak نافذته بدلاً من ذلك (القسم 3.7).</x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="3-2-options"><body><x>3.2 الخيارات</x></body></h3>
+<table class="tech-table"><thead><tr><th><body><x><b>نمط RAR</b></x></body></th><th><body><x><b>نمط zip</b></x></body></th><th><body><x><b>المعنى</b></x></body></th></tr></thead><tbody><tr><td>
+				<code>-p</code></td><td>
+				<code>-e</code></td><td><body><x>التشفير / فك التشفير، وطلب كلمة المرور. يولِّد الإدخال الفارغ كلمة مرور عشوائية ويعرضها.</x></body></td></tr><tr><td>
+				<code>-p<password></password></code></td><td>
+				<code>-P <password></password></code></td><td><body><x>كلمة المرور على سطر الأوامر (مرئية للمستخدمين الآخرين للجهاز).</x></body></td></tr><tr><td><body><x><code>-hp[password]</code></x></body></td><td>
+				<br>
+
+				</td><td><body><x>مثل -p. أسماء الملفات مشفَّرة دائماً في nikpak.</x></body></td></tr><tr><td>
+				<code>-m0</code>
+				.. <code>-m5</code></td><td>
+				<code>-0</code>
+				.. <code>-9</code></td><td><body><x>Store (تخزين بلا ضغط)، وأسرع، وسريع، وجيد، وعالٍ (يضيف إعادة ضغط Deflate)، وأقصى (الافتراضي منذ الإصدار 1.2.1؛ LZMA2/PPMd، القسم 6.7). استخدم -m2 عندما تكون السرعة أهم من الحجم.</x></body></td></tr><tr><td><body><x><code>-mt</code></x></body></td><td>
+				<br>
+
+				</td><td><body><x>عدد الخيوط، من 1 إلى 256 (الافتراضي: كل الأنوية).</x></body></td></tr><tr><td><body><x><code>-mc-</code> / <code>-mc+</code></x></body></td><td>
+				<br>
+
+				</td><td><body><x>إيقاف جميع مرشِّحات المحتوى (مرمّزات الوسائط وإعادة ضغط Deflate) / تشغيل مرشِّحات الوسائط دائماً. الافتراضي: تجربة تلقائية لكل ملف.</x></body></td></tr><tr><td>
+				<code>-r</code></td><td>
+				<br>
+
+				</td><td><body><x>الاجتياز التكراري للمجلدات (مفعَّل دائماً، ومقبول لأغراض التوافق).</x></body></td></tr><tr><td><body><x><code>-ep</code></x></body></td><td>
+				<code>-j</code></td><td><body><x>تخزين آخر مكوِّن من المسار فقط لكل وسيطة.</x></body></td></tr><tr><td><body><x><code>-ep1</code></x></body></td><td>
+				<br>
+
+				</td><td><body><x>عدم تخزين اسم المجلد الأساسي لوسيطة المجلد.</x></body></td></tr><tr><td>
+				<code>-o+</code></td><td>
+				<code>-o</code></td><td><body><x>الكتابة فوق الملفات الموجودة دون سؤال.</x></body></td></tr><tr><td>
+				<code>-o-</code></td><td>
+				<code>-n</code></td><td><body><x>تخطي الملفات الموجودة دون سؤال.</x></body></td></tr><tr><td><body><x><code>-or</code></x></body></td><td>
+				<br>
+
+				</td><td><body><x>إعادة تسمية الملفات المستخرجة الموجودة مسبقاً: <code>name (1).ext</code>.</x></body></td></tr><tr><td>
+				<code>-y</code></td><td>
+				<br>
+
+				</td><td><body><x>افتراض نعم (Yes) لكل سؤال.</x></body></td></tr><tr><td>
+				<code>-x<pattern></pattern></code></td><td>
+				<code>-x <pattern></pattern></code></td><td><body><x>استبعاد ملفات؛ يمكن تكراره.</x></body></td></tr><tr><td>
+				<code>-d <dir></dir></code></td><td>
+				<code>-d <dir></dir></code></td><td><body><x>مجلد الوجهة لأمرَي <code>x</code> و<code>e</code>.</x></body></td></tr><tr><td><body><x><code>-inul</code> <code>-idq</code></x></body></td><td>
+				<code>-q</code></td><td><body><x>الصمت (Quiet): تُطبع الأخطاء فقط.</x></body></td></tr><tr><td><body><x><code>@listfile</code></x></body></td><td>
+				<br>
+
+				</td><td><body><x>قراءة أسماء الملفات من ملف نصي، اسم واحد في كل سطر.</x></body></td></tr><tr><td><body><x><code>-h</code> <code>-help</code> <code>-?</code></x></body></td><td>
+				<br>
+
+				</td><td><body><x>المساعدة الكاملة. يطبع <code>-V</code> رقم الإصدار.</x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p><body><x>الخيارات التي ترسلها الواجهات الأمامية لـRAR عادةً لكن لا معنى لها هنا (<code>-s</code> و<code>-ma5</code> و<code>-md64m</code> و<code>-ibck</code> و<code>-idp</code> و<code>-rr</code> و<code>-ts*</code> و<code>-w</code> وما شابهها) تُقبَل وتُتجاهَل، حتى تستمر إعدادات الأدوات الموجودة في العمل. أي شيء آخر يولِّد رسالة خطأ واضحة وكود خروج 7.</x></body></p>
+<p><body><x>تضيف قائمة مدير الملفات خيارات طويلة قليلة (القسم 3.11): يضغط <code>nikpak --add</code> و<code>--add-here</code> العناصر المعطاة في أرشيف جديد، ويضيف <code>nikpak --install-menu</code> و<code>--uninstall-menu</code> قائمة النقر الأيمن أو يزيلها (<code>--all-users</code> للتثبيت لجميع المستخدمين)، ويقود <code>unNik --extract</code> و<code>--extract-here</code> و<code>--extract-to</code> عملية الاستخراج من القائمة.</x></body></p>
+<h3 class="se" id="3-3-passwords-in-detail"><body><x>3.3 كلمات المرور بالتفصيل</x></body></h3>
+<p><body><x>عند إنشاء أرشيف مع <code>-p</code>، يحدد nikpak كلمة المرور بهذا الترتيب، ولا يفشل أبداً لمجرد عدم إمداد أي كلمة:</x></body></p>
+<ul><li><body><x><code>-p</code> أو <code>-P </code> على سطر الأوامر: تُستخدم كما هي (8 أحرف كحد أدنى).</x></body></li><li><body><x>متغير البيئة <code>NIKPAK_PASSWORD</code>، الذي يُبقي كلمة المرور خارج قائمة العمليات.</x></body></li><li><body><x>مطالبة تفاعلية، تُسأل مرتين للتأكيد. <b>يولِّد الإدخال الفارغ كلمة مرور عشوائية.</b></x></body></li><li><body><x>بدون طرفية (على سبيل المثال داخل واجهة رسومية)، كلمة مرور تُمرَّر عبر stdin؛ وإن لم توجد، تُولَّد كلمة مرور عشوائية.</x></body></li></ul>
+<p><body><x>تتكون كلمة المرور المولَّدة من 24 حرفاً من أبجدية تضم 56 رمزاً غير ملتبس (بدون 0/O و1/l/I)، أي نحو 139 بتاً من الإنتروبيا. تُطبع مرة واحدة في صندوق على الطرفية. <b>لا توجد أي وسيلة استرداد:</b> الأرشيف الذي فُقدت كلمة مروره لا يستطيع أحد فتحه.</x></body></p>
+<p><body><x>عند فتح أرشيف مشفر يستخدم nikpak المصادر نفسها ثم يفشل بكود خروج 11 مع رسالة توضيحية؛ ولا يولِّد أي شيء أبداً، لأن كلمة المرور المولَّدة لا يمكن أن تطابق.</x></body></p>
+<h3 class="se" id="3-4-exit-codes"><body><x>3.4 أكواد الخروج</x></body></h3>
+<table class="tech-table"><thead><tr><th><body><x><b>الكود</b></x></body></th><th><body><x><b>المعنى</b></x></body></th><th><body><x><b>السبب النموذجي</b></x></body></th></tr></thead><tbody><tr><td>
+				0</td><td><body><x>نجاح</x></body></td><td>
+				<br>
+
+				</td></tr><tr><td>
+				1</td><td><body><x>تحذير</x></body></td><td><body><x>تم تخطي بعض الملفات (غير قابلة للقراءة، مسار غير آمن، رابط رمزي)</x></body></td></tr><tr><td>
+				2</td><td><body><x>خطأ فادح</x></body></td><td><body><x>تعذّر إنشاء ملف أو قراءته، خطأ داخلي</x></body></td></tr><tr><td>
+				3</td><td><body><x>أرشيف تالف أو خطأ CRC</x></body></td><td><body><x>أرشيف تالف أو مبتور، فشل في المجموع الاختباري</x></body></td></tr><tr><td>
+				7</td><td><body><x>خطأ في سطر الأوامر</x></body></td><td><body><x>خيار غير معروف، اسم الأرشيف مفقود</x></body></td></tr><tr><td>
+				10</td><td><body><x>لا شيء مطابق</x></body></td><td><body><x>لم يطابق أي ملف الأسماء أو أحرف البدل</x></body></td></tr><tr><td>
+				11</td><td><body><x>كلمة مرور خاطئة أو مفقودة</x></body></td><td><body><x>كلمة مرور غير صحيحة، أو أرشيف مشفر تم العبث به</x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="3-5-examples"><body><x>3.5 أمثلة</x></body></h3>
+<pre>nikpak a backup.nik C:\Docs\*.txt Photos\ # create an archive</pre>
+<pre>nikpak a -m5 -mt8 big.nik Projects\ # maximum, 8 threads</pre>
+<pre>nikpak a -p secret.nik Taxes2026\ # encrypted, prompts</pre>
+<pre>nikpak a -pMyLongPassw0rd s.nik f.pdf # password given</pre>
+<pre>nikpak x backup.nik C:\Restore\ # extract with paths</pre>
+<pre>nikpak e backup.nik *.jpg C:\Pics\ # only *.jpg, flat</pre>
+<pre>nikpak x backup.nik Docs/report.pdf # extract ONE file</pre>
+<pre>nikpak e backup.nik Docs/report.pdf -d C:\Out # one file, no path</pre>
+<pre>nikpak x backup.nik Photos -d C:\Restore # one folder</pre>
+<pre>nikpak l backup.nik *.pdf # list only PDFs</pre>
+<pre>nikpak p backup.nik notes.txt # show a file</pre>
+<pre>nikpak d backup.nik Temp *.bak # delete entries</pre>
+<pre>nikpak l backup.nik # list</pre>
+<pre>nikpak t secret.nik # test (asks password)</pre>
+<pre>nikpak mt song.wav tracker.mod photo.bmp # which filter wins?</pre>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="3-6-integration-with-total-commander-and-other-front-ends"><body><x>3.6 التكامل مع Total Commander والواجهات الأمامية الأخرى</x></body></h3>
+<p><body><x>لأن nikpak يقبل صياغة أوامر RAR (<code>a</code> و<code>x</code> و<code>e</code> و<code>l</code> و<code>t</code> و<code>@listfile</code> و<code>-p</code> و<code>-ep1</code> و<code>-o+</code> و<code>-y</code> و<code>-m</code>)، يمكن لأي برنامج قادر على تشغيل <code>rar.exe</code> خارجي أن يشغِّل <code>nikpak.exe</code>. في Total Commander، سجِّل الامتداد <code>nik</code> ضمن <i>Configuration, Packer, Additional packer programs</i> ووجِّه أمري الضغط وفك الضغط إلى <code>nikpak.exe</code>. استخدم <code>-o+</code> أو <code>-y</code> للاستخراج دون تدخل بشري، لأنه بدون طرفية لا يستطيع nikpak أن يسأل عما إذا كان يجب الكتابة فوق الملفات وسيتخطى الملفات الموجودة بدلاً من ذلك. تختلف أسماء القوائم بين إصدارات Total Commander؛ راجع مساعدته المدمجة لمعرفة الحقول بدقة.</x></body></p>
+<table class="tech-table"><tbody><tr><td><body><x><b>المجلدات التي تحتوي مسافات على Windows</b><br>المسار الموضوع بين علامتَي اقتباس وينتهي بشرطة مائلة خلفية، مثل <code>"C:\My Folder\"</code>، يفسِّره Windows بشكل خاطئ (تُعامَل علامة الاقتباس الأخيرة على أنها مُهرَّبة). وللوجهات التي تحتوي مسافات استخدم <code>-d "C:\My Folder"</code> بدلاً من ذلك.</x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="3-7-the-graphical-interface"><body><x>3.7 الواجهة الرسومية</x></body></h3>
+<p><body><x>عند تشغيل nikpak <b>بدون وسائط</b>، على سبيل المثال بالنقر المزدوج على nikpak.exe، يفتح نافذة صغيرة بدلاً من طباعة طريقة استخدامه. وهو يفعل شيئاً واحداً: يضغط ما تُفلته عليه.</x></body></p>
+<figure><img src="../assets/img/tech/93d28e45.png" alt="The nikpak window: waiting for files (left) and compressing (right)." loading="lazy"><figcaption><body><x>نافذة nikpak: بانتظار الملفات (يساراً) وأثناء الضغط (يميناً).</x></body></figcaption></figure>
+<ul><li><body><x><b>أفلِت ملفاً أو مجلداً</b>، أو عدة عناصر دفعة واحدة، على النافذة، أو انقر الدائرة (أو الرابطين choose files / choose a folder) لاختيارها في مربع حوار؛ ويُظهر النقر على الدائرة الزرَّين Choose files وChoose a folder داخل الحلقة. تُضغَط العناصر بأفضل ضغط (<b>-m5</b>) في أرشيف واحد يُسمَّى باسم الملف (بدون امتداده) أو المجلد، أو باسم المجلد الذي جاءت منه عند وجود عدة عناصر. لا يُكتب فوق أرشيف موجود أبداً: يصبح report.nik هو report (2).nik.</x></body></li><li><body><x>يُعرض <b>التقدّم</b> كنسبة مئوية كبيرة داخل عداد دائري، مع المرحلة (analysing وcompressing وfinishing)، والكمية المعالجة، والوقت. يوقف زر <b>Cancel</b> تحتها (أو مفتاح Esc) الضغط الطويل فوراً ويزيل الأرشيف غير المكتمل؛ وتبقى النافذة مفتوحة للعنصر التالي. إغلاق النافذة أثناء الضغط يفعل الشيء نفسه.</x></body></li><li><body><x><b>تم</b>: تتحول الحلقة إلى اللون الأخضر وتعرض اسم الأرشيف وحجمه مقابل الأصل والوقت. يفتح Show in folder الأرشيف في Explorer أو Finder أو مدير الملفات؛ ويبدأ Compress more (أو النقر على الدائرة) الأرشيف التالي.</x></body></li><li><body><x><b>Save to</b>: يمكن كتابة مجلد الوجهة في الأسفل أو اختياره بزر Browse. يُتذكَّر للمرة التالية (Windows: %APPDATA%\nikpak\settings.txt؛ macOS: ~/Library/Application Support/nikpak؛ Linux: ~/.config/nikpak). وفي المرة الأولى يكون سطح المكتب.</x></body></li><li><body><x><b>المجتمع</b>: تفتح الأزرار الدائرية الثلاثة أسفل اليمين صفحات nikpak على Telegram وX وDiscord (القسم 1.5).</x></body></li><li><body><x><b>التبديل إلى unNik:</b> يغلق الزر الدائري الذي يحمل سهماً للأعلى، يسار زر i، برنامج NikPak ويشغِّل unNik (القسم 3.9). بعد الضغط، يفتح هذا الزر ورابط <b>Open in unNik</b> على شاشة الإتمام الأرشيف الجديد فوراً. ويُعطَّل الزر أثناء الضغط.</x></body></li><li><body><x><b>فتح مجلد الوجهة:</b> يفتح زر المجلد الموجود بين حقل Save to وBrowse ذلك المجلد في Explorer أو Finder؛ وبعد الضغط يفتحه مع تحديد الأرشيف الجديد.</x></body></li><li><body><x><b>الأصوات:</b> نقرة خفيفة للأزرار والروابط والخيارات، وصوت قصير لكل إجراء (بدء العمل، النجاح، الخطأ، الإلغاء، تبديل البرنامج، مرور الملفات فوق النافذة). وهي مصنوعة من البرنامج نفسه، دون ملفات صوتية. يشغِّلها زر مكبر الصوت في شريط العنوان ويطفئها؛ وهي مفعَّلة افتراضياً، ويُشارَك هذا الاختيار مع unNik.</x></body></li><li><body><x><b>اللغة</b>: يفتح الزر أسفل اليسار، الذي يحمل علماً واسم اللغة بلغتها، قائمة باللغات العشر الأكثر تحدثاً في العالم (Ethnologue 2025): English و中文 (Mandarin Chinese) وहिन्दी (Hindi) وEspañol والعربية (Arabic) وFrançais وবাংলা (Bengali) وPortuguês وРусский (Russian) وBahasa Indonesia. اختيار إحداها يحفظها ويعيد تشغيل nikpak بتلك اللغة. في المرة الأولى، يتبع nikpak لغة Windows (أو النظام)، وإلا الإنجليزية. ويبقى سطر الأوامر بالإنجليزية.</x></body></li><li><body><x><b>التشغيل كمسؤول</b>: لا يسمح Windows بسحب الملفات من Explorer إلى برنامج يعمل كمسؤول. عند تشغيل nikpak.exe كمسؤول (على سبيل المثال من PowerShell مسؤول)، يعيد تشغيل نفسه مرة واحدة كمستخدم عادي عبر Explorer حتى يعمل السحب والإفلات. وإن تعذَّر ذلك، تعرض النافذة إشعاراً؛ فاختر الملفات بالأزرار بدلاً من ذلك.</x></body></li><li><body><x><b>الحالة وحول</b>: يعرض أعلى اليسار EVALUATION COPY · REGISTER (يفتح النقر مربع التسجيل) أو REGISTERED TO مع حامل الترخيص. يفتح زر <b>i</b> الصغير أعلى اليمين، بجانب التصغير والإغلاق، مربع <b>About</b>: الإصدار، و© 2026 Nicolas Choukroun، من توزيع Nikkoid LLC، وحالة الترخيص، والموقع الإلكتروني، وشروط الترخيص (LICENSE.txt).</x></body></li></ul>
+<p><body><x>تبلغ أبعاد النافذة 500 × 560 نقطة (نحو 9:10)، بحيث تناسب لقطة شاشة للنافذة كاملة منشور صور على X (Twitter) دون قصّ. وهي بلا إطار: اسحبها من منطقتها العلوية؛ وتفتح الأزرار أعلى اليمين مربع About وتصغِّرها وتغلقها. عند تشغيل nikpak.exe من Explorer، تُغلَق نافذة الطرفية التي يفتحها Windows له تلقائياً؛ أما عند تشغيله من موجه أوامر فيُترك الموجه كما هو. وبدون شاشة رسومية (على سبيل المثال عبر SSH)، يطبع nikpak طريقة استخدامه كالمعتاد. تستخدم الواجهة egui/eframe وتضمّن مجموعات فرعية من خطوط Inter وNoto Sans SC وNoto Sans Devanagari وNoto Sans Bengali وNoto Sans Arabic (ترخيص SIL Open Font License، انظر assets/fonts/OFL.txt). ويُبنى ملف تنفيذي لسطر الأوامر فقط بالأمر <code>cargo build --release --no-default-features</code>.</x></body></p>
+<figure><img src="../assets/img/tech/2a2cecb.png" alt="The window in Chinese, Hindi and Arabic, and the language menu." loading="lazy"><figcaption><body><x>النافذة بالصينية والعربية، والتذكير بالهندية، وقائمة اللغة.</x></body></figcaption></figure>
+<p><body><x>تحتاج اللغات <b>الهندية والبنغالية والعربية</b> إلى تشكيل (shaping): تتغير أشكال الحروف وتتصل ببعضها، وتتحرك علامات الحركات حول الحرف الساكن، وتُكتب العربية من اليمين إلى اليسار. يرسم egui محرفاً واحداً لكل حرف، ما سيطبع هذه اللغات بشكل خاطئ، لذلك يرتب nikpak هذه النصوص بخوارزمية Unicode ثنائية الاتجاه (unicode-bidi)، ويشكّلها بـrustybuzz (منقول Rust لـHarfBuzz)، وينقّطها بـab_glyph ويرسم النتيجة كصورة (textshape.rs). وتحتفظ الكلمات والأرقام اللاتينية داخلها بخط Inter. وتُصغَّر الترجمات الطويلة لتناسب أزرارها، وتنمو المربعات مع نصوصها. كُتبت الترجمات (i18n.rs) بمساعدة آلية؛ ومراجعة المتحدثين الأصليين مرحَّب بها.</x></body></p>
+<h3 class="se" id="3-8-licence-and-registration-shareware"><body><x>3.8 الترخيص والتسجيل (برنامج shareware)</x></body></h3>
+<p><body><x>NikPak برنامج <b>shareware</b>، © 2026 Nicolas Choukroun، من توزيع <b>Nikkoid LLC</b>، ومرخَّص مثل WinRAR: الحزمة نفسها هي النسخة التجريبية المجانية، وبمجرد إدخال مفتاح ترخيص تصبح النسخة المسجَّلة. لا شيء معطَّل في النسخة التجريبية.</x></body></p>
+<table class="tech-table"><thead><tr><th><body><x><b>مَن</b></x></body></th><th><body><x><b>الشروط</b></x></body></th></tr></thead><tbody><tr><td><body><x>الأفراد</x></body></td><td><body><x>مجاني للاستخدام الشخصي غير التجاري، دون حد زمني. يزيل الترخيص الشخصي (19 دولاراً) التذكير؛ ويغطي جميع أجهزة الكمبيوتر التي يستخدمها حامل الترخيص.</x></body></td></tr><tr><td><body><x>الشركات والمؤسسات</x></body></td><td><body><x>ترخيص شركة واحد لكل مقعد، بعد فترة تقييم مجانية مدتها 40 يوماً؛ والمقاعد هي أجهزة الكمبيوتر أو المستخدمون، أيهما أكبر. أسعار الكميات لكل مقعد، على غرار WinRAR: 1–9 مقاعد بـ19 دولاراً، و10–24 بـ15، و25–49 بـ12، و50–99 بـ9، و100–199 بـ7، و200–499 بـ6، و500 فأكثر بـ5 دولارات.</x></body></td></tr><tr><td><body><x>التوزيع</x></body></td><td><body><x>يجوز وضع الحزمة غير المعدَّلة (مع LICENSE.txt وTHIRD-PARTY-NOTICES.txt) على أي موقع shareware أو موقع تنزيل؛ ويُحظر إضافة المفاتيح أو ملفات المفاتيح أو الكراكات. وأرشيفات .nik معفاة من الإتاوات.</x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<figure><img src="../assets/img/tech/a48982f5.png" alt="The reminder of the evaluation copy, the registration box and the file chooser." loading="lazy"><figcaption><body><x>تذكير النسخة التجريبية (يساراً)، ومربع التسجيل (وسطاً)، ومنتقي الملفات (يميناً).</x></body></figcaption></figure>
+<figure><img src="../assets/img/tech/cd6fee8b.png" alt="The main window with the i button, and the About box." loading="lazy"><figcaption><body><x>النافذة الرئيسية مع زر i الصغير أعلى اليمين (يساراً) ومربع About (يميناً).</x></body></figcaption></figure>
+<ul><li><body><x>يظهر <b>التذكير</b> عندما تفتح نسخة غير مسجَّلة نافذتها. وله زران، <b>Register</b> و<b>Test for free</b>، يتغير ترتيبهما الأيمن/الأيسر عشوائياً عند كل تشغيل. يغلقه Test for free (أو Esc)؛ ثم يعمل nikpak دون أي قيود.</x></body></li><li><body><x>يطلب <b>مربع التسجيل</b> الاسم وعنوان البريد الإلكتروني ومفتاح الترخيص. يجب أن تتطابق الثلاثة: فالمفتاح توقيع للاسم والبريد الإلكتروني. لا يهمّ اختلاف حالة الأحرف ولا المسافات الزائدة ولا الأحرف المتشابهة O/0 وI/L/1. يفتح <b>Buy a licence</b> الرابط https://nikpak.nikkoid.com/buy.php.</x></body></li><li><body><x><b>بمجرد التسجيل</b> لا يسأل nikpak مرة أخرى على ذلك الجهاز لذلك المستخدم. يُخزَّن الترخيص في %APPDATA%\nikpak\license.txt (macOS: ~/Library/Application Support/nikpak؛ Linux: ~/.config/nikpak). ويمكن للشركة بدلاً من ذلك وضع ملف <code>nikpak.key</code> بجانب nikpak.exe، فيسجِّل كل مستخدمي ذلك الجهاز.</x></body></li><li><body><x><b>سطر الأوامر</b>: يسجِّل الأمر <code>nikpak register "Jane Doe" jane@example.com NPK1-…</code>؛ ويعرض <code>nikpak license</code> الحالة؛ ويزيل <code>nikpak unregister</code> الترخيص. ويعرض <code>nikpak -V</code> و<code>nikpak -help</code> الحالة أيضاً. وتطبع النسخ غير المسجَّلة سطر إشعار تقييم واحد على مخرجات الخطأ (stderr)، وليس على المخرجات القياسية أبداً؛ ويكبتها -q.</x></body></li></ul>
+<h4 class="su" id="how-the-keys-work"><body><x>كيف تعمل المفاتيح</x></body></h4>
+<p><body><x>يقرأ مفتاح الترخيص بصيغة <code>NPK1-</code> متبوعاً بـ108 أحرف في مجموعات من خمسة (Crockford base32). ويحتوي على نوع الترخيص (شخصي أو شركة)، وعدد المقاعد، و<b>توقيع Ed25519</b> على <code>NIKPAK-LICENSE-1</code> والنوع والمقاعد والاسم وعنوان البريد الإلكتروني، كل منها مُطبَّع (المسافات مدموجة، أحرف صغيرة). يحتوي nikpak على المفتاح العام البالغ 32 بايتاً فقط، في <code>src/license_pubkey.rs</code>، لذا لا تتيح دراسة البرنامج لأي شخص صنع المفاتيح.</x></body></p>
+<p><body><x>تُصنع المفاتيح بالمفتاح الخاص، الذي لا يغادر Nikkoid LLC أبداً: إما بالأداة الخاصة <code>nikpak-keygen</code> (<code>cargo run --release --features keygen --bin nikpak-keygen -- make --name "Jane Doe" --email jane@example.com</code>؛ و<code>--company --seats 25</code> للشركات؛ وينشئ <code>newkeys</code> زوج مفاتيح جديداً) أو على خادم الويب بأدوات PHP في <code>server/</code> (PHP 7.2+ وMySQL 5.7)، التي تصدر مفتاحاً واحداً لكل عملية دفع وتنتج المفاتيح نفسها تماماً. يصف server/README.md الإعداد وسير الدفع.</x></body></p>
+<h3 class="se" id="3-9-unnik-the-free-archive-browser"><body><x>3.9 unNik، متصفح الأرشيف المجاني</x></body></h3>
+<p><body><x><b>unNik</b> (unNik.exe) هو البرنامج الثاني في الحزمة. يفتح أرشيفات .nik ويعرض ما بداخلها ويستخرج ما تختاره. وهو <b>مجاني للجميع</b>، بما في ذلك الشركات، دون تسجيل ودون تذكير (LICENSE.txt، القسم 2a). يثبِّته برنامج الإعداد بجانب nikpak.exe، ويضيفه إلى قائمة Start ويجعله البرنامج المسؤول عن ملفات .nik، بحيث يفتح النقر المزدوج على أرشيف في unNik؛ ويفعل unNik archive.nik الشيء نفسه من موجه الأوامر.</x></body></p>
+<figure><img src="../assets/img/tech/2a153152.png" alt="unNik waiting for an archive and its built-in viewer" loading="lazy"><figcaption><body><x>unNik بانتظار أرشيف (يساراً) وعارضه المدمج وهو يبحث في ملف مصدري (يميناً).</x></body></figcaption></figure>
+<p><body><x>تبدو النافذة الفارغة تماماً مثل نافذة NikPak، مع سهم متجه للأعلى في الحلقة. أفلِت أرشيف .nik عليها، أو انقر الحلقة، أو اختر أحد الأرشيفات الحديثة: تتوسع النافذة لتصبح المتصفح (1120 × 720، قابل لتغيير الحجم من حوافه، ويمكن تكبيره). تطلب الأرشيفات المشفرة كلمة مرورها أولاً.</x></body></p>
+<figure><img src="../assets/img/tech/399578f.png" alt="The unNik archive browser" loading="lazy"><figcaption><body><x>المتصفح: شجرة المجلدات وملخص الضغط (يساراً)، والملفات (وسطاً)، وتفاصيل الملف المحدد (يميناً).</x></body></figcaption></figure>
+<ul><li><body><x><b>التنقل</b> بشجرة المجلدات ومسار التنقل (breadcrumbs) وBack وForward وUp (Alt+Left وAlt+Right وBackspace) والنقرات المزدوجة. يعثر <b>Search</b> (Ctrl+F) على الملفات بالاسم في الأرشيف كله؛ ويعرض كل نتيجة مجلدها.</x></body></li><li><body><x><b>التحديد</b> بالنقر، أو Ctrl+نقر، أو Shift+نقر، أو مربعات الاختيار، أو Ctrl+A، أو مفاتيح الأسهم. انقر عنوان عمود للفرز حسب الاسم أو الحجم أو النوع أو التاريخ. ويفتح النقر الأيمن قائمة بكل الإجراءات.</x></body></li><li><body><x><b>استخراج الكل</b>، أو التحديد (Ctrl+E): اختر الوجهة (افتراضياً مجلد باسم الأرشيف، بجانبه)، واحتفظ بالمجلدات أو لا، وما الذي يجب فعله عند وجود ملف مسبقاً: استبداله، أو الاحتفاظ بكليهما (name (1).ext)، أو تخطيه. تُنشأ الملفات المأخوذة من داخل مجلد بدون مسار ذلك المجلد، كما في WinRAR. وتتوقف القراءة مباشرة بعد آخر ملف مختار.</x></body></li><li><body><x><b>العرض</b> (F3، أو النقر المزدوج على ملف نصي): نص مع أرقام الأسطر، وبحث مع تمييز، والتفاف الأسطر، والنسخ؛ والملفات الثنائية بالنظام الست عشري. تُعرض أول 16 MB؛ ويفتح <b>Open in Notepad</b> الملف كاملاً. ويشغِّل <b>Open</b> الملف ببرنامجه الخاص (يُستخرج إلى مجلد مؤقت أولاً).</x></body></li><li><body><x>يزيل <b>Delete</b> (Del) الملفات والمجلدات من الأرشيف بعد تأكيد. ولأن الأرشيف solid، يُعاد كتابته بدونها في ملف مؤقت لا يحل محل الأصل إلا عند نجاح كل شيء. تحتفظ الأرشيفات المشفرة بكلمة مرورها؛ وتحتفظ العناصر الأخرى بمرشِّح الوسائط أو Deflate ومحرك -m5 الخاص بها.</x></body></li><li><body><x>يفك <b>Test</b> ضغط الأرشيف كله ويفحص كل ملف. ويعرض جزء <b>details</b> الحجم والتاريخ والمجلد وCRC32 وكيفية تخزين الملف وسماته؛ وبالنسبة للأرشيف نفسه يعرض حجمه وطريقته وتشفيره. ويعرض الملخص تحت الشجرة المساحة الموفَّرة.</x></body></li><li><body><x>اللغات العشر نفسها، وزر اللغة، ومربع About (i)، وأزرار المجتمع كما في NikPak. وتُرسَم أسماء الملفات بأي نظام كتابة بخطوط النظام كخيار احتياطي.</x></body></li><li><body><x><b>التبديل إلى NikPak:</b> يغلق الزر الدائري الذي يحمل سهماً للأسفل، يسار زر i، برنامج unNik ويشغِّل NikPak. يوجد البرنامجان في المجلد نفسه. ويتشاركان ملف إعدادات واحداً، لذا تُستخدم اللغة المختارة في أحدهما في الآخر، وتتبع النافذة المفتوحة التغيير خلال ثانيتين.</x></body></li><li><body><x><b>فتح مجلد الوجهة:</b> يفتح الزر يسار زر الإخراج مجلد آخر عملية استخراج في Explorer أو Finder (وقبل أي استخراج، مجلد الأرشيف). يشغِّل unNik الأصوات نفسها التي يشغلها NikPak، مع أصوات لفتح الأرشيف والاستخراج والحذف والاختبار؛ ويتشارك زر مكبر الصوت خاصته مع زر NikPak في إعداد واحد.</x></body></li></ul>
+<figure><img src="../assets/img/tech/7b4e9aa1.png" alt="Extracting a selection and deleting a file in unNik" loading="lazy"><figcaption><body><x>استخراج تحديد (يساراً) وحذف ملف (يميناً).</x></body></figcaption></figure>
+<h3 class="se" id="3-10-skins"><body><x>3.10 الواجهات الجلدية</x></body></h3>
+<p><body><x>يتشارك NikPak وunNik الواجهات الجلدية الـ55 نفسها للنافذة: واجهات Nikkomander الـ41 — من Nikkoid Blue (الافتراضية) وNikkoid Bright إلى Dracula وNord وSolarized وClassic Blue وMatrix وPizza وChristmas و8-Bit Game — إضافة إلى 14 واجهة مرسومة يرسم خلفياتها البرنامج نفسه: Moon وAmerica وPattaya Neons وBurgers Tokyo وSushi وAmiga وMSX وColecovision وZX Spectrum وCat Life وDog Life وMario Bros وCounter Strike وChess.</x></body></p>
+<ul><li><body><x><b>زر الواجهات الجلدية</b> (لوحة ألوان، في شريط عنوان البرنامجين): يفتح قائمة الواجهات، حيث تُرسم كل واجهة بألوانها. يُظهر التمرير فوق واجهة معاينتها على النافذة كاملة؛ والنقر عليها يثبّتها؛ ويعيد Esc أو النقر خارجها إلى الواجهة التي كانت لديك.</x></body></li><li><body><x>يبدِّل <b>زر الشمس/القمر</b> بجانبه بين Nikkoid Blue (الداكنة) وNikkoid Bright بنقرة واحدة.</x></body></li><li><body><x><b>يقف صندوق الواجهات الجلدية خارج البرنامج.</b> أثناء فتح الصندوق تتسع النافذة بعرض الصندوق إلى اليمين: يحتفظ البرنامج بلوحته 500 × 560 ويجلس الصندوق في المساحة الشفافة الإضافية بجانبها، بحيث تبقى الواجهة كاملة مرئية خلف الواجهة قيد التجربة. يمكن سحب الصندوق من شريط عنوانه مرة أخرى فوق البرنامج أو إلى أي مكان آخر في النافذة، وله زرا <b>Apply Skin</b> و<b>Cancel</b>. تجرِّب النقرة على واجهة معاينتها على النافذة كاملة؛ ويحتفظ Apply بها ويحفظها للبرنامجين؛ ويعيد Cancel (أو Esc أو ×) إلى الواجهة التي كانت لديك. لم يعد النقر على البرنامج يغلق الصندوق. ولا تتسع نافذة unNik.</x></body></li><li><body><x><b>تُحفَظ الواجهة المختارة</b> (<code>skin=</code> في ملف الإعدادات) وتُشارَك: الواجهة المختارة في أحد البرنامجين يأخذها الآخر خلال ثانيتين.</x></body></li><li><body><x><b>واجهاتك الخاصة:</b> يقرأ “Import a skin…” أسفل القائمة ملف Nikkomander <code>.skin.json</code> (اسماً وقائمة ألوان) وينسخه إلى مجلد <code>skins</code> بجانب ملف الإعدادات؛ ويزيل علامة × الموجودة على بلاطة الواجهة المستوردة تلك الواجهة.</x></body></li><li><body><x><b>تتراجع الواجهات المرسومة خلف الواجهة.</b> تُرسم الخلفيات المرسومة بواسطة <code>src/skin_scenes.rs</code>، لا بتدرجات CSS، لذا تتكيف مع أي حجم نافذة. ومنذ الإصدار 1.6.2 تمر كل واحدة بتمريرة <code>discreet()</code> في <code>src/skin.rs</code>: يُسحب الرسم نحو متوسطه المحلي، ويُموَّه قليلاً ويُمحى تدريجياً نحو لون خلفية الواجهة — أكثر ما يكون خلف حلقة الإفلات وعمود النص، وأكثر قليلاً فوق الشعار — بحيث يبقى العنوان والحلقة ونص الحالة واضحين على الواجهات الأربع عشرة.</x></body></li></ul>
+<h3 class="se" id="3-11-the-file-manager-menu"><body><x>3.11 قائمة مدير الملفات</x></body></h3>
+<p><body><x>قائمة فرعية “NikPak” في قائمة النقر الأيمن لمدير الملفات، مثل قائمة WinRAR، يثبِّتها برنامج الإعداد (Windows: خيار مُفعَّل افتراضياً؛ Linux: <code>nikpak --install-menu</code>؛ macOS: إجراءات Finder السريعة).</x></body></p>
+<ul><li><body><x><b>على الملفات والمجلدات:</b> <b>Add to archive…</b> (يطلب الاسم والمجلد، ثم يضغط في نافذة NikPak) و<b>Add to archive here</b> (يوضع الأرشيف بجانب العناصر، باسم مثل الإفلات على النافذة).</x></body></li><li><body><x><b>على أرشيفات .nik:</b> <b>Open with unNik</b> و<b>Extract files…</b> و<b>Extract here</b> و<b>Extract to its own folder</b>.</x></body></li><li><body><x>تذهب <b>عدة عناصر</b> إلى أرشيف واحد؛ وتُستخرج عدة أرشيفات محددة واحداً تلو الآخر في نافذة واحدة.</x></body></li><li><body><x><b>تعمل الأوامر عبر unNik.exe،</b> فلا تومض نافذة طرفية؛ وتتبع التسميات لغة NikPak. يعرض Windows 10 القائمة الفرعية مباشرة، وWindows 11 ضمن <b>Show more options</b> (Shift+F10)؛ ويضيف Linux قوائم خدمات KDE Dolphin وإجراءات Nemo وسكربتات Nautilus، ويضيف macOS إجراءات Finder السريعة.</x></body></li><li><body><x><b>خيارات سطر أوامر جديدة تستخدمها القائمة:</b> <code>nikpak --add</code> و<code>--add-here</code> (لضغط العناصر المعطاة)، و<code>nikpak --install-menu</code> و<code>--uninstall-menu</code> و<code>--all-users</code>؛ و<code>unNik --extract</code> و<code>--extract-here</code> و<code>--extract-to</code>. يعرض Extract here / to its own folder نافذة unNik الصغيرة مع حلقة التقدم (مربع كلمة المرور للأرشيفات المشفرة) ويغلقها عند استخراج كل شيء؛ وتبقى التحذيرات والأخطاء على الشاشة.</x></body></li><li><body><x><b>برنامج إعداد ثانٍ،</b> <code>unnik--setup.exe</code>، يثبِّت unNik وحده (المتصفح المجاني) لمن يستقبلون أرشيفات .nik فقط؛ وعندما يكون NikPak مثبتاً بالفعل فإنه يثبِّت البرنامج فقط، فلا تتكرر القوائم أبداً.</x></body></li></ul>
+<h2 class="ch" id="4-architecture"><body><x>4 البنية</x></body></h2>
+<p><body><x>nikpak برنامج Rust واحد من نحو 9,600 سطر (بما في ذلك اختبارات الوحدة) موزع على ستة عشر ملفاً مصدرياً، إضافة إلى أداة الترخيص الخاصة nikpak-keygen. قاعدته التصميمية المركزية هي <b>التدفق (streaming)</b>: تُقرأ الملفات قطعاً بحجم 256 KiB، وتُدفع عبر سلسلة من الكاتبات، ولا تُحتفَظ في الذاكرة كاملة أبداً (الاستثناءان الوحيدان هما بيانات بكسل BMP، المحدودة بـ256 MiB، ومخازن العمل المؤقتة بحجم 64 KiB الخاصة بالمرمّزات).</x></body></p>
+<h3 class="se" id="4-1-data-flow-when-creating-an-archive"><body><x>4.1 تدفق البيانات عند إنشاء أرشيف</x></body></h3>
+<figure><img src="../assets/img/tech/c917ced3.png" alt="Figure 1: the creation pipeline. The two lower boxes are inputs to the stage above them." loading="lazy"><figcaption><body><x>الشكل 1: خط أنابيب الإنشاء. الصندوقان السفليان مدخلان للمرحلة فوقهما.</x></body></figcaption></figure>
+<p><body><x>كل مرحلة هي تنفيذ لواجهة <code>Write</code> القياسية ملفوفة حول التالية، بحيث يخدم مسار الكود نفسه أرشيفاً عادياً وأرشيفاً مشفراً وتجربة الوسائط.</x></body></p>
+<h3 class="se" id="4-2-source-code-map"><body><x>4.2 خريطة الكود المصدري</x></body></h3>
+<table class="tech-table"><thead><tr><th><body><x><b>الملف</b></x></body></th><th><body><x><b>المسؤولية</b></x></body></th></tr></thead><tbody><tr><td><body><x><code>main.rs</code></x></body></td><td><body><x>نقطة الدخول. يحلل الوسائط، ويوجِّه الأمر، ويحوِّل الأخطاء إلى أكواد خروج. ويتعامل مع أنبوب مغلق بهدوء (<code>nikpak lb x | head</code>).</x></body></td></tr><tr><td><body><x><code>cli.rs</code></x></body></td><td><body><x>محلل وسائط مكتوب يدوياً بنمط RAR/zip، وجداول الخيارات، ونص <code>-help</code> الكامل. لا تستطيع مكتبات نمط Clap التعبير عن مفاتيح التبديل مثل <code>-pSECRET</code> أو <code>-m5</code> بشكل نظيف.</x></body></td></tr><tr><td><body><x><code>archive.rs</code></x></body></td><td><body><x>الإنشاء، والعرض، والاختبار، والاستخراج (بالمرشِّحات أو باختيار دقيق)، والحذف، والطباعة، واختبار الوسائط؛ وكذلك الفهرس وقراءة الملف الواحد التي يستخدمها unNik. ويحتوي على كاتب وقارئ تدفق العناصر، وسياسة الكتابة فوق، ومنطق الملف المؤقت الذرّي.</x></body></td></tr><tr><td><body><x><code>media.rs</code></x></body></td><td><body><x>اكتشاف المحتوى لملفات WAV وAIFF وMOD وBMP؛ ومرشِّحات Shuffle وDelta وMED؛ واختيار التجربة؛ ومساعدات CRC وتأطير المقاطع.</x></body></td></tr><tr><td><body><x><code>nac.rs</code></x></body></td><td><body><x>مرمّز NAC الصوتي بلا فقدان: إزالة ارتباط الستيريو، والمتنبئات، وترميز البواقي.</x></body></td></tr><tr><td><body><x><code>bits.rs</code></x></body></td><td><body><x>كاتب وقارئ بتات بترتيب البت الأكثر أهمية أولاً (MSB-first) يستخدمهما NAC.</x></body></td></tr><tr><td><body><x><code>crypto.rs</code></x></body></td><td><body><x>اشتقاق مفتاح Argon2id وكاتب وقارئ مقاطع XChaCha20-Poly1305.</x></body></td></tr><tr><td><body><x><code>format.rs</code></x></body></td><td><body><x>ثوابت صيغة التخزين على القرص: التوقيع السحري، والإصدارات، وأنواع السجلات، وحدود KDF.</x></body></td></tr><tr><td><body><x><code>util.rs</code></x></body></td><td><body><x>المطالبة بكلمة المرور وتوليدها، وتنظيف المسارات، ومطابقة أحرف البدل، وتنسيق التاريخ والحجم.</x></body></td></tr><tr><td><body><x><code>error.rs</code></x></body></td><td><body><x>نوع الخطأ، وأكواد خروجه، وتصنيف أخطاء الإدخال/الإخراج (الفساد مقابل عطل النظام).</x></body></td></tr><tr><td><body><x><code>engine.rs</code></x></body></td><td><body><x>الجسم متعدد المحركات لـ-m5: كاتب وقارئ الكتل، ومحركا LZMA2 وPPMd، وتجربة المحركات (القسمان 5.6 و6.7).</x></body></td></tr><tr><td><body><x><code>recomp.rs</code></x></body></td><td><body><x>إعادة ضغط Deflate لحاويات ZIP وPDF وgzip باستخدام preflate (القسم 7.9).</x></body></td></tr><tr><td><body><x><code>gui.rs</code></x></body></td><td><body><x>الواجهة الرسومية: نافذة الإفلات، وحلقة التقدم، وإعداد الوجهة، وروابط المجتمع (القسم 3.7).</x></body></td></tr><tr><td><body><x><code>unnik.rs</code></x></body></td><td><body><x>unNik، متصفح الأرشيف: الشجرة، والقائمة، والبحث، والعارض، ومربعا الاستخراج والحذف (القسم 3.9).</x></body></td></tr><tr><td><body><x><code>lib.rs, bin/unnik.rs</code></x></body></td><td><body><x>المكتبة المشتركة بين nikpak وunNik، ونقطة دخول unNik.exe (برنامج نافذة، بلا طرفية).</x></body></td></tr><tr><td><body><x><code>license.rs</code></x></body></td><td><body><x>ترخيص shareware: صيغة المفتاح، والتحقق من Ed25519، وتخزين الترخيص، والتسجيل (القسم 3.8).</x></body></td></tr><tr><td><body><x><code>i18n.rs</code></x></body></td><td><body><x>ترجمات النافذة إلى اللغات العشر الأكثر تحدثاً؛ وإعداد اللغة (القسم 3.7).</x></body></td></tr><tr><td><body><x><code>textshape.rs</code></x></body></td><td><body><x>النص المشكَّل للهندية والبنغالية والعربية: الترتيب ثنائي الاتجاه، والتشكيل، والتنقيط (القسم 3.7).</x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="4-3-creating-an-archive-step-by-step"><body><x>4.3 إنشاء أرشيف خطوة بخطوة</x></body></h3>
+<ul><li><body><x><b>التحقق من</b> موقع الإخراج. لا يُستبدل أرشيف موجود إلا مع <code>-o+</code> (أو نعم تفاعلية)؛ وإلا يوضح nikpak أن الإلحاق غير مدعوم.</x></body></li><li><body><x><b>جمع</b> الإدخال: تُوسَّع أحرف البدل (PowerShell لا يفعل ذلك)، وتُقرأ ملفات <code>@listfiles</code>، وتُطبَّق الاستثناءات، ويُتخطَّى الروابط الرمزية والملفات الخاصة مع تحذير، ولا يُضاف الأرشيف إلى نفسه أبداً.</x></body></li><li><body><x><b>تحديد كلمة المرور</b> إذا طُلب التشفير (القسم 3.3) واشتقاق المفتاح باستخدام Argon2id.</x></body></li><li><body><x><b>كتابة الترويسة</b>، ثم بناء سلسلة الكاتبات: الملف، وكاتب مؤقت (buffered)، ومشفِّر المقاطع الاختياري، ومشفِّر Zstandard.</x></body></li><li><body><x><b>كتابة كل عنصر.</b> تمر ملفات الوسائط عبر الاكتشاف والتجربة (الفصل 7)؛ ويُنسخ كل شيء آخر قطعاً بحجم 256 KiB مع حساب CRC32.</x></body></li><li><body><x><b>كتابة علامة النهاية</b> مع عدد العناصر، وإنهاء إطار Zstandard، وختم المقطع المشفر الأخير، والتفريغ إلى القرص.</x></body></li><li><body><x><b>إعادة تسمية</b> <code>name.nik.tmp</code> إلى <code>name.nik</code>. إذا فشل أي شيء قبل ذلك، يحذف كائن حارس الملف المؤقت، فلا يستبدل أرشيف ناقص الكتابة أرشيفاً سليماً أبداً.</x></body></li></ul>
+<h3 class="se" id="4-4-extracting-an-archive-step-by-step"><body><x>4.4 استخراج أرشيف خطوة بخطوة</x></body></h3>
+<ul><li><body><x><b>قراءة الترويسة والتحقق منها</b>: التوقيع السحري، والإصدار، والأعلام، والطريقة، وبالنسبة للأرشيفات المشفرة معاملات Argon2id، التي تُفحص نطاقاتها قبل تخصيص أي ذاكرة.</x></body></li><li><body><x><b>الحصول على كلمة المرور</b> واشتقاق المفتاح. ثم يثبت المقطع الموثَّق الأول صحة كلمة المرور أو ينفيها.</x></body></li><li><body><x><b>اجتياز تدفق العناصر.</b> يُنظَّف اسم كل عنصر (القسم 10.1) قبل أي وصول إلى نظام الملفات.</x></body></li><li><body><x><b>كتابة الملفات</b> باستخدام <code>create_new</code>، وتعيين الطوابع الزمنية والصلاحيات، والتحقق من CRC32 للبايتات المُعاد بناؤها. ويُحذف الملف الذي يفشل في CRC بدلاً من الإبقاء عليه.</x></body></li><li><body><x><b>التحقق من نهاية</b> الأرشيف: بعد علامة النهاية يجب أن ينتهي التدفق فعلاً، وإذا كان مشفراً يجب أن يكون المقطع الموثَّق الأخير قد عُولج. وهذا يكشف البتر والبيانات الملحقة.</x></body></li></ul>
+<h3 class="se" id="4-5-memory-and-threading"><body><x>4.5 الذاكرة والخيوط</x></body></h3>
+<p><body><x>يستخدم Zstandard خيوط عمل للضغط (كل الأنوية افتراضياً، و<code>-mt</code> للحد منها). ويعمل فك الضغط والمرمّز الصوتي والتشفير على خيط الاستدعاء. يحتاج Argon2id إلى 64 MiB لاشتقاق المفتاح، ويستخدم المستويان الأعلى نافذة مطابقة بحجم 128 MiB، لذا يحتاج فك ضغط مثل هذه الأرشيفات إلى هذا القدر من الذاكرة.</x></body></p>
+<h2 class="ch" id="5-the-nik-container-format"><body><x>5 صيغة الحاوية .nik</x></body></h2>
+<p><body><x>ملف <code>.nik</code> هو ترويسة ثابتة صغيرة يتبعها جسم. والجسم تدفق واحد <b>solid</b>: تُدمج جميع العناصر وتُضغط معاً وتُشفَّر اختيارياً. يضيف الإصدار 2 من الصيغة سجلات الوسائط؛ وتبقى أرشيفات الإصدار 1 قابلة للقراءة.</x></body></p>
+<h3 class="se" id="5-1-header"><body><x>5.1 الترويسة</x></body></h3>
+<table class="tech-table"><thead><tr><th><body><x><b>الإزاحة</b></x></body></th><th><body><x><b>الحجم</b></x></body></th><th><body><x><b>الحقل</b></x></body></th><th><body><x><b>ملاحظات</b></x></body></th></tr></thead><tbody><tr><td>
+				0</td><td>
+				8</td><td><body><x>التوقيع السحري</x></body></td><td><body><x><code>89 4E 49 4B 0D 0A 1A 0A</code> (فكرة PNG: يكتشف تلف النقل في وضع النص)</x></body></td></tr><tr><td>
+				8</td><td>
+				1</td><td><body><x>الإصدار</x></body></td><td><body><x>3 (الإصداران 1 و2 ما زالا قابلين للقراءة)</x></body></td></tr><tr><td>
+				9</td><td>
+				1</td><td><body><x>الأعلام</x></body></td><td><body><x>البت 0 = مشفر؛ ويجب أن تكون البتات الأخرى 0</x></body></td></tr><tr><td>
+				10</td><td>
+				1</td><td><body><x>الطريقة</x></body></td><td><body><x>0 = store، و1 = Zstandard، و2 = كتل متعددة المحركات (5.6)</x></body></td></tr><tr><td>
+				11</td><td>
+				1</td><td><body><x>محجوز</x></body></td><td>
+				0</td></tr><tr><td>
+				12</td><td>
+				4</td><td><body><x>ذاكرة Argon2id (KiB)</x></body></td><td><body><x>الأرشيفات المشفرة فقط، بترتيب little endian</x></body></td></tr><tr><td>
+				16</td><td>
+				4</td><td><body><x>تمريرات Argon2id</x></body></td><td><body><x>المشفر فقط</x></body></td></tr><tr><td>
+				20</td><td>
+				4</td><td><body><x>حارات Argon2id</x></body></td><td><body><x>المشفر فقط</x></body></td></tr><tr><td>
+				24</td><td>
+				16</td><td><body><x>الملح (Salt)</x></body></td><td><body><x>عشوائي لكل أرشيف، المشفر فقط</x></body></td></tr><tr><td>
+				40</td><td>
+				19</td><td><body><x>بادئة nonce التدفق</x></body></td><td><body><x>عشوائي لكل أرشيف، المشفر فقط</x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p><body><x>تُوثَّق الترويسة الكاملة (12 بايتاً، أو 59 بايتاً عند التشفير) لاحقاً كبيانات مرتبطة لكل مقطع مشفر، لذا لا يمكن تعديلها دون اكتشاف ذلك.</x></body></p>
+<h3 class="se" id="5-2-entry-records"><body><x>5.2 سجلات العناصر</x></body></h3>
+<p><body><x>داخل التدفق (بعد فك التشفير وفك الضغط) يكون كل عنصر سجلاً. وجميع الأعداد الصحيحة بترتيب little endian.</x></body></p>
+<table class="tech-table"><thead><tr><th><body><x><b>النوع</b></x></body></th><th><body><x><b>التخطيط</b></x></body></th></tr></thead><tbody><tr><td><body><x><code>0</code> END</x></body></td><td><body><x><code>count:u64</code>. يعلّم النهاية ويحدد عدد العناصر التي تسبقه.</x></body></td></tr><tr><td><body><x><code>1</code> FILE</x></body></td><td><body><x><code>name_len:u16 name mtime:i64 mode:u32 size:u64 data[size] crc32:u32</code></x></body></td></tr><tr><td><body><x><code>2</code> DIR</x></body></td><td><body><x><code>name_len:u16 name mtime:i64 mode:u32</code></x></body></td></tr><tr><td><body><x><code>3</code> MEDIA</x></body></td><td><body><x><code>name_len:u16 name mtime:i64 mode:u32 size:u64 filter:u8 method:u8 params_len:u8 params framed_stream crc32:u32</code></x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<ul><li><body><x>الأسماء بصيغة UTF-8 مع فواصل <code>/</code>، وبحد أقصى 4096 بايت.</x></body></li><li><body><x><code>mtime</code> هو ثواني Unix؛ و<code>mode</code> هو كلمة صلاحيات Unix (تحصل ملفات Windows على 0644 أو 0755، و0444 عندما تكون للقراءة فقط).</x></body></li><li><body><x>يغطي CRC32 دائماً البايتات <b>الأصلية</b>، وهو ما يجعل مرشِّحات الوسائط قابلة للتحقق.</x></body></li><li><body><x>في سجل MEDIA يكون <code>size</code> هو الحجم الأصلي. و<code>framed_stream</code> سلسلة من مقاطع <code>[u32 length][bytes]</code> تنتهي بطول صفري، لذا يستطيع القارئ دائماً تخطي عنصر وسائط دون فهم مرشِّحه.</x></body></li></ul>
+<h4 class="su" id="media-parameters"><body><x>معاملات الوسائط</x></body></h4>
+<table class="tech-table"><thead><tr><th><body><x><b>المرشِّح</b></x></body></th><th><body><x><b>المعاملات</b></x></body></th><th><body><x><b>المحتوى</b></x></body></th></tr></thead><tbody><tr><td><body><x>1 صوت</x></body></td><td><body><x>19 بايتاً</x></body></td><td><body><x><code>offset:u64 frames:u64 channels:u8 bits:u8 flags:u8</code> (بت العلم 0 = big endian، وبت 1 = بإشارة signed)</x></body></td></tr><tr><td><body><x>2 صورة</x></body></td><td><body><x>21 بايتاً</x></body></td><td><body><x><code>offset:u64 width:u32 rows:u32 bpp:u8 stride:u32</code></x></body></td></tr><tr><td><body><x>3 Deflate</x></body></td><td><body><x>0 بايت</x></body></td><td><body><x><code>none: the framed stream holds raw segments and recompressed Deflate streams (section 7.9)</code></x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p><body><x>يُخزَّن كل شيء قبل <code>offset</code> (الترويسات والوسوم واللوحات وأنماط MOD) وكل شيء بعد منطقة العينات أو البكسلات (المقاطع اللاحقة) دون تغيير حول البيانات المفلترة.</x></body></p>
+<h3 class="se" id="5-3-encrypted-body-framing"><body><x>5.3 تأطير الجسم المشفر</x></body></h3>
+<p><body><x>عند تعيين علم التشفير، يُقطَّع مخرج zstd إلى مقاطع بحجم 64 KiB من النص الصريح. يُخزَّن كل مقطع بطول 32 بتاً بترتيب big endian يليه النص المشفر، وهو أطول بـ16 بايتاً بسبب وسم Poly1305. لا يُختَم المقطع إلا عند وجود بايت واحد آخر على الأقل بعده، لذا لا يكون المقطع الأخير فارغاً أبداً ويمكن تعليمه كنهائي (القسم 8.3).</x></body></p>
+<h3 class="se" id="5-4-why-a-solid-stream"><body><x>5.4 لماذا التدفق solid؟</x></body></h3>
+<p><body><x>ضغط جميع الملفات كتدفق واحد يتيح للضاغط إيجاد التكرارات بين الملفات، وهذا مهم للغاية لأشجار الكود المصدري ومجموعات المستندات (يُظهر الاختبار المعياري في الفصل 11 أن مخرج RAR غير solid أكبر من مخرجه solid بمرتين تقريباً على 10,949 ملفاً). الثمن هو الوصول المتسلسل: استخراج ملف واحد يتطلب فك ضغط ما يسبقه. ويقلل nikpak كلفة ذلك بالنسبة لعناصر الوسائط بتخطيها دون فك ترميزها.</x></body></p>
+<h3 class="se" id="5-5-versioning"><body><x>5.5 التحكم في الإصدارات</x></body></h3>
+<p><body><x>يُفحص بايت الإصدار مقابل أعلى إصدار يفهمه البرنامج. ينتج الأرشيف الأحدث الرسالة <i>Unsupported archive version N; please update nikpak</i> بدلاً من خطأ فساد مضلل. وتُرفض الأعلام والطرق ومرشِّحات الوسائط غير المعروفة بالطريقة نفسها.</x></body></p>
+<h3 class="se" id="5-6-multi-engine-body-version-3"><body><x>5.6 الجسم متعدد المحركات (الإصدار 3)</x></body></h3>
+<p><body><x>تستخدم الأرشيفات المصنوعة بـ-m5 الطريقة 2. لا يتغير تدفق السجلات الداخلي الموصوف في 5.2، لكنه يُقطَّع، بين العناصر فقط، إلى <b>كتل</b>، وتُضغط كل كتلة بمحركها الخاص. وعند دمجها، تكون الكتل بعد فك ضغطها هي تدفق سجلات أرشيف أحادي المحرك تماماً، لذا يعمل العرض والاختبار والاستخراج بالطريقة نفسها.</x></body></p>
+<table class="tech-table"><thead><tr><th><body><x><b>العنصر</b></x></body></th><th><body><x><b>التخطيط</b></x></body></th></tr></thead><tbody><tr><td><body><x>الجسم</x></body></td><td><body><x>كتلة* يتبعها بايت واحد قيمته 0</x></body></td></tr><tr><td><body><x>كتلة</x></body></td><td><body><x>engine:u8 parameters، ثم إطارات [u32 length 1 .. 1 MiB][compressed bytes]، تنتهي بطول صفري</x></body></td></tr><tr><td><body><x>المحرك 1</x></body></td><td><body><x>Zstandard (بدون معاملات)</x></body></td></tr><tr><td><body><x>المحرك 2</x></body></td><td><body><x>تيار LZMA2 خام: dictionary size u32، وlc u8، وlp u8، وpb u8</x></body></td></tr><tr><td><body><x>المحرك 3</x></body></td><td><body><x>PPMd variant I (PPMd8): order u8، وmodel size u32، وrestore method u8 (0 = إعادة تشغيل)</x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p><body><x>يتيح التأطير للقارئ إيجاد نهاية كل كتلة دون الوثوق بالمفكِّك، وتُفحص نطاقات كل معامل قبل تخصيص الذاكرة (قاموس LZMA2 بحد أقصى 1.5 GiB، ونموذج PPMd بحد أقصى 1 GiB، والرتبة من 2 إلى 16). وعند التشفير، يُحمى الجسم بالمقاطع الموثَّقة نفسها المستخدمة في أي أرشيف آخر (الفصل 8).</x></body></p>
+<h2 class="ch" id="6-the-compression-engine"><body><x>6 محرك الضغط</x></body></h2>
+<h3 class="se" id="6-1-why-zstandard"><body><x>6.1 لماذا Zstandard</x></body></h3>
+<p><body><x>يجمع Zstandard بين مطابقة LZ77 ومرحلة إنتروبيا مبنية من ترميز Huffman وإنتروبيا الحالات المحدودة (FSE). وبالمقارنة مع خوارزمية Deflate الخاصة بـZIP، يجد المطابقات على نافذة أكبر بكثير، ويصمغ القيم الحرفية وأطوال المطابقة بأكواد إنتروبيا أضيق، ويفك الترميز بمعدل غيغابايتات في الثانية. وهو أيضاً صيغة مفتوحة وخاضعة لتدقيق واسع، ما يُبقي بيانات nikpak قابلة للاسترداد بأدوات مستقلة.</x></body></p>
+<h3 class="se" id="6-2-level-mapping"><body><x>6.2 ربط المستويات</x></body></h3>
+<p><body><x>يقبل nikpak مستويات نمط RAR (<code>-m0</code> .. <code>-m5</code>) ومستويات نمط zip (<code>-0</code> .. <code>-9</code>) ويربطها بمستويات Zstandard:</x></body></p>
+<table class="tech-table"><thead><tr><th><body><x><b>الخيار</b></x></body></th><th><body><x><b>مستوى Zstandard</b></x></body></th><th><body><x><b>الطابع</b></x></body></th></tr></thead><tbody><tr><td>
+				<code>-m0</code></td><td><body><x>لا شيء (مخزَّن)</x></body></td><td><body><x>بدون ضغط، وبدون مرشِّحات وسائط</x></body></td></tr><tr><td>
+				<code>-m1</code></td><td>
+				1</td><td><body><x>الأسرع</x></body></td></tr><tr><td>
+				<code>-m2</code></td><td>
+				3</td><td><body><x>سريع؛ نحو 0.9 ثانية لـ197 MB على نواة واحدة (الافتراضي حتى الإصدار 1.2.0)</x></body></td></tr><tr><td>
+				<code>-m3</code></td><td>
+				9</td><td><body><x>توازن جيد</x></body></td></tr><tr><td>
+				<code>-m4</code></td><td>
+				15</td><td><body><x>عالٍ؛ نافذة 128 MiB ومطابقة المسافات الطويلة؛ وإعادة ضغط Deflate (7.9)</x></body></td></tr><tr><td><body><x><code>-m5 (default)</code></x></body></td><td><body><x>LZMA2 / PPMd</x></body></td><td><body><x>الأقصى، والافتراضي منذ الإصدار 1.2.1: جسم متعدد المحركات (6.7) وإعادة ضغط Deflate</x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p><body><x>تُربط مستويات نمط zip كما يلي: يخزِّن <code>-0</code>، وتستخدم <code>-1</code> إلى <code>-6</code> مستويات Zstandard من 1 إلى 6، ويستخدم <code>-7</code> المستوى 9، و<code>-8</code> المستوى 12، و<code>-9</code> هو نفسه -m5.</x></body></p>
+<h3 class="se" id="6-3-large-window-and-long-distance-matching"><body><x>6.3 النافذة الكبيرة ومطابقة المسافات الطويلة</x></body></h3>
+<p><body><x>عند مستوى Zstandard 15 فما فوق يفعِّل nikpak نافذة مطابقة بحجم 2^27 بايت (128 MiB) ومطابقة المسافات الطويلة. تحتوي أشجار الكود المصدري ومجموعات المستندات والنسخ الاحتياطية على العديد من الملفات شبه المكررة المتباعدة في التدفق؛ فلا تستطيع نافذة عادية بحجم 8 MiB الرؤية عبرها. على مجموعة الاختبار 197 MB قلَّص هذا المخرج عند <code>-m5</code> من 26.3 MB إلى <b>24.4 MB</b> وعند <code>-m4</code> من 29.5 MB إلى 26.8 MB، دون كلفة في السرعة لـ<code>-m4</code> وكلفة صغيرة لـ<code>-m5</code>. وتقع نافذة 2^27 ضمن حد المفكِّك الافتراضي لـZstandard، لذا يمكن لأي مفكِّك قياسي قراءة البيانات.</x></body></p>
+<h3 class="se" id="6-4-multi-threading"><body><x>6.4 تعدد الخيوط</x></body></h3>
+<p><body><x>يقسم المشفِّر الإدخال إلى مهام تعمل على خيوط عمل (كل الأنوية افتراضياً). لذا تتوسع سرعة الضغط مع عدد الأنوية، بينما تبقى الصيغة تدفقاً واحداً. قيست جميع الأرقام في هذا الدليل على نواة <b>واحدة</b>؛ وعلى جهاز نموذجي متعدد الأنوية يكون nikpak أسرع بكثير مما هو معروض.</x></body></p>
+<h3 class="se" id="6-5-integrity-inside-the-stream"><body><x>6.5 السلامة داخل التدفق</x></body></h3>
+<p><body><x>يحمل إطار Zstandard مجموعاً اختبارياً خاصاً بمحتواه، ويضيف nikpak CRC32 لكل ملف وعلامة نهاية مع عدد العناصر. لذا يُكتشف الأرشيف العادي التالف على ثلاثة مستويات: المجموع الاختباري للإطار، وCRC لكل ملف، وعلامة النهاية.</x></body></p>
+<h3 class="se" id="6-6-store-mode"><body><x>6.6 وضع التخزين (store)</x></body></h3>
+<p><body><x>يكتب <code>-m0</code> العناصر دون ضغط. وهو مفيد للبيانات المضغوطة مسبقاً، وهو أيضاً الوضع الوحيد الذي تُتجاوز فيه مرشِّحات الوسائط عمداً: فالمستخدم الذي يطلب <i>store</i> لا يتوقع تحويل البيانات.</x></body></p>
+<h3 class="se" id="6-7-the-maximum-level-lzma2-and-ppmd"><body><x>6.7 المستوى الأقصى: LZMA2 وPPMd</x></body></h3>
+<p><body><x>Zstandard هو المحرك المناسب للسرعة، لكن عند أقوى إعداداته يظل متأخراً بنسبة قليلة في المائة عن LZMA2 على الكود المصدري والمستندات، ومتأخراً كثيراً عن PPMd على النصوص النثرية. منذ الإصدار 1.2، يبني -m5 الأرشيف من كتلتين (الصيغة في 5.6):</x></body></p>
+<ul><li><body><x><b>الكتلة الثنائية.</b> تُضغط المجلدات والملفات الثنائية وعناصر الوسائط والعناصر المعاد ضغطها بـDeflate باستخدام <b>LZMA2</b>: إعداد preset 9، وطول nice 273، وعمق باحث المطابقة 32، وقاموس بحجم البيانات (من 1 إلى 128 MiB).</x></body></li><li><body><x><b>كتلة النصوص.</b> تذهب الملفات التي لا تحتوي أول 64 KiB فيها على بايت صفري ولا أحرف تحكم تقريباً (الكود المصدري، والنصوص، وCSV، وHTML، وXML ...) إلى كتلة ثانية. تُضغط أربع مجموعات متجاورة بحجم 1 MiB من هذه الملفات تجريبياً باستخدام <b>PPMd variant I</b> (رتبة 8، ونموذج 192 MiB) وباستخدام LZMA2 المضبوط للنصوص (lc 4 وpb 0)، وتفوز النتيجة الأصغر. يفضَّل PPMd للنثر؛ وتفضل أشجار الكود المصدري الكبيرة التي تحتوي ملفات شبه متطابقة LZMA2، لأنه يستطيع نسخ التكرارات الطويلة عبر الملفات.</x></body></li><li><body><x><b>الترتيب.</b> داخل كل كتلة، تُرتَّب الملفات حسب الامتداد ثم حسب اسم الملف، كما يفعل 7-Zip، بحيث تتجاور الملفات المتطابقة أو المتشابهة. وبالتعاون مع عينة التجربة المتجاورة، جعل هذا مجموعة البيانات العامة أصغر بنسبة 7.5 %.</x></body></li></ul>
+<p><body><x>قيسَت إعدادات LZMA2 "القصوى" ورُفضت: على XML الجداول كانت أبطأ حتى عشر مرات وليست أصغر. يعمل -m5 على خيط واحد، بغض النظر عن -mt.</x></body></p>
+<h2 class="ch" id="7-media-intelligence"><body><x>7 ذكاء الوسائط</x></body></h2>
+<p><body><x>يرى الضاغط العام البايتات فحسب. ولا يعرف أن ملف WAV هو شكل موجي يمكن التنبؤ بعينته التالية من العينات السابقة، أو أن البكسلات المتجاورة في صورة فوتوغرافية متساوية تقريباً. توفِّر طبقة الوسائط في nikpak تلك المعرفة: فهي تتعرف على هذه الملفات، وتطبق تحويلاً بلا فقدان يكشف التكرار، وتتيح للضاغط (أو لمرمّز متخصص) استغلاله. وهنا يحقق nikpak أكبر مكسب مقابل RAR.</x></body></p>
+<h3 class="se" id="7-1-detection-by-content"><body><x>7.1 الاكتشاف بالمحتوى</x></body></h3>
+<p><body><x>ينظر الاكتشاف إلى أول بايتات كل ملف بحجم 8 KiB على الأقل ولا يثق بالامتداد أبداً، لذا يُعثر على WAV المعاد تسميته إلى <code>.dat</code> ولا يُعثر على ملف نصي اسمه <code>.wav</code>.</x></body></p>
+<table class="tech-table"><thead><tr><th><body><x><b>النوع</b></x></body></th><th><body><x><b>كيف يُتعرَّف عليه</b></x></body></th><th><body><x><b>ما يُفلتَر</b></x></body></th></tr></thead><tbody><tr><td><body><x>WAV</x></body></td><td><body><x><code>RIFF</code>..<code>WAVE</code>، ومقطع <code>fmt</code> مع PCM صحيح (format 1، أو WAVE_FORMAT_EXTENSIBLE مع الصيغة الفرعية PCM)، و8/16/24/32 بتاً، ومن 1 إلى 8 قنوات، ومحاذاة كتلة متسقة؛ ثم مقطع <code>data</code></x></body></td><td><body><x>منطقة العينات. يُقيَّد طول البيانات الصفري أو المبالغ فيه أو المزيف بالملف؛ وتُحفظ البايتات المتبقية والمقاطع اللاحقة كما هي.</x></body></td></tr><tr><td><body><x>AIFF / AIFC</x></body></td><td><body><x>مقاطع <code>FORM</code>..<code>AIFF</code> أو <code>AIFC</code> (الضغط <code>NONE</code> أو <code>twos</code>)، ومقطعا <code>COMM</code> و<code>SSND</code>، وعينات بإشارة وترتيب big endian</x></body></td><td><body><x>منطقة بيانات الصوت.</x></body></td></tr><tr><td><body><x>ProTracker MOD</x></body></td><td><body><x>التوقيع عند الإزاحة 1080: M.K. أو M!K! أو FLT4 أو 4CHN أو 6CHN أو 8CHN أو FLT8 أو OCTA أو CD81</x></body></td><td><body><x>منطقة العينات 8 بت بعد بيانات الأنماط (القسم 7.6).</x></body></td></tr><tr><td><body><x>BMP</x></body></td><td><body><x><code>BM</code>، وترويسة DIB بحجم 40 بايتاً أو أكثر، وبدون ضغط، و8 أو 24 أو 32 بتاً لكل بكسل، وصفوف بكسلات تناسب الملف، ومنطقة بين 4 KiB و256 MiB</x></body></td><td><body><x>صفوف البكسلات (القسم 7.7).</x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p><body><x>غير مُعالج، لذا يُخزَّن بضغط عادي: WAV بالفاصلة العائمة، وADPCM وغيره من الصوت المضغوط، وBMP بنمط RLE أو حقول البتات، وصيغ tracker غير ProTracker MOD. ولا يُتعرَّف على الوسائط المضغوطة مسبقاً مثل MP3 وJPEG وFLAC وPNG وMP4 إطلاقاً وتُترك كما هي، لأن تحويلها لن يفيد.</x></body></p>
+<h3 class="se" id="7-2-the-trial-choosing-the-best-filter-per-file"><body><x>7.2 التجربة: اختيار أفضل مرشِّح لكل ملف</x></body></h3>
+<p><body><x>لا يوجد تحويل واحد هو الأفضل لكل ملف. يفوز الترميز التنبئي في الموسيقى المسجَّلة؛ ويفوز فصل مستويات البايتات في الصوت الآتي من مصدر مضغوط 8 بتات (حيث تظهر نحو ألف قيمة 16 بت مميزة فقط)؛ ويفوز الضغط العادي في الصمت وفي عينات tracker المتكررة جداً. لذلك يقيس nikpak <b>بدلاً من التخمين</b>.</x></body></p>
+<ul><li><body><x>أخذ عينة: منطقة العينات كاملة عندما يصل حجمها إلى 3 MiB، وإلا ثلاث نوافذ بحجم 768 KiB عند 5 % و45 % و85 % من الصوت. وبالنسبة للصور، الصفوف الأولى حتى نحو 4 MiB.</x></body></li><li><body><x>ضغط العينة بـZstandard عادي بمستوى 3 (خط الأساس) وبكل مرشِّح ينطبق: NAC وShuffle وShuffle+Delta للصوت 16/24/32 بتاً؛ وNAC وShuffle+Delta للصوت 8 بتات؛ وMED للصور.</x></body></li><li><body><x>الاحتفاظ بالمرشِّح صاحب أصغر تقدير، لكن فقط إذا تفوق على خط الأساس بنسبة 2 % على الأقل. وإلا يُخزَّن الملف بضغط عادي.</x></body></li><li><body><x>كتابة الملف بالفائز. يحدث كل هذا لكل ملف على حدة، لذا يمكن لأرشيف واحد أن يحتوي ملفات WAV مرمَّزة بطرق مختلفة بجانب ملفات عادية.</x></body></li></ul>
+<p><body><x>يشغِّل <code>nikpak mt </code> القياس نفسه على الملف <b>بالكامل</b> ويطبع جدولاً، وهذه هي الطريقة التي استُكشف بها الاختبار المعياري في الفصل 11. وفي الخيارات، يعطِّل <code>-mc-</code> المرشِّحات ويجبر <code>-mc+</code> المرشِّح الافتراضي دون تجربة.</x></body></p>
+<table class="tech-table"><tbody><tr><td><body><x><b>بلا فقدان، ومُتحقَّق منه، وقابل للتجاوز</b><br>كل مرشِّح قابل للعكس تماماً. يُحسب CRC32 المخزَّن مع كل عنصر على البايتات الأصلية ويُفحص عند الاستخراج، ويتحقق مشفِّر NAC من كل كتلة أثناء الكتابة (القسم 7.4)، ويطفئ <code>-mc-</code> الطبقة كلها.</x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="7-3-the-nac-audio-codec"><body><x>7.3 مرمّز NAC الصوتي</x></body></h3>
+<p><body><x>NAC (مرمّز nikpak الصوتي) مرمّز بلا فقدان قائم على الكتل لـPCM الصحيح. ينتمي إلى العائلة نفسها التي ينتمي إليها FLAC: تنبؤ خطي يليه ترميز Rice. وله تدفق بتات خاص به، صُمم لهذا الأرشيف، ويُستخدم لملفات WAV وAIFF وبيانات عينات ملفات MOD.</x></body></p>
+<figure><img src="../assets/img/tech/fc2a013c.png" alt="Figure 2: encoding one block of 4096 sample frames." loading="lazy"><figcaption><body><x>الشكل 2: ترميز كتلة واحدة من 4096 إطار عينات.</x></body></figcaption></figure>
+<h4 class="su" id="blocks-and-stereo-decorrelation"><body><x>الكتل وإزالة ارتباط الستيريو</x></body></h4>
+<p><body><x>يُقطَّع الصوت إلى كتل من 4096 إطار عينات، كل واحدة مرمَّزة بشكل مستقل، ما يجعل المرمّز متيناً (لا يمكن للخطأ الانتشار) ويتيح للمشفِّر التكيف مع المواد المتغيرة. وبالنسبة للستيريو، يختار المشفِّر واحداً من أربعة تمثيلات لكل كتلة:</x></body></p>
+<table class="tech-table"><thead><tr><th><body><x><b>الوضع</b></x></body></th><th><body><x><b>القنوات المرمَّزة</b></x></body></th><th><body><x><b>إعادة البناء</b></x></body></th></tr></thead><tbody><tr><td>
+				0</td><td><body><x>اليسرى، اليمنى</x></body></td><td><body><x>مباشر</x></body></td></tr><tr><td>
+				1</td><td><body><x>اليسرى، الجانبية</x></body></td><td>
+				R
+				= L - S</td></tr><tr><td>
+				2</td><td><body><x>الجانبية، اليمنى</x></body></td><td>
+				L
+				= R + S</td></tr><tr><td>
+				3</td><td><body><x>الوسطى، الجانبية</x></body></td><td><body><x><code>sum = (M &lt;&lt; 1) | (S &amp; 1)</code>, <code>L = (sum + S) &gt;&gt; 1</code>, <code>R = (sum - S) &gt;&gt; 1</code></x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p><body><x>مع <code>Side = L - R</code> و<code>Mid = (L + R) &gt;&gt; 1</code>. تحتاج القناة الجانبية بتاً واحداً أكثر من القناة العادية وتُرمَّز بـ<code>bits + 1</code>. يُختار الوضع بكلفة منخفضة: يجمع المشفِّر القيم المطلقة لبواقي المتنبئ الثابت من الرتبة 2 لكل من L وR وM وS ويأخذ الزوج صاحب المجموع الأصغر. وبالنسبة للتسجيلات ذات القنوات شديدة الارتباط، يوفِّر Mid/Side عادة عدة نقاط مئوية.</x></body></p>
+<h4 class="su" id="sub-frame-types"><body><x>أنواع الإطارات الفرعية</x></body></h4>
+<p><body><x>تُخزَّن كل قناة مرمَّزة في الكتلة كواحد من أربعة إطارات فرعية، أيهما أصغر:</x></body></p>
+<table class="tech-table"><thead><tr><th><body><x><b>النوع</b></x></body></th><th><body><x><b>الاستخدام</b></x></body></th><th><body><x><b>الكلفة</b></x></body></th></tr></thead><tbody><tr><td><body><x>ثابت</x></body></td><td><body><x>جميع العينات متساوية (صمت رقمي)</x></body></td><td><body><x>بتان + بتات عرض العينة لكتلة كاملة</x></body></td></tr><tr><td><body><x>حرفي (Verbatim)</x></body></td><td><body><x>مادة شبيهة بالضوضاء، أو الخيار الاحتياطي الآمن</x></body></td><td><body><x>n × بتات العرض</x></body></td></tr><tr><td><body><x>ثابت (Fixed)</x></body></td><td><body><x>متنبئ متعدد الحدود من الرتبة 0 إلى 4</x></body></td><td><body><x>عينات إحماء + بواقٍ</x></body></td></tr><tr><td><body><x>LPC</x></body></td><td><body><x>متنبئ خطي من الرتبة 1 إلى 32 مع معاملات مرسلة</x></body></td><td><body><x>معاملات + إحماء + بواقٍ</x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p><body><x><b>البتات المهدرة.</b> إذا كانت البتات المنخفضة لكل عينة في كتلة صفراً دائماً (تسجيل 8 بتات مخزَّن في حاويات 16 بتاً، أو إشارة مكمَّاة)، تُزال ويُخزَّن عددها في 5 بتات.</x></body></p>
+<h4 class="su" id="fixed-predictors"><body><x>المتنبئات الثابتة</x></body></h4>
+<pre>order 0: e[i] = x[i]</pre>
+<pre>order 1: e[i] = x[i] - x[i-1]</pre>
+<pre>order 2: e[i] = x[i] - 2*x[i-1] + x[i-2]</pre>
+<pre>order 3: e[i] = x[i] - 3*x[i-1] + 3*x[i-2] - x[i-3]</pre>
+<pre>order 4: e[i] = x[i] - 4*x[i-1] + 6*x[i-2] - 4*x[i-3] + x[i-4]</pre>
+<p><br>
+<br>
+
+</p>
+<p><body><x>تُخزَّن أول <code>order</code> عينات في الكتلة حرفياً كقيم إحماء.</x></body></p>
+<h4 class="su" id="linear-predictive-coding-lpc"><body><x>الترميز التنبئي الخطي (LPC)</x></body></h4>
+<p><body><x>بالنسبة للموسيقى النغمية والتوافقية، يكون المتنبئ الذي تُضبط معاملاته على الكتلة أفضل بكثير من متعدد حدود ثابت. يحسبها المشفِّر كما يلي:</x></body></p>
+<ul><li><body><x>تطبيق <b>نافذة Tukey</b> (تدرّج تناقصي على الربعين الأول والأخير) على الكتلة، حتى لا تشوِّه حوافها الإحصاءات.</x></body></li><li><body><x>حساب <b>الارتباط الذاتي</b> <code>r[0..32]</code> للإشارة المطبَّقة عليها النافذة.</x></body></li><li><body><x>تشغيل <b>استدعاء Levinson-Durbin</b>، الذي ينتج مجموعة المعاملات المثلى لكل رتبة من 1 إلى 32 في تمريرة واحدة: <code>k = (r[i] - sum a[j] r[i-j]) / err</code>، و<code>a[i] = k</code>، و<code>a[j] = a[j] - k a[i-j]</code>، و<code>err = err (1 - k^2)</code>.</x></body></li><li><body><x><b>تكمية</b> المعاملات الحقيقية إلى أعداد صحيحة بدقة 12 أو 14 أو 15 بتاً (حسب عرض العينة)، مع اختيار مقياس من قوى الاثنين (<code>shift</code>، من 0 إلى 20) بحيث يتسع أكبر معامل بالكاد. يستخدم التقريب تغذية راجعة للخطأ، فلا تتراكم أخطاء التكمية عبر المعاملات.</x></body></li><li><body><x>تقييم عدة رتب (تعتمد المجموعة على مستوى الجهد، أدناه)، وحساب بواقي كل منها، والاحتفاظ بالرتبة ذات أصغر حجم إجمالي مقدَّر، بما في ذلك كلفة إرسال معاملاتها.</x></body></li></ul>
+<p><body><x>المتنبئ نفسه حساب صحيح خالص، وهو ما ينفذه المفكِّك:</x></body></p>
+<pre>pred[i] = (q[0]*x[i-1] + q[1]*x[i-2] + ... + q[n-1]*x[i-n]) &gt;&gt; shift</pre>
+<pre>e[i] = x[i] - pred[i] (n = order; the sum uses 64 bits)</pre>
+<p><br>
+<br>
+
+</p>
+<p><body><x>تُستخدم الفاصلة العائمة <b>فقط في المشفِّر</b> لتقرير المعاملات الصحيحة التي ستُرسل. ولا يلمس المفكِّك الفاصلة العائمة أبداً، لذا يكون فك الترميز مطابقاً بتاً ببت على كل معالج وكل مترجم.</x></body></p>
+<h4 class="su" id="residual-coding"><body><x>ترميز البواقي</x></body></h4>
+<p><body><x>تُربط أخطاء التنبؤ بأعداد غير موقعة بتحويل zig-zag (<code>u = (e &lt;&lt; 1) XOR (e &gt;&gt; 63)</code>، بحيث تصبح القيم الموجبة والسالبة الصغيرة أعداداً صغيرة) وتُرمَّز بأكواد <b>Rice المقسمة</b>. يُقسَّم بواقي الكتلة إلى 2^p قسم (p من 0 إلى 8، يختاره المشفِّر)؛ ويحصل كل قسم على معامل Rice خاص به <code>k</code> (5 بتات). تُكتب القيمة بصيغة <code>u &gt;&gt; k</code> بالأحادي (ذلك العدد من الأصفار وواحد) يليه البتات <code>k</code> المنخفضة. يُشتق أفضل <code>k</code> لقسم من مجموع قيمه، لذا يمكن تقدير كلفة كل متنبئ مرشح بثمن بخس من المجاميع الجارية بدلاً من ترميزه.</x></body></p>
+<h4 class="su" id="effort-levels"><body><x>مستويات الجهد</x></body></h4>
+<p><body><x>يحدد مستوى الأرشيف (خيار <code>-m</code>) عدد رتب LPC التي تُجرَّب لكل كتلة. تعني الرتب الأكثر نتيجة أصغر قليلاً ومشفِّراً أبطأ؛ بينما تبقى سرعة المفكِّك كما هي.</x></body></p>
+<table class="tech-table"><thead><tr><th><body><x><b>مستوى الأرشيف</b></x></body></th><th><body><x><b>جهد NAC</b></x></body></th><th><body><x><b>رتب LPC المجرَّبة</b></x></body></th></tr></thead><tbody><tr><td>
+				-m1</td><td>
+				0</td><td>
+				8,
+				16</td></tr><tr><td>
+				-m2,
+				-m3</td><td>
+				1</td><td>
+				4,
+				8, 12, 16, 24, 32</td></tr><tr><td>
+				-m4,
+				-m5</td><td>
+				2</td><td>
+				2,
+				4, 6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p><body><x>تُجرَّب المتنبئات الثابتة من الرتبة 0 إلى 4 دائماً. وفي الاختبار المعياري غيّر مستوى الجهد نتيجة موسيقى الستيريو بأقل من 0.05 %: يأتي المكسب الكبير من استخدام التنبؤ أصلاً.</x></body></p>
+<h4 class="su" id="bit-layout-of-a-block"><body><x>تخطيط بتات الكتلة</x></body></h4>
+<pre>block := [stereo mode: 2 bits] sub-frame [sub-frame] (byte-padded)</pre>
+<pre>sub-frame := type:2 ...</pre>
+<pre>CONSTANT : value:width</pre>
+<pre>VERBATIM : wasted:5 samples:(n x (width - wasted))</pre>
+<pre>FIXED : wasted:5 order:3 warm-up residual</pre>
+<pre>LPC : wasted:5 order-1:5 precision-1:4 shift:5</pre>
+<pre>coefficients warm-up residual</pre>
+<pre>residual := partition-order:4 per partition: k:5 Rice-coded values</pre>
+<p><br>
+<br>
+
+</p>
+<p><body><x>تُخزَّن كل كتلة في الأرشيف مع طول 32 بتاً في المقدمة، لذا يعرف المفكِّك دائماً أين تبدأ الكتلة التالية.</x></body></p>
+<h3 class="se" id="7-4-self-verification"><body><x>7.4 التحقق الذاتي</x></body></h3>
+<p><body><x>كتابة أرشيف هي الفرصة الوحيدة لاكتشاف خطأ في المشفِّر، لذا لا يثق مشفِّر NAC بنفسه. بعد ترميز كل كتلة <b>يفك ترميزها مرة أخرى</b> ويقارن النتيجة بالعينات الأصلية. وعند أي اختلاف يعيد ترميز الكتلة حرفياً (وهو ما لا يمكن أن يفشل) ويفحص مرة أخرى؛ وإن فشل حتى ذلك، يتوقف الأرشفة بخطأ صريح واقتراح استخدام <code>-mc-</code>. ويُختبر مسار الاحتياط في اختبارات الوحدة، التي تجبر الترميز الحرفي لكل توليفة من عمق البتات وعدد القنوات، وتحوِّل الآلية خطأ فقدان بيانات صامتاً محتملاً إلى حالة مكتشفة قابلة للاسترداد.</x></body></p>
+<p><body><x>علاوة على ذلك، يُخضَع المفكِّك للاختبار العشوائي (fuzzing): تُغذَّى آلاف الكتل من البايتات العشوائية وكتل بتاتها مقلوبة إليه في اختبارات الوحدة، ويجب أن يعيد خطأً دون أن يهلع أو يخصص كميات غير معقولة من الذاكرة. أثناء التطوير وجد هذا خطأً حقيقياً (بالنسبة لمواد 32 بتاً يمكن أن يخرج بحث معامل Rice فارغاً ويلجأ إلى معامل كان سينتج كوداً بحجم عدة غيغابايتات)؛ وقد أُصلح وأصبح مغطى باختبار.</x></body></p>
+<h3 class="se" id="7-5-shuffle-and-shuffle-delta"><body><x>7.5 Shuffle وShuffle+Delta</x></body></h3>
+<p><body><x>لا يستجيب بعض الصوت للتنبؤ. ملفات WAV الخاصة بالمعرض المستخدمة في الاختبار المعياري هي 16 بتاً، ومع ذلك تحتوي على نحو ألف قيمة عينة مميزة فقط، لأنها أُنتجت من مصدر 8 بتات مضغوط. لا يستطيع المتنبئ استغلال ذلك، ويضغطها FLAC إلى 84 % من الأصل بينما يحتاج Zstandard العادي إلى 63 %. ما يساعد هو ترتيب البايتات بحيث يرى الضاغط بيانات متجانسة:</x></body></p>
+<ul><li><body><x>يفصل <b>Shuffle</b> بايتات العينات إلى مستويات (planes): كل بايتات الأهمية الأقل للقناة 0، ثم كل بايتات الأهمية الأكبر للقناة 0، ثم القناة 1، وهكذا، في كتل من 32768 إطاراً. يكون مستوى البايتات العالية أملس ومستوى البايتات المنخفضة محدود الأبجدية جداً؛ فيصمغ مشفِّر الإنتروبيا في Zstandard كل منهما أفضل بكثير من الخليط المتشابك.</x></body></li><li><body><x>يستبدل <b>Shuffle+Delta</b> أولاً كل عينة بفرقها عن العينة السابقة للقناة نفسها (بمقياس عرض العينة، لذا فهو قابل للعكس تماماً، مع حمل الحالة عبر الكتل) ثم يخلط. يساعد هذا عندما تكون الإشارة أملس لكن غير قابلة للتنبؤ بما يكفي ليفوز NAC.</x></body></li></ul>
+<p><body><x>على ملفات المعرض الـ35 يكون الأرشيف صاحب أفضل مرشِّح لكل ملف (الذي تختاره التجربة) بنسبة 51 % من الحجم الأصلي عند <code>-m2</code> و47 % عند <code>-m5</code>، مقابل 63 % لـZstandard العادي.</x></body></p>
+<h3 class="se" id="7-6-protracker-mod-files"><body><x>7.6 ملفات ProTracker MOD</x></body></h3>
+<p><body><x>وحدة MOD هي ترويسة بحجم 1084 بايتاً (العنوان، و31 واصف عينة، وجدول ترتيب أنماط من 128 عنصراً، وتوقيع 4 بايتات عند الإزاحة 1080)، تليها بيانات الأنماط، ثم العينات الخام 8 بتات ذات الإشارة لجميع الآلات. يحسب nikpak أين تبدأ العينات وما طولها:</x></body></p>
+<pre>patterns = max(order table) + 1</pre>
+<pre>sample_start = 1084 + patterns * 256 * channels (4 ch: 1024 B per pattern)</pre>
+<pre>sample_bytes = sum of (length in words * 2) over the 31 descriptors,</pre>
+<pre>clamped to the end of the file</pre>
+<p><br>
+<br>
+
+</p>
+<p><body><x>تُخزَّن الترويسة والأنماط كما هي (يتعامل الضاغط جيداً مع أحداث النوتات المتكررة تلك) وتُعامَل منطقة العينات كتيار أحادي واحد بإشارة و8 بتات للتجربة. لكل ملف، يفوز NAC أو Shuffle+Delta أو الضغط العادي: تميل الآلات المعيّنة إلى تفضيل NAC، بينما يفوز الضغط العادي في بعض الوحدات (على سبيل المثال تلك ذات العينات القصيرة جداً أو المتكررة جداً). تُعالج الوحدات المبتورة بتقييد المنطقة بالبيانات الموجودة فعلاً.</x></body></p>
+<h3 class="se" id="7-7-bmp-images"><body><x>7.7 صور BMP</x></body></h3>
+<p><body><x>يخزِّن BMP غير المضغوط صفوف بكسلات محشوة إلى مضاعف أربعة بايتات. يعمل المرشِّح في أربع خطوات:</x></body></p>
+<ul><li><body><x><b>تقسيم</b> منطقة البكسلات إلى مستوى لكل قناة (B وG وR وA لـ32 بتاً)، مع تذكر بايتات الحشو لكل صف على حدة.</x></body></li><li><body><x><b>إزالة ارتباط اللون.</b> طرح مستوى الأخضر من المستويين الأزرق والأحمر (بمقياس 256). في الصور الفوتوغرافية تكون القنوات الثلاث شديدة الارتباط، لذا تكون الفروق صغيرة.</x></body></li><li><body><x><b>التنبؤ بكل بكسل</b> من جيرانه بمتنبئ <b>MED</b> (كاشف الحواف الوسيطي)، المستخدم في مرمّز الصور LOCO-I: بالنسبة لليسار <code>a</code> والأعلى <code>b</code> والأعلى-يسار <code>c</code>، يكون التنبؤ <code>min(a,b)</code> إذا كان <code>c &gt;= max(a,b)</code>، و<code>max(a,b)</code> إذا كان <code>c &lt;= min(a,b)</code>، و<code>a + b - c</code> فيما عدا ذلك. يستبدل خطأ التنبؤ البكسل (بمقياس 256). على الحواف يتبع المتنبئ الحافة؛ وعلى التدرجات الناعمة يستقرئ التدرج.</x></body></li><li><body><x><b>دمج</b> مستويات البواقي وبايتات الحشو وترك Zstandard يضغطها. تصبح المناطق الناعمة سلاسل من بايتات قريبة من الصفر.</x></body></li></ul>
+<p><body><x>يعكس المفكِّك الخطوات تماماً. وتتخطى ملفات BMP ذات 8 بتات خطوة اللون؛ ثم تقرر التجربة ما إذا كان التنبؤ مفيداً لتلك اللوحة، لأن التنبؤ بفهارس اللوحة لا يكون منطقياً إلا للوحات الرمادية أو المرتبة بسلاسة. ولا تُفلتَر ملفات BMP الأكبر من 256 MiB، للحد من استخدام الذاكرة.</x></body></p>
+<h3 class="se" id="7-8-why-this-beats-rar"><body><x>7.8 لماذا يتفوق هذا على RAR</x></body></h3>
+<p><body><x>يضغط RAR الوسائط بمحركه العام للمطابقة وHuffman مع مجموعة صغيرة من مرشِّحات البايتات. بدلاً من ذلك يمنح nikpak الصوتَ مرمّزاً تنبئياً حقيقياً مع إزالة ارتباط الستيريو لكل كتلة وترميز Rice متكيف، ويمنح الصورَ متنبئاً ثنائي الأبعاد سليماً مع إزالة ارتباط اللون، ويختار لكل ملف بالقياس. والنتيجة ظاهرة في الاختبار المعياري: أصغر بنسبة 12 إلى 15 % في الصوت من كل نوع، و13 % في موسيقى tracker، و39 % في الصور الفوتوغرافية، وتقع نتيجة NAC للمسار الستيريو ضمن 0.2 % من مشفِّر FLAC المتخصص.</x></body></p>
+<h3 class="se" id="7-9-office-documents-pdf-and-gzip-deflate-recompression"><body><x>7.9 مستندات Office وPDF وgzip: إعادة ضغط Deflate</x></body></h3>
+<p><body><x>ملفات Office الحديثة هي أرشيفات ZIP من XML (docx وxlsx وpptx وodt وods)، وتخزِّن ملفات PDF صفحاتها في تدفقات Deflate (FlateDecode). لذا يكون محتواها مضغوطاً مسبقاً، ولا يستطيع أي أرشيفي تصغيره كثيراً: في اختبار الإصدار 1.1 المعياري، لم تنخفض 6.6 MB من ملفات .xlsx إلا إلى 5.6 MB مع 7-Zip. يزيل nikpak 1.2 تلك العقبة.</x></body></p>
+<ul><li><body><x><b>الاكتشاف بالمحتوى.</b> ترويسة ZIP محلية (PK\x03\x04) في بداية الملف، أو %PDF- أو ترويسة gzip؛ ولا يُستخدم الامتداد أبداً.</x></body></li><li><body><x><b>فك الترميز.</b> يُعثر على كل تدفق Deflate (عناصر ZIP بالطريقة 8، وتدفقات PDF بترويسة zlib، وكل عضو gzip) ويُحلَّل بـ<b>preflate</b> (مكتبة preflate-rs من Microsoft). يعيد preflate البيانات الصريحة إضافة إلى سجل تصحيحات صغير يصف بالضبط كيف اتخذ المشفِّر الأصلي خياراته، أياً كان ذلك المشفِّر.</x></body></li><li><body><x><b>التخزين.</b> يُخزَّن الملف كسلسلة من المقاطع الخام وأزواج (النص الصريح، التصحيحات). ثم يذهب XML الصريح أو وصف الصفحة إلى التدفق solid، حيث يضغطه LZMA2 إلى جزء صغير من حجمه بتنسيق Deflate.</x></body></li><li><body><x><b>التحقق.</b> قبل استخدام النتيجة، يعيد nikpak بناء كل تدفق Deflate ويقارن طول الملف كاملاً وCRC32 الخاص به مع الأصل. إذا اختلف أي شيء، أو فشل preflate أو هلع على ملف مشوه، يُخزَّن الملف ببساطة بشكل عادي.</x></body></li><li><body><x><b>الاستخراج.</b> يُعاد إنشاء تدفقات Deflate بتاً ببت، لذا يكون ملف .docx أو .pdf المستخرج مطابقاً بايتاً ببايت، ويُفحص CRC32 الخاص به كما لكل عنصر.</x></body></li></ul>
+<p><body><x>على مجموعة Office في القسم 11.7 هذا ما يجعل nikpak أصغر من كل أرشيفي آخر. تحتوي 6.6 MB من ملفات .xlsx على 71 MB من XML بمجرد فك ترميزه، ويُضغط ذلك XML أفضل بكثير مما فعل Deflate. الثمن هو الوقت: يحلل preflate نحو 15 MB من البيانات الصريحة في الثانية. ولهذا السبب تُستخدم إعادة الضغط عند -m4 و-m5 فقط، حيث تستحق عناءها (قياسياً: كسب -m3 نسبة 0.5 % مقابل ستة أضعاف الوقت). الحدود: ملفات حتى 512 MiB، ولكل تدفق حتى 512 MiB من البيانات الصريحة و64 MiB من التصحيحات. ويطفئها -mc-.</x></body></p>
+<h2 class="ch" id="8-encryption"><body><x>8 التشفير</x></body></h2>
+<p><body><x>بُني تشفير nikpak بالكامل من مكونات قياسية مدروسة جيداً (تطبيقا RustCrypto لـArgon2id وXChaCha20-Poly1305). لم تُبتكر أي بدائية لهذا المشروع؛ ويكمن العمل في دمجها بشكل صحيح.</x></body></p>
+<h3 class="se" id="8-1-threat-model"><body><x>8.1 نموذج التهديد</x></body></h3>
+<p><body><x>يفترض التصميم مهاجماً يحصل على ملف الأرشيف ويستطيع دراسته وتعديله على مهل، ويستطيع تجربة عدد غير محدود من تخمينات كلمة المرور دون اتصال. يهدف nikpak إلى ضمان:</x></body></p>
+<ul><li><body><x><b>سرية</b> محتويات الملفات <i>و</i> كل ما يتعلق بها: الأسماء والأحجام والطوابع الزمنية والصلاحيات وعدد الملفات.</x></body></li><li><body><x><b>السلامة والأصالة</b>: أي تغيير في الأرشيف، سواء في البيانات أو الترويسة أو ترتيب البيانات أو طولها، يُكتشف قبل قبول بيانات خاطئة.</x></body></li><li><body><x><b>مقاومة التخمين</b>: كل تخمين لكلمة المرور يُجعَل مكلفاً قدر الإمكان عملياً.</x></body></li></ul>
+<p><body><x>لا يخفي وجود الأرشيف ولا حجمه التقريبي، ولا يستطيع الحماية من البرمجيات الخبيثة على الجهاز الذي ينشئ الأرشيف أو يفتحه، ولا من كلمة مرور ضعيفة.</x></body></p>
+<h3 class="se" id="8-2-from-password-to-key-argon2id"><body><x>8.2 من كلمة المرور إلى المفتاح: Argon2id</x></body></h3>
+<p><body><x>كلمة المرور مفتاح رديء: قصيرة وقابلة للتنبؤ ويكتبها إنسان. تتحول إلى مفتاح 256 بتاً باستخدام <b>Argon2id</b>، الفائز في مسابقة تهشير كلمات المرور والخوارزمية المقننة في RFC 9106. صُمم Argon2id ليكون <b>مستهلكاً للذاكرة</b> عمداً: يتطلب حساب مفتاح واحد كتلة ذاكرة كبيرة تُملأ ثم تُقرأ مراراً بنمط يعتمد على البيانات. يستخدم nikpak ملف تعريف الذاكرة المنخفضة من RFC:</x></body></p>
+<table class="tech-table"><thead><tr><th><body><x><b>المعامل</b></x></body></th><th><body><x><b>القيمة</b></x></body></th><th><body><x><b>المعنى</b></x></body></th></tr></thead><tbody><tr><td><body><x>الذاكرة</x></body></td><td><body><x>64 MiB</x></body></td><td><body><x>يحتاج كل تخمين إلى 64 MiB من الذاكرة السريعة</x></body></td></tr><tr><td><body><x>التمريرات</x></body></td><td>
+				3</td><td><body><x>تُعالج الذاكرة ثلاث مرات</x></body></td></tr><tr><td><body><x>الحارات</x></body></td><td>
+				4</td><td><body><x>درجة التوازي داخل عملية الاشتقاق الواحدة</x></body></td></tr><tr><td><body><x>الملح (Salt)</x></body></td><td><body><x>16 بايتاً عشوائياً</x></body></td><td><body><x>جديد لكل أرشيف: كلمات المرور المتطابقة تعطي مفاتيح مختلفة، وتصبح الجداول المحسوبة مسبقاً عديمة الفائدة</x></body></td></tr><tr><td><body><x>المخرج</x></body></td><td><body><x>32 بايتاً</x></body></td><td><body><x>مفتاح XChaCha20-Poly1305</x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p><body><x>استهلاك الذاكرة هو ما يميز Argon2id عن PBKDF2 الأقدم (المستخدم في RAR5 وفي وضع AES الخاص بـZIP): لا يحتاج PBKDF2 إلى ذاكرة تقريباً، لذا يمكن لبطاقة رسوميات أو شريحة مخصصة اختبار أعداد هائلة من التخمينات بالتوازي. مع Argon2id يجب أن توفر عتاد المهاجم 64 MiB لكل تخمين متوازٍ، ما يزيل معظم تلك الميزة. وكلفة ذلك على المستخدم الشرعي جزء من الثانية، تُدفع مرة واحدة لكل أرشيف.</x></body></p>
+<p><body><x>تُخزَّن المعاملات في الترويسة، لذا يمكن للإصدارات المستقبلية رفعها دون كسر الأرشيفات القديمة. وعند القراءة تُفحص نطاقاتها أولاً (الذاكرة 8 × الحارات حتى 1 GiB، والتمريرات من 1 إلى 64، والحارات من 1 إلى 64) بحيث لا يستطيع أرشيف خبيث جعل nikpak يخصص كميات عبثية من الذاكرة قبل التحقق من كلمة المرور.</x></body></p>
+<h3 class="se" id="8-3-xchacha20-poly1305-in-the-stream-construction"><body><x>8.3 XChaCha20-Poly1305 في بنية STREAM</x></body></h3>
+<p><body><x>تُحمى البيانات الكبيرة بـ<b>XChaCha20-Poly1305</b>، وهو تشفير موثَّق مع بيانات مرتبطة (AEAD): يوفر ChaCha20 تشفيراً تيارياً بمفتاح 256 بتاً، ويوسِّع المتغير X قيمة nonce إلى 192 بتاً (كبيرة بما يكفي للاختيار عشوائياً دون تكرار أبداً)، ويضيف Poly1305 وسم توثيق 128 بتاً لكل رسالة مختومة. ChaCha20 سريع على كل معالج دون تعليمات خاصة، وعلى عكس AES القائم على الجداول، فهو خالٍ طبيعياً من تسريبات توقيت الذاكرة المخبئية.</x></body></p>
+<p><body><x>الأرشيف أكبر بكثير من رسالة واحدة، لذا يستخدم nikpak بنية <b>STREAM</b> (البنية نفسها التي تستخدمها أدوات تشفير الملفات الحديثة): تُقطَّع البيانات إلى مقاطع بحجم 64 KiB ويُختَم المقطع رقم <i>i</i> تحت nonce</x></body></p>
+<pre>nonce (24 bytes) = random prefix (19 bytes)</pre>
+<pre>| chunk counter (4 bytes, big endian)</pre>
+<pre>| last-chunk flag (1 byte)</pre>
+<p><br>
+<br>
+
+</p>
+<p><body><x>يمنح هذا ثلاث ضمانات دفعة واحدة. لكل مقطع nonce فريد، وهو أمر جوهري للتشفير التياري. ولأن العداد جزء من nonce، فإن <b>إعادة ترتيب المقاطع أو تكرارها يفشل التوثيق</b>. ولأن المقطع الأخير يحمل علماً مختلفاً، فإن <b>بتر الأرشيف، حتى عند حدود المقاطع تماماً، يفشل التوثيق</b>: فالمقطع الأخير الجديد كان مختوماً كمقطع غير نهائي. البادئة ذات الـ19 بايتاً عشوائية لكل أرشيف.</x></body></p>
+<p><body><x>إضافة إلى ذلك، تُمرَّر ترويسة الأرشيف الكاملة (الإصدار والأعلام والطريقة ومعاملات Argon2id والملح وبادئة nonce) كـ<b>بيانات مرتبطة</b> لكل مقطع. تُوثَّق لكنها لا تُشفَّر؛ وقلب أي بت فيها يجعل كل مقطع يفشل. وهذا يصد أيضاً هجمات خفض الإصدار التي تحاول إضعاف المعاملات المخزنة.</x></body></p>
+<table class="tech-table"><thead><tr><th><body><x><b>البند</b></x></body></th><th><body><x><b>القيمة</b></x></body></th></tr></thead><tbody><tr><td><body><x>التشفير</x></body></td><td><body><x>XChaCha20-Poly1305: مفتاح 256 بتاً، وnonce بـ192 بتاً، ووسم بـ128 بتاً</x></body></td></tr><tr><td><body><x>المقطع</x></body></td><td><body><x>حتى 64 KiB من النص الصريح؛ يُخزَّن بصيغة <code>u32 length</code> + النص المشفر + وسم 16 بايتاً</x></body></td></tr><tr><td><body><x>تكلفة الحجم</x></body></td><td><body><x>نحو 0.03 % (20 بايتاً لكل 64 KiB)، وقيسَت بنسبة 0.03 % على مجموعة بيانات 222 MB</x></body></td></tr><tr><td><body><x>تكلفة السرعة</x></body></td><td><body><x>قياسياً: +0.3 ثانية إجمالاً على مجموعة بيانات 222 MB (0.92 ثانية بدلاً من 0.64 ثانية)، بما في ذلك اشتقاق المفتاح</x></body></td></tr><tr><td><body><x>كلمة مرور خاطئة</x></body></td><td><body><x>تُكتشف عند المقطع الأول؛ ولا يُنتج أي نص صريح</x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="8-4-what-an-observer-can-and-cannot-see"><body><x>8.4 ما يستطيع المراقب رؤيته وما لا يستطيعه</x></body></h3>
+<table class="tech-table"><thead><tr><th><body><x><b>مرئي بدون كلمة المرور</b></x></body></th><th><body><x><b>محمي</b></x></body></th></tr></thead><tbody><tr><td><body><x>التوقيع السحري والإصدار والأعلام وطريقة الضغط</x></body></td><td><body><x>أسماء الملفات وبنية المجلدات</x></body></td></tr><tr><td><body><x>معاملات Argon2id والملح وبادئة nonce</x></body></td><td><body><x>أحجام الملفات والطوابع الزمنية والصلاحيات</x></body></td></tr><tr><td><body><x>حجم الأرشيف الإجمالي وعدد المقاطع</x></body></td><td><body><x>عدد الملفات</x></body></td></tr><tr><td><body><x>كونه أرشيف nikpak</x></body></td><td><body><x>كل المحتوى، بما في ذلك ما إذا كان يحتوي وسائط</x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p><body><x>إحدى نتائج الضغط قبل التشفير أن حجم الأرشيف يعكس مدى قابلية البيانات للضغط. هذا أمر متأصل في كل أرشيفي يضغط ويشفر؛ ولا يهم إلا إذا استطاع المهاجم التحكم في جزء من البيانات ومراقبة الحجم، وهو ما لا ينطبق على أرشفة الملفات.</x></body></p>
+<h3 class="se" id="8-5-password-handling"><body><x>8.5 التعامل مع كلمات المرور</x></body></h3>
+<ul><li><body><x><b>الطول الأدنى.</b> 8 أحرف عند إنشاء أرشيف؛ وتُرفض كلمات المرور الأقصر مع توضيح.</x></body></li><li><body><x><b>التأكيد.</b> تسأل المطالبة التفاعلية مرتين، ولا تُظهر الأحرف المكتوبة، وترفض عدم التطابق.</x></body></li><li><body><x><b>التوليد.</b> بدون كلمة مرور، يسحب nikpak 24 حرفاً من أبجدية تضم 56 رمزاً تستبعد المتشابهات (0/O و1/l/I)، باستخدام <b>أخذ العينات بالرفض</b> على المولِّد العشوائي الآمن تشفيرياً في نظام التشغيل بحيث لا يكون أي رمز أكثر احتمالاً من غيره. أي 24 × log2(56)، نحو <b>139 بتاً</b> من الإنتروبيا، وتُعرض مرة واحدة في مربع مميز بوضوح.</x></body></li><li><body><x><b>نظافة الذاكرة.</b> يُمسح المفتاح المشتق وسلاسل كلمة المرور من الذاكرة عندما لا تعود هناك حاجة إليها (حزمة <code>zeroize</code>).</x></body></li><li><body><x><b>القنوات.</b> سطر الأوامر (<code>-p</code>)، أو متغير البيئة <code>NIKPAK_PASSWORD</code>، أو المطالبة التفاعلية، أو stdin عند غياب الطرفية. صيغة سطر الأوامر مريحة لكنها مرئية في قائمة العمليات؛ والأشكال الأخرى أفضل.</x></body></li></ul>
+<h3 class="se" id="8-6-attack-tests"><body><x>8.6 اختبارات الهجوم</x></body></h3>
+<p><body><x>نُفِّذت التلاعبات التالية بأرشيفات مشفرة ضد البرنامج النهائي. واكتُشفت جميعها قبل قبول أي بيانات خاطئة:</x></body></p>
+<table class="tech-table"><thead><tr><th><body><x><b>التلاعب</b></x></body></th><th><body><x><b>النتيجة</b></x></body></th></tr></thead><tbody><tr><td><body><x>قلب بايت واحد في منتصف النص المشفر</x></body></td><td><body><x>مرفوض: فشل التوثيق (خروج 11)</x></body></td></tr><tr><td><body><x>قلب بايت من الملح في الترويسة</x></body></td><td><body><x>مرفوض (الترويسة بيانات مرتبطة ويتغير المفتاح)</x></body></td></tr><tr><td><body><x>تغيير بايت الطريقة في الترويسة</x></body></td><td><body><x>مرفوض</x></body></td></tr><tr><td><body><x>بتر الملف بمقدار 100 بايت</x></body></td><td><body><x>مرفوض كتالف (خروج 3)</x></body></td></tr><tr><td><body><x>حذف المقطع الأخير عند حدود المقاطع تماماً</x></body></td><td><body><x>مرفوض: المقطع الأخير الجديد يفتقد العلم النهائي</x></body></td></tr><tr><td><body><x>تبديل مقطعين</x></body></td><td><body><x>مرفوض: عدم تطابق العداد</x></body></td></tr><tr><td><body><x>إمداد كلمة مرور خاطئة</x></body></td><td><body><x>مرفوض عند المقطع الأول (خروج 11)</x></body></td></tr><tr><td><body><x>إدخال ملف عشوائي كأرشيف</x></body></td><td><body><x>مرفوض: توقيع غير صالح (خروج 3)</x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<table class="tech-table"><tbody><tr><td><body><x><b>المخاطر المتبقية، بصراحة</b><br>يمكن دائماً تخمين كلمة المرور الضعيفة؛ يجعلها Argon2id مكلفة لكنه لا يستطيع إنقاذ <code>password123</code>. لم يُدقَّق nikpak تدقيقاً مستقلاً. ولا يستطيع الدفاع ضد مسجِّلات لوحة المفاتيح أو البرمجيات الخبيثة أو من يقرأ ذاكرة العملية قيد التشغيل. وبالنسبة للبيانات التي قد يسبب كشفها ضرراً جسيماً، اطلب من خبير تشفير مراجعة التطبيق أولاً.</x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h2 class="ch" id="9-quantum-resistance"><body><x>9 مقاومة الحوسبة الكمومية</x></body></h2>
+<p><body><x>تهدد الحواسيب الكمومية بعض التشفير بشدة وتكاد لا تمس تشفيراً آخر. صُمم nikpak على الجانب الذي لا يكاد يتأثر.</x></body></p>
+<h3 class="se" id="9-1-what-quantum-computers-change"><body><x>9.1 ما الذي تغيره الحواسيب الكمومية</x></body></h3>
+<table class="tech-table"><thead><tr><th><body><x><b>الخوارزمية</b></x></body></th><th><body><x><b>الأثر</b></x></body></th><th><body><x><b>مَن يتأثر</b></x></body></th></tr></thead><tbody><tr><td><body><x><b>Shor</b> (1994)</x></body></td><td><body><x>يحلل الأعداد الصحيحة إلى عوامل ويحسب اللوغاريتمات المتقطعة في زمن كثير الحدود</x></body></td><td><body><x>RSA وDiffie-Hellman وDSA وتشفير المنحنيات الإهليلجية: <b>مكسورة</b> بواسطة حاسوب كمومي كبير</x></body></td></tr><tr><td><body><x><b>Grover</b> (1996)</x></body></td><td><body><x>يبحث في فضاء غير منظم من N عنصراً في نحو الجذر التربيعي لـN خطوة</x></body></td><td><body><x>المفاتيح المتماثلة ودوال التهشير: ينخفض طول المفتاح <i>الفعال</i> إلى <b>النصف</b></x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p><body><x>خوارزمية Shor هي الدراماتيكية: سوف تكسر كل نظام يعتمد على رياضيات المفاتيح العامة، ولهذا تنتقل الحكومات وهيئات المعايير إلى خوارزميات مفاتيح عامة ما بعد الكم مثل ML-KEM (FIPS 203). أما خوارزمية Grover فهي اللطيفة: يوفر مفتاح 256 بتاً نحو 128 بتاً من الأمان ضدها، وتكرارات Grover متسلسلة بطبيعتها، لذا فإن توزيع العمل على عدة أجهزة كمومية لا ينتج سوى الجذر التربيعي لعددها كتسريع.</x></body></p>
+<h3 class="se" id="9-2-nikpak-s-position"><body><x>9.2 موقف nikpak</x></body></h3>
+<table class="tech-table"><thead><tr><th><body><x><b>المكوِّن</b></x></body></th><th><body><x><b>البدائية</b></x></body></th><th><body><x><b>الأثر الكمومي</b></x></body></th></tr></thead><tbody><tr><td><body><x>التشفير</x></body></td><td><body><x>XChaCha20، مفتاح 256 بتاً</x></body></td><td><body><x>أفضل هجوم معروف: Grover، نحو 2^128 عملية. بعيد المنال.</x></body></td></tr><tr><td><body><x>التوثيق</x></body></td><td><body><x>Poly1305، وسم 128 بتاً، مُشتق من سر 256 بتاً</x></body></td><td><body><x>لا رياضيات مفاتيح عامة معنية</x></body></td></tr><tr><td><body><x>من كلمة المرور إلى المفتاح</x></body></td><td><body><x>Argon2id، 64 MiB، و3 تمريرات</x></body></td><td><body><x>يمكن لـGrover في أقصى تقدير خفض إنتروبيا كلمة المرور إلى النصف، وكل تكرار سيتطلب تقييم دالة مستهلكة للذاكرة</x></body></td></tr><tr><td><body><x>العشوائية</x></body></td><td><body><x>مولِّد أرقام عشوائية آمن تشفيرياً في نظام التشغيل (CSPRNG)</x></body></td><td><body><x>غير متأثر</x></body></td></tr><tr><td><body><x>تشفير المفاتيح العامة</x></body></td><td><body><x><b>لا شيء</b></x></body></td><td><body><x>لا شيء لتهاجمه خوارزمية Shor</x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p><body><x>المفتاح المتماثل 256 بتاً هو المرجع لأعلى فئة أمان (<b>الفئة 5</b>) في معايير NIST ما بعد الكم: تُقيَّم خوارزميات المفاتيح العامة التي يقننها NIST بمدى اقترابها من صعوبة البحث الشامل في مفتاح AES بطول 256 بتاً. بعبارة أخرى، يجلس تشفير بيانات nikpak بالفعل عند مستوى القوة الذي تستهدفه معايير ما بعد الكم.</x></body></p>
+<h3 class="se" id="9-3-what-about-the-password"><body><x>9.3 وماذا عن كلمة المرور؟</x></body></h3>
+<p><body><x>فضاء مفاتيح التشفير هو 256 بتاً، لكن المفتاح مشتق من كلمة مرور، لذا تكون القوة الحقيقية هي الأصغر بين إنتروبيا كلمة المرور و256 بتاً. ضد خصم كمومي تُنصَّف إنتروبيا كلمة المرور، في أفضل الأحوال للمهاجم:</x></body></p>
+<table class="tech-table"><thead><tr><th><body><x><b>كلمة المرور</b></x></body></th><th><body><x><b>الإنتروبيا</b></x></body></th><th><body><x><b>البحث الكلاسيكي</b></x></body></th><th><body><x><b>بحث Grover (في أفضل الأحوال)</b></x></body></th></tr></thead><tbody><tr><td><body><x>مولَّدة من nikpak (24 رمزاً)</x></body></td><td><body><x>نحو 139 بتاً</x></body></td><td><body><x>نحو 2^139 تخميناً</x></body></td><td><body><x>نحو 2^70 تكراراً، كل منها يتطلب تقييم Argon2id متماسكاً بحجم 64 MiB</x></body></td></tr><tr><td><body><x>ست كلمات Diceware عشوائية</x></body></td><td><body><x>نحو 77 بتاً</x></body></td><td><body><x>نحو 2^77 تخميناً</x></body></td><td><body><x>نحو 2^39 تكراراً للدارة المكلفة نفسها</x></body></td></tr><tr><td><body><x>كلمة مرور من 10 أحرف يختارها إنسان</x></body></td><td><body><x>عادةً من 30 إلى 45 بتاً</x></body></td><td><body><x>ممكنة</x></body></td><td><body><x>ممكنة</x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p><body><x>الخلاصة هي المألوفة، بصياغة أكثر حدة: <b>كلمة المرور هي نقطة الضعف، لا التشفير.</b> استخدم كلمة المرور المولَّدة أو عبارة مرور عشوائية طويلة وسيقاوم الأرشيف المهاجمين الكلاسيكيين والكموميين في أي مستقبل منظور. يساعد Argon2id في العالمين، لأن كلفة كل تخمين تهيمن عليها الذاكرة، وخوارزمية Grover لا تجعلها أرخص.</x></body></p>
+<h3 class="se" id="9-4-harvest-now-decrypt-later"><body><x>9.4 "اجمع الآن، وفك التشفير لاحقاً"</x></body></h3>
+<p><body><x>التهديد الكمومي كثير الاستشهاد هو أن يسجل الخصم بيانات مشفرة اليوم ويفك تشفيرها عند وجود حاسوب كمومي. بالنسبة للأنظمة التي تتبادل المفاتيح بـRSA أو المنحنيات الإهليلجية، مثل اتصالات TLS أو تشفير البريد الإلكتروني، هذا حقيقي. لا يوجد في أرشيف nikpak تبادل مفاتيح: يأتي مفتاحه من سر لا يغادر رأس المستخدم أو مدير كلمات المرور. لا يمكن فتح النسخة المخزنة لاحقاً إلا بتخمين ذلك السر، ولا تجعل الحواسيب الكمومية ذلك أسهل جوهرياً.</x></body></p>
+<h3 class="se" id="9-5-honest-limits-and-the-road-ahead"><body><x>9.5 الحدود الصادقة والطريق إلى الأمام</x></body></h3>
+<ul><li><body><x>تعني "مقاومة الحوسبة الكمومية" أنه لا توجد خوارزمية كمومية معروفة تتفوق على البحث العام ضد هذه البدائيات. وهي ليست إثباتاً؛ يستمر تحليل شيفرات ChaCha20 وArgon2، والصيغة مُرقَّمة الإصدارات بحيث يمكن تغيير المعاملات أو الخوارزميات.</x></body></li><li><body><x>إذا أُضيفت مشاركة المفاتيح العامة يوماً (تشفير أرشيف <i>بمفتاح</i> المستلم)، فستستخدم مخططاً <b>هجيناً</b>، X25519 مدمجاً مع ML-KEM، بحيث يكون آمناً إذا صمد أي من المكونين.</x></body></li><li><body><x>لا تحمي مقاومة الحوسبة الكمومية من أخطاء التنفيذ. انظر القسمين 8.6 و10.</x></body></li></ul>
+<h2 class="ch" id="10-hardening-and-robustness"><body><x>10 التحصين والمتانة</x></body></h2>
+<p><body><x>يقرأ الأرشيفي ملفات كتبها غرباء ويكتب ملفات على قرص مستخدمه، ما يجعله هدفاً كلاسيكياً. يعامل nikpak كل أرشيف كمدخل غير موثوق.</x></body></p>
+<h3 class="se" id="10-1-safe-extraction"><body><x>10.1 الاستخراج الآمن</x></body></h3>
+<ul><li><body><x><b>اختراق المسارات ("zip slip").</b> يُطبَّع اسم كل عنصر: تتحول الشرطات المائلة الخلفية إلى شرطات مائلة، وتُسقط المكونات الفارغة ومكوِّن <code>.</code>، ويتسبب أي مكوِّن <code>..</code> في تخطي العنصر مع تحذير. تفقد الأسماء المطلقة جذرها، لذا يُستخرج <code>/etc/passwd</code> <i>داخل</i> مجلد الوجهة.</x></body></li><li><body><x><b>أسماء Windows.</b> عند التشغيل على Windows، تُرفض المكونات التي تحتوي <code>&lt; &gt; : " | ? *</code> أو أحرف تحكم، أو تنتهي بمسافة أو نقطة، أو تساوي اسم جهاز محجوزاً (CON وPRN وAUX وNUL وCOM1-9 وLPT1-9).</x></body></li><li><body><x><b>الروابط الرمزية.</b> قبل الكتابة، يُفحص كل مكوِّن موجود من المسار الهدف تحت الوجهة؛ ولا يُتبع الرابط أبداً. يُحذف الملف الموجود أولاً ويُنشأ الجديد باستخدام <code>create_new</code>، الذي يرفض فتح مسار موجود، لذا لا يمكن استخدام رابط لإعادة توجيه الكتابة.</x></body></li><li><body><x><b>بتات الامتياز.</b> لا تُستعاد بتات setuid وsetgid وsticky أبداً؛ وتُقنَّع الصلاحيات إلى بتات rwx العادية.</x></body></li><li><body><x><b>الملفات الفاشلة.</b> يُحذف الملف الذي لا يطابق CRC32 الخاص به، ولا يُترك خلفه.</x></body></li></ul>
+<p><body><x>استُخرج في الاختبارات أرشيف مبني يدوياً يحتوي <code>../../evil.txt</code> و<code>/tmp/evil.txt</code> و<code>..\..\evil.txt</code> و<code>ok/../../evil.txt</code>: لم يفلت أي شيء من الوجهة، وأُبلغ عن العناصر غير الآمنة وتُخطيت، ورُفض رابط رمزي مزروع في الوجهة.</x></body></p>
+<h3 class="se" id="10-2-bounded-decoders"><body><x>10.2 مفكِّكات محدودة الموارد</x></body></h3>
+<ul><li><body><x>تُفحص نطاقات معاملات Argon2id قبل أي تخصيص (القسم 8.2).</x></body></li><li><body><x>يجب أن يكون طول المقاطع المشفرة بين 16 بايتاً و64 KiB + 16؛ والأسماء بحد أقصى 4096 بايت؛ ويجب أن تعلن الكتل الصوتية طولاً معقولاً؛ وتُحدَّد مناطق BMP بـ256 MiB؛ وتُقيَّد أكواد Rice الأحادية.</x></body></li><li><body><x>غُذّيت مفكِّكات الصوت والوسائط بآلاف المدخلات العشوائية وذات البتات المقلوبة في اختبارات الوحدة ويجب أن تعيد خطأً، ولا تهلع أو تُجهض أبداً.</x></body></li><li><body><x>لا يحتوي كود nikpak نفسه على أي كتل <code>unsafe</code>، ويحوِّل فحص الحدود في Rust أي خطأ منطقي كان سيصبح خطأ إفساد ذاكرة في C إلى فشل نظيف.</x></body></li></ul>
+<p><body><x>لا يحد nikpak نسبة تمدد الأرشيف، لذا مثل كل أرشيفي، يمكن لـ"قنبلة ضغط" مصممة عمداً أن تملأ القرص عند الاستخراج. اختبر الأرشيفات المجهولة بـ<code>t</code> أولاً إذا كان ذلك يهمك.</x></body></p>
+<h3 class="se" id="10-3-safe-creation-and-honest-errors"><body><x>10.3 الإنشاء الآمن والأخطاء الصادقة</x></body></h3>
+<ul><li><body><x>يُكتب الأرشيف إلى <code>name.nik.tmp</code> ولا يُعاد تسميته إلا عند اكتماله؛ يحذف الحارس الملف المؤقت عند أي فشل، لذا لا يترك التشغيل المتقطع أرشيفاً ناقص الكتابة أو مستبدلاً أبداً.</x></body></li><li><body><x>إذا أصبح الملف أقصر أثناء أرشفته، يجهض nikpak برسالة صريحة بدلاً من كتابة عنصر غير متسق. وتُتخطى الملفات غير القابلة للقراءة والروابط الرمزية والملفات الخاصة مع تحذير (كود خروج 1) ولا يُضاف الأرشيف إلى نفسه أبداً.</x></body></li><li><body><x>تُصنَّف الأخطاء بحيث تستطيع السكربتات التفاعل: خطأ المجموع الاختباري أو الإطار داخل الأرشيف هو <i>فساد</i> (خروج 3)، وفشل التوثيق هو <i>كلمة مرور خاطئة أو عبث</i> (خروج 11)، والكتابة المرفوضة هي <i>خطأ فادح</i> (خروج 2).</x></body></li></ul>
+<h2 class="ch" id="11-benchmarks"><body><x>11 الاختبارات المعيارية</x></body></h2>
+<p><body><x>يعرض هذا الفصل قياسات لا ادعاءات. يصف بدقة ما قيس، ويتضمن النتائج غير المواتية لـnikpak، ويعطي الأوامر اللازمة لإعادة كل شيء.</x></body></p>
+<p><body><x>قيسَت الأقسام من 11.1 إلى 11.6 باستخدام nikpak 1.1.0، الذي كان -m5 فيه لا يزال يستخدم Zstandard. ويقارن القسم 11.7 الإصدار nikpak 1.2.0 مع RAR و7-Zip وZIP على جهاز واحد.</x></body></p>
+<h3 class="se" id="11-1-method"><body><x>11.1 المنهجية</x></body></h3>
+<table class="tech-table"><thead><tr><th><body><x><b>البند</b></x></body></th><th><body><x><b>التفصيل</b></x></body></th></tr></thead><tbody><tr><td><body><x>الجهاز</x></body></td><td><body><x>آلة افتراضية Linux x86-64، بنواة معالج <b>واحدة</b>. جميع الأوقات بثواني ساعة الحائط على تلك النواة الواحدة؛ والآلات متعددة الأنوية أسرع للأداتين.</x></body></td></tr><tr><td><body><x>البرمجيات</x></body></td><td><body><x><b>RAR 7.00</b> (26 فبراير 2024، بناء تجريبي لنظام Linux، صيغة <code>-ma5</code>)؛ و<b>nikpak 1.1.0</b> مبني بوضع release مع LTO؛ وFLAC 1.x بخيار <code>-8</code> كمرجع صوتي.</x></body></td></tr><tr><td><body><x>إعدادات RAR</x></body></td><td><body><x><code>-m3</code> (افتراضي RAR) و<code>-m5</code> (الأفضل). وبالنسبة لاختبار البيانات العامة أيضاً <code>-s</code> (solid) و<code>-md256m</code> (قاموس 256 MB)، لأن أرشيفات nikpak تكون solid دائماً والمقارنة العادلة تتطلب السماح لـRAR بالشيء نفسه.</x></body></td></tr><tr><td><body><x>التحقق</x></body></td><td><body><x>استُخرج كل أرشيف nikpak وقورن بالأصل (<code>cmp</code> لملفات الوسائط، وSHA-256 لجميع الملفات الـ10,949 في المجموعة العامة).</x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h4 class="su" id="the-test-material"><body><x>مادة الاختبار</x></body></h4>
+<table class="tech-table"><thead><tr><th><body><x><b>المجموعة</b></x></body></th><th><body><x><b>المحتوى</b></x></body></th></tr></thead><tbody><tr><td><body><x>ملفات WAV الخاصة بالمعرض</x></body></td><td><body><x>35 ملفاً صوتياً من معرض LibreOffice: أحادي 16 بتاً، 23 ملفاً بتردد 11,025 Hz و12 ملفاً بتردد 22,050 Hz. تحتوي على نحو ألف قيمة عينة مميزة فقط (مصادر مضغوطة) وهي حالة محرجة عمداً للترميز التنبئي.</x></body></td></tr><tr><td><body><x>الموسيقى</x></body></td><td><body><x>مقطوعة متعددة الآلات مدتها 100 ثانية (بيانو وأوتار وباس وفلوت وطبول) مُصيَّرة بـTiMidity++ ومجموعة أصوات Freepats بتردد 44.1 kHz ستيريو 16 بتاً (17.4 MB). اشتق SoX نسخة أحادية 16 بتاً بتردد 22.05 kHz، وأحادية 8 بتات بتردد 22.05 kHz، وستيريو 24 بتاً بتردد 48 kHz.</x></body></td></tr><tr><td><body><x>MOD</x></body></td><td><body><x>16 وحدة ProTracker من مجموعة اختبار libxmp.</x></body></td></tr><tr><td><body><x>BMP</x></body></td><td><body><x>6 صور: خمس صور فوتوغرافية من مجموعة عينات scikit-image (24 بتاً، إضافة إلى تحويل رمادي 8 بتات لإحداها) وخامة من TeX Live.</x></body></td></tr><tr><td><body><x>البيانات العامة</x></body></td><td><body><x>197.6 MB في 10,949 ملفاً: مكتبة Python القياسية والحزم، والتوثيق، وترويسات C من جهاز الاختبار، مع إزالة الروابط الرمزية.</x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<table class="tech-table"><tbody><tr><td><body><x><b>حدود مادة الاختبار هذه</b><br>الموسيقى اصطناعية: صُيِّرت من MIDI وتحتوي مقاطع متكررة، ما يساعد كل أداة قائمة على LZ، بما في ذلك مرحلة Zstandard بعد NAC. تحتوي التسجيلات الحقيقية على تكرارات دقيقة أقل، لذا ستختلف الأحجام المطلقة. تعامل المقارنة كل الأدوات بالمثل، وتؤكد نتيجة FLAC على الملف نفسه أن المرمّز الصوتي نفسه تنافسي، لكن على القراء أصحاب المواد المحددة قياسها: يفعل <code>nikpak mt </code> ذلك بالضبط.</x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="11-2-media-files"><body><x>11.2 ملفات الوسائط</x></body></h3>
+<table class="tech-table"><thead><tr><th><body><x><b>المجموعة</b></x></body></th><th><body><x><b>الأصل</b></x></body></th><th><body><x><b>RAR 7 -m5</b></x></body></th><th><body><x><b>nikpak -m2</b></x></body></th><th><body><x><b>nikpak -m5</b></x></body></th><th><body><x><b>m5 مقابل RAR</b></x></body></th></tr></thead><tbody><tr><td><body><x>6 صور BMP فوتوغرافية</x></body></td><td>
+				9,183,956</td><td>
+				2,862,744</td><td>
+				2,035,223</td><td>
+				<b>1,750,706</b></td><td><body><x><b>أصغر بنسبة 38.8 %</b></x></body></td></tr><tr><td><body><x>16 ملف ProTracker MOD</x></body></td><td>
+				2,507,557</td><td>
+				1,070,290</td><td>
+				966,622</td><td>
+				<b>927,973</b></td><td><body><x><b>أصغر بنسبة 13.3 %</b></x></body></td></tr><tr><td><body><x>35 ملف WAV من المعرض (أحادي 16 بتاً)</x></body></td><td>
+				2,991,820</td><td>
+				1,605,879</td><td>
+				1,529,219</td><td>
+				<b>1,418,532</b></td><td><body><x><b>أصغر بنسبة 11.7 %</b></x></body></td></tr><tr><td><body><x>موسيقى 44.1 kHz ستيريو 16 بتاً</x></body></td><td>
+				17,371,848</td><td>
+				11,024,411</td><td>
+				9,415,519</td><td>
+				<b>9,411,898</b></td><td><body><x><b>أصغر بنسبة 14.6 %</b></x></body></td></tr><tr><td><body><x>موسيقى 22.05 kHz أحادي 16 بتاً</x></body></td><td>
+				4,342,996</td><td>
+				3,112,135</td><td>
+				2,635,819</td><td>
+				<b>2,634,669</b></td><td><body><x><b>أصغر بنسبة 15.3 %</b></x></body></td></tr><tr><td><body><x>موسيقى 22.05 kHz أحادي 8 بتات</x></body></td><td>
+				2,171,520</td><td>
+				844,160</td><td>
+				742,462</td><td>
+				<b>740,751</b></td><td><body><x><b>أصغر بنسبة 12.2 %</b></x></body></td></tr><tr><td><body><x>موسيقى 48 kHz ستيريو 24 بتاً</x></body></td><td>
+				28,362,206</td><td>
+				21,467,283
+				(-m3)</td><td>
+				18,689,529</td><td>
+				<b>18,688,030</b></td><td><body><x><b>أصغر بنسبة 12.9 %</b></x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p><body><x>جميع الأحجام بالبايتات. بالنسبة لملف 24 بتاً لم يُقاس RAR إلا عند <code>-m3</code>، لذا يكون ذلك الصف مقارنة أضعف من البقية.</x></body></p>
+<figure><img src="../assets/img/tech/58cb4866.png" alt="Figure 3: archive size as a percentage of the original data (lower is better)." loading="lazy"><figcaption><body><x>الشكل 3: حجم الأرشيف كنسبة مئوية من البيانات الأصلية (الأقل أفضل).</x></body></figcaption></figure>
+<figure><img src="../assets/img/tech/f09f585d.png" alt="Figure 4: size reduction of nikpak compared with RAR 7.00 -m5." loading="lazy"><figcaption><body><x>الشكل 4: تقليص الحجم الذي يحققه nikpak مقارنة بـRAR 7.00 -m5.</x></body></figcaption></figure>
+<h4 class="su" id="what-the-media-filters-add"><body><x>ما الذي تضيفه مرشِّحات الوسائط</x></body></h4>
+<p><body><x>nikpak نفسه بدون مرشِّحات الوسائط (الإصدار 1.0، Zstandard عادي عند المستوى الافتراضي) هو المقياس الصحيح لقيمة طبقة الوسائط:</x></body></p>
+<table class="tech-table"><thead><tr><th><body><x><b>المجموعة</b></x></body></th><th><body><x><b>nikpak 1.0 (بدون مرشِّحات)</b></x></body></th><th><body><x><b>nikpak 1.1 -m2</b></x></body></th><th><body><x><b>التقليص</b></x></body></th></tr></thead><tbody><tr><td><body><x>6 صور BMP فوتوغرافية</x></body></td><td>
+				3,580,971</td><td>
+				2,035,223</td><td>
+				<b>43.2
+				%</b></td></tr><tr><td><body><x>16 ملف ProTracker MOD</x></body></td><td>
+				1,260,607</td><td>
+				966,622</td><td>
+				<b>23.3
+				%</b></td></tr><tr><td><body><x>35 ملف WAV من المعرض (أحادي 16 بتاً)</x></body></td><td>
+				1,876,722</td><td>
+				1,529,219</td><td>
+				<b>18.5
+				%</b></td></tr><tr><td><body><x>موسيقى 44.1 kHz ستيريو 16 بتاً</x></body></td><td>
+				15,585,422</td><td>
+				9,415,519</td><td>
+				<b>39.6
+				%</b></td></tr><tr><td><body><x>موسيقى 22.05 kHz أحادي 16 بتاً</x></body></td><td>
+				3,887,183</td><td>
+				2,635,819</td><td>
+				<b>32.2
+				%</b></td></tr><tr><td><body><x>موسيقى 22.05 kHz أحادي 8 بتات</x></body></td><td>
+				1,078,493</td><td>
+				742,462</td><td>
+				<b>31.2
+				%</b></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h4 class="su" id="comparison-with-flac"><body><x>المقارنة مع FLAC</x></body></h4>
+<p><body><x>بالنسبة لموسيقى الستيريو 44.1 kHz ينتج FLAC <code>-8</code>، المشفِّر المرجعي المتخصص، 9,407,019 بايتاً. تيار NAC للصوت نفسه هو 9,425,305 بايتاً، ضمن 0.2 %، وأرشيف nikpak النهائي 9,415,519 بايتاً. وبالنسبة لنسختي الأحادي 22 kHz و8 بتات يكون NAC أصغر من FLAC (2,635,446 مقابل 2,638,954، و785,890 مقابل 798,810 لمنطقة الصوت وحدها)، وبالنسبة لـ24 بتاً يكون الأرشيف (18.69 MB) أصغر من 19.12 MB لـFLAC. ويكون FLAC أضعف بكثير على ملفات المعرض (2.50 MB مقابل 1.61 MB لـRAR)، للسبب المشروح في القسم 7.5؛ وهذه هي الحالة التي تستحق فيها المرشِّحات الأخرى مكانها.</x></body></p>
+<h3 class="se" id="11-3-general-data"><body><x>11.3 البيانات العامة</x></body></h3>
+<p><body><x>الكود المصدري والمستندات ليست وسائط، لذا يتحقق هذا الاختبار مما إذا كانت مكاسب nikpak في مكان آخر تكلفه شيئاً في الملفات العادية.</x></body></p>
+<table class="tech-table"><thead><tr><th><body><x><b>الأداة والمستوى</b></x></body></th><th><body><x><b>الحجم (بايت)</b></x></body></th><th><body><x><b>الوقت</b></x></body></th><th><body><x><b>الاستخراج</b></x></body></th></tr></thead><tbody><tr><td><body><x><b>nikpak -m5</b></x></body></td><td>
+				<b>24,443,483</b></td><td>
+				45.6
+				s</td><td>
+				1.8
+				s</td></tr><tr><td><body><x>RAR 7 -m5 -s -md256m</x></body></td><td>
+				25,862,475</td><td>
+				36.2
+				s</td><td>
+				<br>
+
+				</td></tr><tr><td><body><x>RAR 7 -m5 -s</x></body></td><td>
+				26,002,812</td><td>
+				26.7
+				s</td><td>
+				<br>
+
+				</td></tr><tr><td><body><x>RAR 7 -m3 -s</x></body></td><td>
+				26,536,863</td><td>
+				16.7
+				s</td><td>
+				1.5
+				s</td></tr><tr><td><body><x>nikpak -m4</x></body></td><td>
+				26,814,023</td><td>
+				13.5
+				s</td><td>
+				<br>
+
+				</td></tr><tr><td><body><x>nikpak -m3</x></body></td><td>
+				30,329,965</td><td>
+				2.0
+				s</td><td>
+				<br>
+
+				</td></tr><tr><td><body><x><b>nikpak -m2 (افتراضي 1.1)</b></x></body></td><td>
+				36,266,743</td><td>
+				<b>0.9
+				s</b></td><td>
+				0.8
+				s</td></tr><tr><td><body><x>RAR 7 -m5 (افتراضي، غير solid)</x></body></td><td>
+				50,851,230</td><td>
+				14.8
+				s</td><td>
+				<br>
+
+				</td></tr><tr><td><body><x>RAR 7 -m3 (افتراضي، غير solid)</x></body></td><td>
+				50,974,773</td><td>
+				9.7
+				s</td><td>
+				2.3
+				s</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<figure><img src="../assets/img/tech/4e82b598.png" alt="Figure 5: general data, size and creation time on one core." loading="lazy"><figcaption><body><x>الشكل 5: البيانات العامة، الحجم ووقت الإنشاء على نواة واحدة.</x></body></figcaption></figure>
+<p><body><x>قراءة الجدول بصدق:</x></body></p>
+<ul><li><body><x><b>المستوى الأقصى:</b> ينتج nikpak أرشيفاً أصغر بنسبة 5.5 % من أفضل ما ينتجه RAR (24.4 مقابل 25.9 MB). ويكون RAR <b>أسرع</b> عند هذا المستوى (26.7 إلى 36.2 ثانية مقابل 45.6 ثانية).</x></body></li><li><body><x><b>تساوي الحجم:</b> يكون <code>nikpak -m4</code> ضمن نحو 1 % من مستوى RAR الافتراضي solid في 81 % من الوقت (13.5 ثانية مقابل 16.7 ثانية).</x></body></li><li><body><x><b>المستويات السريعة:</b> يقايض <code>-m2</code> النسبة بالسرعة: أسرع 18 مرة من RAR solid <code>-m3</code>، وأكبر بنسبة 37 %. هذا هو المستوى المناسب للنسخ الاحتياطية وخطوط الأنابيب حيث يكون الوقت أهم من آخر بضعة ميغابايتات.</x></body></li><li><body><x><b>غير solid:</b> تكون أرشيفات RAR الافتراضية (غير solid) ضعف حجم أرشيفاته solid تقريباً على بيانات كثيرة الملفات الصغيرة هذه. على من يقارن nikpak بـRAR أن يضيف <code>-s</code> إلى RAR.</x></body></li></ul>
+<h3 class="se" id="11-4-speed-on-a-single-large-media-file"><body><x>11.4 السرعة على ملف وسائط كبير واحد</x></body></h3>
+<figure><img src="../assets/img/tech/d26c8b2.png" alt="Figure 6: creating an archive from the 17 MB stereo WAV." loading="lazy"><figcaption><body><x>الشكل 6: إنشاء أرشيف من ملف WAV الستيريو بحجم 17 MB.</x></body></figcaption></figure>
+<table class="tech-table"><thead><tr><th><body><x><b>العملية</b></x></body></th><th><body><x><b>nikpak</b></x></body></th><th><body><x><b>RAR 7</b></x></body></th><th><body><x><b>الحجم</b></x></body></th></tr></thead><tbody><tr><td><body><x>الإنشاء، السريع / افتراضي RAR</x></body></td><td>
+				<b>1.45
+				s</b>
+				(-m2)</td><td>
+				2.54
+				s (-m3)</td><td><body><x>9,415,519 vs 11,128,595</x></body></td></tr><tr><td><body><x>الإنشاء، المستوى الأقصى</x></body></td><td>
+				<b>3.14
+				s</b>
+				(-m5)</td><td>
+				5.87
+				s (-m5)</td><td><body><x>9,411,898 vs 11,024,411</x></body></td></tr><tr><td><body><x>الاستخراج</x></body></td><td>
+				0.28
+				s</td><td>
+				<b>0.23
+				s</b></td><td><body><x>المخرج نفسه</x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p><body><x>على الوسائط يكون nikpak أصغر وأسرع في الإنشاء. يستخرج RAR أسرع قليلاً؛ والسبب المحتمل هو أن فك ترميز NAC ينفذ تنبؤاً صحيحاً لكل عينة، وهو ما يكلف أكثر قليلاً من نسخ المطابقة الذي يهيمن على فك الترميز العام.</x></body></p>
+<h3 class="se" id="11-5-encryption-overhead"><body><x>11.5 تكلفة التشفير</x></body></h3>
+<p><body><x>على مجموعة بيانات 222 MB، استغرق الأرشيف المشفر 0.92 ثانية مقابل 0.64 ثانية غير مشفر، وكان أكبر بـ11,087 بايتاً (0.03 %). يشمل الفرق اشتقاق Argon2id، لذا تهيمن على الكلفة نسبة ثابتة من الثانية.</x></body></p>
+<h3 class="se" id="11-6-reproducing-the-results"><body><x>11.6 إعادة إنتاج النتائج</x></body></h3>
+<pre># media: which filter wins, per file</pre>
+<pre>nikpak mt song.wav tracker.mod photo.bmp</pre>
+<p>
+<code></code><br>
+
+</p>
+<pre># archive with nikpak and RAR, then compare</pre>
+<pre>nikpak a -q -ep -m2 test.nik *.wav</pre>
+<pre>rar a -ep -m5 -ma5 test.rar *.wav</pre>
+<p>
+<code></code><br>
+
+</p>
+<pre># fair comparison on many files: give RAR solid mode</pre>
+<pre>rar a -r -s -m5 -ma5 -md256m data.rar data</pre>
+<pre>nikpak a -m5 data.nik data</pre>
+<p>
+<code></code><br>
+
+</p>
+<pre># verify</pre>
+<pre>nikpak x -o+ test.nik restore\</pre>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="11-7-second-run-nikpak-rar-7-7-zip-and-zip"><body><x>11.7 الجولة الثانية: nikpak وRAR 7 و7-Zip وZIP</x></body></h3>
+<p><body><x><b>محدَّث لإصدار nikpak 1.2.0.</b> في النسخة الأولى من هذه الجولة، مع nikpak 1.1.0، كان 7-Zip -mx9 متقدماً في النصوص (بنسبة 1.4 %)، وملفات Office (بنسبة 3.3 %)، والكود المصدري (بنسبة 8.5 %). يضيف nikpak 1.2.0 إعادة ضغط Deflate (7.9) ومستوى أقصى جديداً مبنياً على LZMA2 وPPMd (6.7)، وقيس مرة أخرى على الجهاز نفسه بالملفات نفسها. أرقام RAR و7-Zip وZIP مأخوذة من الجولة الأولى.</x></body></p>
+<p><body><x>تقارن الأقسام من 11.2 إلى 11.5 nikpak بـRAR فقط. تضيف هذه الجولة الثانية الأرشيفيين اللذين يملكهما معظم الناس بالفعل، <b>7-Zip</b> وصيغة <b>ZIP</b> الكلاسيكية، ونوعين من الملفات التي تُؤرشَف كل يوم: <b>النص الصريح</b> و<b>مستندات Office</b> (.doc و.docx و.xls و.xlsx و.csv و.pdf). شُغِّلت الأدوات الأربع واحدة تلو الأخرى على الجهاز نفسه والملفات نفسها، وقيس RAR مرة أخرى. أُعيد بناء مجموعات البيانات من المصادر العامة نفسها، لذا تختلف الأحجام والأوقات المطلقة عن تلك الموجودة في 11.2 إلى 11.4. قارن الأرقام داخل هذا القسم، لا عبر الأقسام.</x></body></p>
+<h4 class="su" id="method"><body><x>الطريقة</x></body></h4>
+<table class="tech-table"><thead><tr><th><body><x><b>البند</b></x></body></th><th><body><x><b>التفصيل</b></x></body></th></tr></thead><tbody><tr><td><body><x>الجهاز</x></body></td><td><body><x>آلة افتراضية Linux x86-64 (Intel Xeon بتردد 2.8 GHz). ثُبّت كل أمر على نواة معالج واحدة باستخدام taskset وشُغِّل بخيط واحد (nikpak -mt1 وRAR -mt1 و7-Zip -mmt=1؛ وZIP أحادي الخيط بالتصميم).</x></body></td></tr><tr><td><body><x>البرمجيات</x></body></td><td><body><x>nikpak 1.2.0 (بناء release)؛ وRAR 7.00 (-ma5، وsolid)؛ و7-Zip 23.01 (صيغة .7z، وLZMA2، وsolid افتراضياً)؛ وInfo-ZIP Zip 3.0 وUnZip 6.0 (Deflate).</x></body></td></tr><tr><td><body><x>المستويات</x></body></td><td><body><x>nikpak: المستوى السريع -m2 والأقصى -m5، وهو الافتراضي منذ الإصدار 1.2.1 (و-m4). الآخرون: الافتراضي والأقصى، وRAR -m3 -s / -m5 -s، و7-Zip -mx5 / -mx9، وZIP -6 / -9. أُعطي RAR الوضع solid (-s)، لأن الثلاثة الآخرين solid، أو لا يمكنهم ذلك في حالة ZIP.</x></body></td></tr><tr><td><body><x>قياس الوقت</x></body></td><td><body><x>ثواني ساعة الحائط. المجموعات الأقل من 50 MB: أفضل ثلاث تشغيلات. المجموعة العامة: تشغيلة واحدة.</x></body></td></tr><tr><td><body><x>التحقق</x></body></td><td><body><x>استُخرجت جميع الأرشيفات الـ92 وقورنت بالأصل باستخدام diff -r. وكانت جميعها متطابقة.</x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h4 class="su" id="the-test-material"><body><x>مادة الاختبار</x></body></h4>
+<table class="tech-table"><thead><tr><th><body><x><b>المجموعة</b></x></body></th><th><body><x><b>الملفات</b></x></body></th><th><body><x><b>الحجم (بايت)</b></x></body></th><th><body><x><b>المحتوى</b></x></body></th></tr></thead><tbody><tr><td><body><x>صور BMP</x></body></td><td>
+				8</td><td>
+				6,987,840</td><td><body><x>ست صور فوتوغرافية من مجموعة عينات scikit-image بصيغة BMP 24 بتاً، إضافة إلى صورة فوتوغرافية رمادية 8 بتات وخامة حصى 8 بتات.</x></body></td></tr><tr><td><body><x>ProTracker MOD</x></body></td><td>
+				16</td><td>
+				2,252,604</td><td><body><x>أكبر 16 وحدة ProTracker في مجموعة اختبار libxmp.</x></body></td></tr><tr><td><body><x>ملفات WAV الخاصة بالمعرض</x></body></td><td>
+				35</td><td>
+				2,991,820</td><td><body><x>أصوات معرض LibreOffice الـ35 نفسها كما في 11.1.</x></body></td></tr><tr><td><body><x>الموسيقى، أربع صيغ</x></body></td><td>
+				4
+				× 1</td><td>
+				53,417,226</td><td><body><x>مقطوعة جديدة مدتها 100 ثانية (بيانو وأوتار وباس وفلوت وطبول) مُصيَّرة بـTiMidity++ وFreepats بتردد 44.1 kHz ستيريو 16 بتاً، ثم حوّلها SoX إلى أحادي 16 بتاً و8 بتات بتردد 22.05 kHz وإلى ستيريو 24 بتاً بتردد 48 kHz.</x></body></td></tr><tr><td><body><x>النص الصريح</x></body></td><td>
+				18</td><td>
+				11,793,318</td><td><body><x>ثمانية عشر كتاباً من مشروع Gutenberg بصيغة .txt (أوستن وملفيل وشكسبير ونسخة الملك جيمس للكتاب المقدس وغيرها).</x></body></td></tr><tr><td><body><x>ملفات Office</x></body></td><td>
+				60</td><td>
+				39,100,915</td><td><body><x>12 تقريراً بصيغة .docx و.doc و.pdf (نص وعناوين وجداول وبعض الصور) و8 دفاتر مبيعات تضم من 500 إلى 30,000 صف بصيغة .xlsx و.xls و.csv (مع صيغ)، حُفظت بـLibreOffice.</x></body></td></tr><tr><td><body><x>البيانات العامة</x></body></td><td>
+				11,473</td><td>
+				190,454,632</td><td><body><x>مكتبات Python 3.12 و3.13 القياسية، وحزم Debian Python، وترويسات C (/usr/include)، و/usr/share/doc. مع إزالة الروابط الرمزية.</x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h4 class="su" id="maximum-levels-archive-size"><body><x>المستويات القصوى: حجم الأرشيف</x></body></h4>
+<table class="tech-table"><thead><tr><th><body><x><b>المجموعة</b></x></body></th><th><body><x><b>الأصل</b></x></body></th><th><body><x><b>nikpak -m5</b></x></body></th><th><body><x><b>RAR 7 -m5</b></x></body></th><th><body><x><b>7-Zip -mx9</b></x></body></th><th><body><x><b>ZIP -9</b></x></body></th></tr></thead><tbody><tr><td><body><x>8 صور BMP</x></body></td><td>
+				6,987,840</td><td>
+				<b>3,557,350</b></td><td>
+				4,394,310</td><td>
+				4,195,043</td><td>
+				4,974,680</td></tr><tr><td><body><x>16 ملف ProTracker MOD</x></body></td><td>
+				2,252,604</td><td>
+				<b>1,127,607</b></td><td>
+				1,264,245</td><td>
+				1,166,855</td><td>
+				1,408,085</td></tr><tr><td><body><x>35 ملف WAV من المعرض (أحادي 16 بتاً)</x></body></td><td>
+				2,991,820</td><td>
+				<b>1,346,484</b></td><td>
+				1,596,971</td><td>
+				1,484,879</td><td>
+				1,852,279</td></tr><tr><td><body><x>موسيقى 44.1 kHz ستيريو 16 بتاً</x></body></td><td>
+				17,760,408</td><td>
+				<b>8,731,989</b></td><td>
+				10,460,042</td><td>
+				10,666,922</td><td>
+				15,225,764</td></tr><tr><td><body><x>موسيقى 22.05 kHz أحادي 16 بتاً</x></body></td><td>
+				4,440,136</td><td>
+				<b>2,458,867</b></td><td>
+				2,797,026</td><td>
+				2,784,080</td><td>
+				3,736,722</td></tr><tr><td><body><x>موسيقى 22.05 kHz أحادي 8 بتات</x></body></td><td>
+				2,220,090</td><td>
+				<b>606,840</b></td><td>
+				725,416</td><td>
+				642,341</td><td>
+				836,989</td></tr><tr><td><body><x>موسيقى 48 kHz ستيريو 24 بتاً</x></body></td><td>
+				28,996,592</td><td>
+				<b>18,198,056</b></td><td>
+				21,229,465</td><td>
+				25,542,036</td><td>
+				26,980,770</td></tr><tr><td><body><x>18 كتاباً نصياً صريحاً (.txt)</x></body></td><td>
+				11,793,318</td><td>
+				<b>2,741,898</b></td><td>
+				3,519,622</td><td>
+				3,259,868</td><td>
+				4,223,579</td></tr><tr><td><body><x>60 ملف Office</x></body></td><td>
+				39,100,915</td><td>
+				<b>6,887,729</b></td><td>
+				11,186,217</td><td>
+				10,085,779</td><td>
+				17,399,998</td></tr><tr><td><body><x>البيانات العامة (11,473 ملفاً)</x></body></td><td>
+				190,454,632</td><td>
+				<b>28,175,618</b></td><td>
+				33,606,893</td><td>
+				28,879,398</td><td>
+				62,198,510</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p><body><x>جميع الأحجام بالبايتات. ويُعرض أصغر أرشيف في كل صف بخط عريض.</x></body></p>
+<figure><img src="../assets/img/tech/ddb7a26b.png" alt="Figure 7: archive size at the maximum level of each tool, as a percentage of the original (lower is better)." loading="lazy"><figcaption><body><x>الشكل 7: حجم الأرشيف عند المستوى الأقصى لكل أداة، كنسبة مئوية من الأصل (الأقل أفضل).</x></body></figcaption></figure>
+<h4 class="su" id="fast-levels-size-and-creation-time"><body><x>المستويات السريعة: الحجم ووقت الإنشاء</x></body></h4>
+<table class="tech-table"><thead><tr><th><body><x><b>المجموعة</b></x></body></th><th><body><x><b>nikpak -m2</b></x></body></th><th><body><x><b>RAR 7 -m3</b></x></body></th><th><body><x><b>7-Zip -mx5</b></x></body></th><th><body><x><b>ZIP -6</b></x></body></th></tr></thead><tbody><tr><td><body><x>8 صور BMP</x></body></td><td>
+				<b>54.0
+				%  ·  0.39 s</b></td><td>
+				63.0
+				%  ·  2.09 s</td><td>
+				60.1
+				%  ·  3.51 s</td><td>
+				71.2
+				%  ·  0.35 s</td></tr><tr><td><body><x>16 ملف ProTracker MOD</x></body></td><td>
+				52.4
+				%  ·  0.61 s</td><td>
+				56.2
+				%  ·  0.43 s</td><td>
+				<b>51.9
+				%  ·  0.69 s</b></td><td>
+				62.7
+				%  ·  0.10 s</td></tr><tr><td><body><x>35 ملف WAV من المعرض (أحادي 16 بتاً)</x></body></td><td>
+				51.1
+				%  ·  0.41 s</td><td>
+				53.6
+				%  ·  0.71 s</td><td>
+				<b>49.6
+				%  ·  1.96 s</b></td><td>
+				61.9
+				%  ·  0.24 s</td></tr><tr><td><body><x>موسيقى 44.1 kHz ستيريو 16 بتاً</x></body></td><td>
+				<b>49.2
+				%  ·  1.72 s</b></td><td>
+				59.9
+				%  ·  3.60 s</td><td>
+				60.1
+				%  ·  14.03 s</td><td>
+				85.7
+				%  ·  0.82 s</td></tr><tr><td><body><x>موسيقى 22.05 kHz أحادي 16 بتاً</x></body></td><td>
+				<b>55.4
+				%  ·  0.58 s</b></td><td>
+				64.1
+				%  ·  0.95 s</td><td>
+				62.7
+				%  ·  2.14 s</td><td>
+				84.2
+				%  ·  0.22 s</td></tr><tr><td><body><x>موسيقى 22.05 kHz أحادي 8 بتات</x></body></td><td>
+				<b>27.4
+				%  ·  0.77 s</b></td><td>
+				33.3
+				%  ·  0.52 s</td><td>
+				28.9
+				%  ·  2.13 s</td><td>
+				38.2
+				%  ·  0.32 s</td></tr><tr><td><body><x>موسيقى 48 kHz ستيريو 24 بتاً</x></body></td><td>
+				<b>62.8
+				%  ·  2.06 s</b></td><td>
+				73.6
+				%  ·  7.54 s</td><td>
+				88.1
+				%  ·  13.54 s</td><td>
+				93.0
+				%  ·  1.19 s</td></tr><tr><td><body><x>18 كتاباً نصياً صريحاً (.txt)</x></body></td><td>
+				35.2
+				%  ·  0.11 s</td><td>
+				30.4
+				%  ·  5.53 s</td><td>
+				<b>27.7
+				%  ·  11.76 s</b></td><td>
+				36.0
+				%  ·  0.89 s</td></tr><tr><td><body><x>60 ملف Office</x></body></td><td>
+				38.0
+				%  ·  0.22 s</td><td>
+				29.5
+				%  ·  8.25 s</td><td>
+				<b>26.2
+				%  ·  21.85 s</b></td><td>
+				44.7
+				%  ·  1.83 s</td></tr><tr><td><body><x>البيانات العامة (11,473 ملفاً)</x></body></td><td>
+				25.3
+				%  ·  1.67 s</td><td>
+				18.0
+				%  ·  48.19 s</td><td>
+				<b>17.0
+				%  ·  93.71 s</b></td><td>
+				32.9
+				%  ·  7.32 s</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p><body><x>nikpak -m2 مقابل المستوى الافتراضي للأدوات الأخرى. تعرض كل خلية حجم الأرشيف كنسبة مئوية من الأصل ووقت الإنشاء على نواة واحدة. وأصغر أرشيف في كل صف بخط عريض.</x></body></p>
+<h4 class="su" id="general-data-in-detail"><body><x>البيانات العامة بالتفصيل</x></body></h4>
+<table class="tech-table"><thead><tr><th><body><x><b>الأداة والمستوى</b></x></body></th><th><body><x><b>الحجم (بايت)</b></x></body></th><th><body><x><b>% من الأصل</b></x></body></th><th><body><x><b>الإنشاء</b></x></body></th><th><body><x><b>الاستخراج</b></x></body></th></tr></thead><tbody><tr><td><body><x><b>nikpak -m5</b></x></body></td><td>
+				<b>28,175,618</b></td><td>
+				<b>14.8
+				%</b></td><td>
+				<b>154.3
+				s</b></td><td>
+				<b>5.6
+				s</b></td></tr><tr><td><body><x><b>7-Zip -mx9</b></x></body></td><td>
+				28,879,398</td><td>
+				15.2
+				%</td><td>
+				120.9
+				s</td><td>
+				6.0
+				s</td></tr><tr><td><body><x>RAR 7 -m5 -s -md256m</x></body></td><td>
+				32,350,575</td><td>
+				17.0
+				%</td><td>
+				73.6
+				s</td><td>
+				7.0
+				s</td></tr><tr><td><body><x><b>7-Zip -mx5</b></x></body></td><td>
+				32,375,802</td><td>
+				17.0
+				%</td><td>
+				93.7
+				s</td><td>
+				4.5
+				s</td></tr><tr><td><body><x>nikpak -m4</x></body></td><td>
+				<b>33,295,133</b></td><td>
+				<b>17.5
+				%</b></td><td>
+				<b>37.8
+				s</b></td><td>
+				<b>3.3
+				s</b></td></tr><tr><td><body><x>RAR 7 -m5 -s</x></body></td><td>
+				33,606,893</td><td>
+				17.6
+				%</td><td>
+				72.4
+				s</td><td>
+				6.7
+				s</td></tr><tr><td><body><x>RAR 7 -m3 -s</x></body></td><td>
+				34,236,198</td><td>
+				18.0
+				%</td><td>
+				48.2
+				s</td><td>
+				5.9
+				s</td></tr><tr><td><body><x><b>nikpak -m2</b></x></body></td><td>
+				<b>48,229,284</b></td><td>
+				<b>25.3
+				%</b></td><td>
+				<b>1.7
+				s</b></td><td>
+				<b>0.9
+				s</b></td></tr><tr><td><body><x>RAR 7 -m3 (غير solid)</x></body></td><td>
+				56,038,351</td><td>
+				29.4
+				%</td><td>
+				20.2
+				s</td><td>
+				6.9
+				s</td></tr><tr><td><body><x><b>ZIP -9</b></x></body></td><td>
+				62,198,510</td><td>
+				32.7
+				%</td><td>
+				28.2
+				s</td><td>
+				6.9
+				s</td></tr><tr><td><body><x><b>ZIP -6</b></x></body></td><td>
+				62,672,415</td><td>
+				32.9
+				%</td><td>
+				7.3
+				s</td><td>
+				5.4
+				s</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<figure><img src="../assets/img/tech/9f20cd82.png" alt="Figure 8: general data, size and creation time of all four tools on one core." loading="lazy"><figcaption><body><x>الشكل 8: البيانات العامة، الحجم ووقت الإنشاء للأدوات الأربع على نواة واحدة.</x></body></figcaption></figure>
+<h4 class="su" id="from-1-1-0-to-1-2-0"><body><x>من 1.1.0 إلى 1.2.0</x></body></h4>
+<table class="tech-table"><thead><tr><th><body><x><b>المجموعة</b></x></body></th><th><body><x><b>nikpak 1.1.0 -m5</b></x></body></th><th><body><x><b>nikpak 1.2.0 -m5</b></x></body></th><th><body><x><b>7-Zip -mx9</b></x></body></th><th><body><x><b>1.2.0 مقابل 7-Zip</b></x></body></th></tr></thead><tbody><tr><td><body><x>18 كتاباً نصياً صريحاً</x></body></td><td>
+				3,306,819</td><td>
+				<b>2,741,898</b></td><td>
+				3,259,868</td><td><body><x><b>أصغر بنسبة 15.9 %</b></x></body></td></tr><tr><td><body><x>60 ملف Office</x></body></td><td>
+				10,417,750</td><td>
+				<b>6,887,729</b></td><td>
+				10,085,779</td><td><body><x>أصغر بنسبة 31.7 %</x></body></td></tr><tr><td><body><x>البيانات العامة</x></body></td><td>
+				31,322,041</td><td>
+				<b>28,175,618</b></td><td>
+				28,879,398</td><td><body><x><b>أصغر بنسبة 2.4 %</b></x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h4 class="su" id="reading-the-results-honestly"><body><x>قراءة النتائج بصدق</x></body></h4>
+<ul><li><body><x><b>nikpak -m5 هو الأصغر في كل مجموعة.</b> مقابل 7-Zip -mx9 يكون أصغر بنسبة 2.4 إلى 31.7 %، ومقابل RAR 7 -m5 بنسبة 10.8 إلى 38.4 %، ومقابل ZIP -9 بنسبة 19.9 إلى 60.4 %. في الصوت المسجَّل يتنبأ NAC بما لا تستطيع الضواغط القائمة على LZ إلا مطابقته: في موسيقى 24 بتاً يوفر 7-Zip نسبة 12 % وnikpak نسبة 37 %.</x></body></li><li><body><x><b>ملفات Office: أصغر بنسبة 31.7 % من 7-Zip.</b> تحوِّل إعادة ضغط Deflate مساحة 6.6 MB من .xlsx و1.9 MB من .docx إلى XML صريح يضغطه LZMA2 أفضل بكثير مما فعل Deflate (6.89 MB مقابل 10.09 MB). حتى -m4 أصغر بنسبة 1.3 % من 7-Zip -mx9 وأسرع (16 ثانية مقابل 26 ثانية). والثمن عند -m5 هو الوقت: 81 ثانية مقابل 26 ثانية.</x></body></li><li><body><x><b>النصوص: أصغر بنسبة 15.9 %، في نصف الوقت.</b> يفوز PPMd في النثر (6.4 ثانية مقابل 12.9 ثانية للإنشاء). ولأن PPMd يفك الترميز ببطء يساوي بطء ترميزه، يستغرق الاستخراج 2.7 ثانية بدلاً من 0.2 ثانية.</x></body></li><li><body><x><b>الكود المصدري: أصغر بنسبة 2.4 %، تقدم ضئيل.</b> 28.2 MB مقابل 28.9 MB، في 154 ثانية مقابل 121 ثانية. صنع الفرقُ الترتيبَ حسب نوع الملف واختيار المحرك على عينات متجاورة (6.7).</x></body></li><li><body><x><b>المستوى السريع -m2: الأسرع، لا الأصغر.</b> يحتاج nikpak -m2 إلى 1.7 ثانية للمجموعة العامة، مقابل 93.7 ثانية لـ7-Zip -mx5 (أطول 56 مرة)، و48.2 ثانية لـRAR، و7.3 ثانية لـZIP. وهو أصغر من 7-Zip -mx5 في الصور وفي معظم الصوت (ملفات MOD وملفات WAV الخاصة بالمعرض أكبر بنسبة 1 إلى 3 %)، لكنه أكبر في النصوص وملفات Office والكود المصدري (49.0 % على المجموعة العامة). ولهذا السبب، يستخدم nikpak منذ الإصدار 1.2.1 الخيار -m5 افتراضياً؛ ويجب طلب -m2.</x></body></li><li><body><x><b>ZIP سريع لكنه الأكبر في كل مكان.</b> حتى nikpak -m2 يتفوق على ZIP -9 في كل مجموعة. ينشئ ZIP أرشيفات وسائط صغيرة أسرع من nikpak -m2، لأن Deflate يبذل عملاً أقل بكثير من مرمّز NAC، لكنه أبطأ في النصوص وملفات Office والكود المصدري.</x></body></li><li><body><x><b>الاستخراج.</b> تُستخرج المجموعة العامة في 0.9 ثانية (nikpak -m2) أو 5.6 ثانية (-m5)، مقابل 6.0 ثانية لـ7-Zip، و6.7 ثانية لـRAR، و6.9 ثانية لـZIP. وتُستخرج الأرشيفات ذات تدفقات Deflate المعاد ضغطها أبطأ، لأن كل تدفق يُعاد بناؤه (2.1 ثانية مقابل 0.7 ثانية لمجموعة Office).</x></body></li><li><body><x><b>RAR على هذا الجهاز.</b> كان RAR أبطأ هنا مما في 11.3 (72 ثانية بدلاً من 27 ثانية لـ-m5 -s على كمية مماثلة من الكود المصدري). يختلف الجهاز والبيانات، لذا لا ينبغي خلط القسمين. وضمن هذه الجولة توافرت الشروط نفسها لكل أداة.</x></body></li></ul>
+<h4 class="su" id="what-this-means-for-nikpak"><body><x>ماذا يعني هذا بالنسبة لـnikpak</x></body></h4>
+<p><body><x>عند المستوى الأقصى ينتج nikpak 1.2.0 أصغر أرشيف بين الأدوات الأربع في كل مجموعة قيست، أصغر بنسبة 2.4 إلى 31.7 % من 7-Zip -mx9. الثمن هو السرعة: -m5 أحادي الخيط وأبطأ من 7-Zip في ملفات Office والكود المصدري. وجعله أسرع مدرج في خارطة الطريق (القسم 15.2).</x></body></p>
+<h2 class="ch" id="12-nikpak-and-rar-compared"><body><x>12 مقارنة nikpak وRAR</x></body></h2>
+<p><body><x>RAR أرشيفي ممتاز وواسع الاستخدام، وهذا الفصل لا يدّعي غير ذلك. يعرض حيث تفضل القياسات والتصميمُ nikpak، وأين يتقدم RAR، ومَن يجب أن يختار ماذا.</x></body></p>
+<h3 class="se" id="12-1-where-nikpak-is-ahead"><body><x>12.1 أين يتفوق nikpak</x></body></h3>
+<table class="tech-table"><thead><tr><th><body><x><b>المجال</b></x></body></th><th><body><x><b>nikpak</b></x></body></th><th><body><x><b>الدليل</b></x></body></th></tr></thead><tbody><tr><td><body><x>الصوت والصور وموسيقى tracker</x></body></td><td><body><x>أصغر بنسبة 12 - 39 % من RAR 7 -m5 في كل مجموعة وسائط قيست</x></body></td><td><body><x>القسم 11.2</x></body></td></tr><tr><td><body><x>الكود المصدري، المستوى الأقصى</x></body></td><td><body><x>أصغر بنسبة 5.5 % من أفضل إعداد solid لدى RAR</x></body></td><td><body><x>القسم 11.3</x></body></td></tr><tr><td><body><x>السرعة عند المستوى السريع -m2</x></body></td><td><body><x>0.9 ثانية مقابل 9.7 - 16.7 ثانية لـ197 MB؛ و1.45 ثانية مقابل 2.54 ثانية لملف WAV</x></body></td><td><body><x>القسمان 11.3 و11.4</x></body></td></tr><tr><td><body><x>التشفير والوضع</x></body></td><td><body><x>XChaCha20-Poly1305، موثَّق؛ ويستخدم RAR5 معيار AES-256 في وضع CBC، وهو غير موثَّق ويعتمد على مجاميع اختبارية منفصلة</x></body></td><td><body><x>الفصل 8</x></body></td></tr><tr><td><body><x>تهشير كلمة المرور</x></body></td><td><body><x>Argon2id، مستهلك للذاكرة (64 MiB)؛ ويستخدم RAR5 معيار PBKDF2-HMAC-SHA256، المرتبط بالمعالج والذي يتوازى بثمن بخس على وحدات معالجة الرسوميات</x></body></td><td><body><x>القسم 8.2</x></body></td></tr><tr><td><body><x>خصوصية أسماء الملفات</x></body></td><td><body><x>مشفَّرة دائماً؛ ويحتاج RAR إلى مفتاح التبديل <code>-hp</code></x></body></td><td><body><x>القسم 8.4</x></body></td></tr><tr><td><body><x>توليد كلمات المرور</x></body></td><td><body><x>مدمج: كلمة مرور عشوائية قوية عند عدم إمداد أي كلمة</x></body></td><td><body><x>القسم 3.3</x></body></td></tr><tr><td><body><x>إثبات العبث</x></body></td><td><body><x>تُكتشف إعادة الترتيب والبتر وتغييرات الترويسة تشفيرياً</x></body></td><td><body><x>القسم 8.6</x></body></td></tr><tr><td><body><x>الشفافية</x></body></td><td><body><x>مصدر كامل وصيغة موثَّقة؛ وتنفيذ بلغة Rust الآمنة الذاكرة</x></body></td><td><body><x>الفصلان 5 و10</x></body></td></tr><tr><td><body><x>التوزيع</x></body></td><td><body><x>ملف تنفيذي استاتيكي واحد (نافذة إفلات وسطر أوامر؛ نحو 2.3 MB بدون النافذة)، أو مثبِّت Windows صغير؛ برنامج shareware مجاني للاستخدام الشخصي (3.8)</x></body></td><td><body><x>الفصل 13</x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="12-2-where-rar-is-ahead"><body><x>12.2 أين يتقدم RAR</x></body></h3>
+<table class="tech-table"><thead><tr><th><body><x><b>المجال</b></x></body></th><th><body><x><b>RAR 7</b></x></body></th><th><body><x><b>nikpak اليوم</b></x></body></th></tr></thead><tbody><tr><td><body><x>سجلات الاسترداد</x></body></td><td><body><x>يستطيع إصلاح الأرشيفات التالفة</x></body></td><td><body><x>يكتشف التلف، ولا يستطيع إصلاحه</x></body></td></tr><tr><td><body><x>الأرشيفات متعددة الأحجام</x></body></td><td><body><x><b>نعم</b></x></body></td><td><body><x>لا</x></body></td></tr><tr><td><body><x>الأرشيفات ذاتية الاستخراج</x></body></td><td><body><x><b>نعم</b></x></body></td><td><body><x>لا</x></body></td></tr><tr><td><body><x>تحديث أرشيف</x></body></td><td><body><x>إضافة واستبدال وحذف الملفات في مكانها</x></body></td><td><body><x>الإنشاء أو الكتابة فوق فقط</x></body></td></tr><tr><td><body><x>الواجهة الرسومية</x></body></td><td><body><x>WinRAR، مع تكامل الصدفة</x></body></td><td><body><x>نافذة إفلات للضغط (3.7)؛ بلا تكامل صدفة، والاستخراج من سطر الأوامر</x></body></td></tr><tr><td><body><x>سرعة المستوى الأقصى</x></body></td><td><body><x>26.7 - 36.2 ثانية على المجموعة العامة</x></body></td><td>
+				45.6
+				s</td></tr><tr><td><body><x>سرعة الاستخراج على الوسائط</x></body></td><td><body><x>0.23 ثانية لملف WAV بحجم 17 MB</x></body></td><td>
+				0.28
+				s</td></tr><tr><td><body><x>النضج والانتشار</x></body></td><td><body><x>عقود من الاختبار الميداني؛ وملايين ملفات .rar الموجودة</x></body></td><td><body><x>جديد؛ بلا تدقيق مستقل؛ ويقرأ .nik فقط</x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="12-3-quantum-resistance-in-perspective"><body><x>12.3 مقاومة الحوسبة الكمومية في منظورها</x></body></h3>
+<p><body><x>يشفر كل من nikpak وRAR5 بمفتاح متماثل 256 بتاً، لذا لا تمسهما خوارزمية Shor ويحتفظ كلاهما بنحو 128 بتاً من الأمان ضد خوارزمية Grover. ولا يميزهما أي ادعاء في ذلك. ما يضيفه nikpak فوق ذلك هو خطوة كلمة مرور مستهلكة للذاكرة (ما يجعل الهجوم الواقعي المهيمن، وهو تخمين كلمة المرور، أكثر كلفة بكثير) وتشفير موثَّق (ما يجعل العبث قابلاً للاكتشاف). كما صُمم منذ البداية على افتراض أن أياً من بدائيات المفاتيح العامة لن تكون جزءاً من صيغة الأرشيف أبداً، وتلتزم خارطة طريقه بمخطط هجين ما بعد الكم إذا أُضيفت مشاركة المفاتيح العامة.</x></body></p>
+<h3 class="se" id="12-4-which-one-to-choose"><body><x>12.4 أيهما تختار</x></body></h3>
+<ul><li><body><x><b>اختر nikpak</b> لأرشفة الصوت والصور وموسيقى tracker والكود المصدري حيث يكون الحجم والسرعة مهمين، وللنسخ الاحتياطية المبرمجة، وللتشفير الافتراضي القوي، وعندما تكون الصيغة المفتوحة والموثَّقة ذات قيمة.</x></body></li><li><body><x><b>اختر RAR</b> عندما تحتاج سجلات الاسترداد أو الأرشيفات متعددة الأحجام أو ذاتية الاستخراج أو التحديث في المكان، أو عندما يتعين عليك تبادل الأرشيفات مع أشخاص لا يملكون سوى أدوات RAR.</x></body></li><li><body><x><b>استخدم الاثنين</b>: لا شيء يمنع سير عمل من استخدام nikpak للوسائط الكبيرة والنسخ الاحتياطية المشفرة مع إبقاء RAR للتوزيع.</x></body></li></ul>
+<h3 class="se" id="12-5-and-7-zip-and-zip"><body><x>12.5 وماذا عن 7-Zip وZIP؟</x></body></h3>
+<p><body><x>يقيس القسم 11.7 الإصدار nikpak 1.2 مقابل 7-Zip 23.01 وInfo-ZIP 3.0 أيضاً. باختصار:</x></body></p>
+<ul><li><body><x><b>اختر nikpak -m5 لأصغر أرشيف.</b> إنه أصغر بنسبة 2.4 إلى 31.7 % من 7-Zip -mx9 في كل مجموعة قيست: 31.7 % في ملفات Office، و15.9 % في النصوص، و2.4 % في الكود المصدري. واختر nikpak -m2 للنسخ الاحتياطية السريعة (أسرع 56 مرة من افتراضي 7-Zip في الكود المصدري). يتمتع nikpak أيضاً بتشفير أقوى: يستخدم 7-Zip معيار AES-256 مع اشتقاق مفتاح SHA-256 غير مستهلك للذاكرة، ولا يخفي أسماء الملفات إلا بـ-mhe.</x></body></li><li><body><x><b>اختر 7-Zip</b> عندما يكون الوقت أهم عند المستوى الأقصى (فهو أسرع في مجموعات Office والكود المصدري الكبيرة)، أو عندما تحتاج مستواه الافتراضي ليكون صغيراً في المستندات، أو عندما تحتاج فتح الصيغ الكثيرة التي يقرؤها 7-Zip.</x></body></li><li><body><x><b>اختر ZIP</b> للتوافق فقط. يفتحه كل نظام تشغيل دون برامج إضافية، لكن nikpak -m5 أصغر بنسبة 19.9 إلى 60.4 %، وتشفير ZIP التقليدي ضعيف.</x></body></li></ul>
+<h2 class="ch" id="13-building-deploying-and-integrating"><body><x>13 البناء والنشر والتكامل</x></body></h2>
+<h3 class="se" id="13-1-windows-with-powershell"><body><x>13.1 نظام Windows مع PowerShell</x></body></h3>
+<p><body><x>كُتب nikpak بلغة Rust ويُبنى بـCargo. وعلى Windows، تحتاج Rust إلى رابط C/C++، يأتي من Visual Studio Build Tools. في PowerShell بصلاحيات مسؤول، ثبِّت الاثنين مرة واحدة ثم أعد فتح PowerShell:</x></body></p>
+<pre>winget install Rustlang.Rustup</pre>
+<pre>$o = '--wait --passive --add Microsoft.VisualStudio.Workload.VCTools'</pre>
+<pre>$o += ' --includeRecommended'</pre>
+<pre>winget install Microsoft.VisualStudio.2022.BuildTools --override $o</pre>
+<p><br>
+<br>
+
+</p>
+<p><body><x>إذا لم يكن <code>winget</code> متاحاً، ثبِّت Rust من rustup.rs وأدوات <i>Build Tools for Visual Studio</i> مع عبء العمل <i>Desktop development with C++</i>. ثم، في المجلد الذي يحتوي المصادر:</x></body></p>
+<pre>.\build.ps1 # builds dist\nikpak.exe and dist\unNik.exe</pre>
+<pre>.\build.ps1 -Test # runs the unit tests first</pre>
+<p>
+<code></code><br>
+
+</p>
+<pre># if PowerShell refuses to run scripts:</pre>
+<pre>powershell -ExecutionPolicy Bypass -File .\build.ps1</pre>
+<p><br>
+<br>
+
+</p>
+<p><body><x>يتحقق <code>build.ps1</code> من تثبيت Cargo (ويشرح كيفية تثبيته إن لم يكن)، ويشغِّل البناء، ويشرح السبب المعتاد عند الفشل، وينسخ الملف التنفيذي إلى <code>dist\nikpak.exe</code>.</x></body></p>
+<h4 class="su" id="the-windows-installer"><body><x>مثبِّت Windows</x></body></h4>
+<p><body><x>يبني <code>.\build.ps1 -Installer</code> (أو <code>npm run installer</code>) أيضاً برنامج الإعداد <code>dist\nikpak--setup.exe</code> باستخدام <b>Inno Setup 6.3 أو أحدث</b> (ثبِّته مرة واحدة بـ<code>winget install JRSoftware.InnoSetup</code>). والسكربت هو <code>installer\nikpak.iss</code>؛ ويؤخذ الإصدار من Cargo.toml. ملف الإعداد هذا هو ما يُرفع إلى مواقع shareware والتنزيل.</x></body></p>
+<ul><li><body><x>افتراضياً يثبِّت <b>للمستخدم الحالي فقط</b>، دون صلاحيات مسؤول أو مطالبة UAC، في %LOCALAPPDATA%\Programs\NikPak. وتعرض صفحته الأولى خيار "install for all users" (مجلد Program Files، ويتطلب صلاحيات مسؤول).</x></body></li><li><body><x>يعرض LICENSE.txt للموافقة ويثبِّت nikpak.exe وunNik.exe والأيقونات وLICENSE.txt وTHIRD-PARTY-NOTICES.txt وCHANGELOG.md. ويضيف عنصراً في قائمة <b>Start</b>، وأيقونة سطح مكتب اختيارية، وعند الطلب يضيف المجلد إلى <b>PATH</b> لسطر الأوامر. ويسجِّل أداة إزالة تثبيت في Settings &gt; Apps.</x></body></li><li><body><x><b>الاختصارات:</b> NikPak وunNik والترخيص في قائمة Start؛ و<b>NikPak على سطح المكتب</b> (دائماً) وunNik على سطح المكتب كخيار.</x></body></li><li><body><x><b>تُسجَّل ملفات .nik دائماً</b> (منذ الإصدار 1.5.2): تحصل على أيقونتها الخاصة (nikfile.ico، صفحة بسحّاب، مثل ملفات .zip)، واسم النوع "NikPak archive"، ويفتحها النقر المزدوج في <b>unNik</b> ("Open with unNik" في قائمة النقر الأيمن). ويُدرج unNik أيضاً في "Open with" وفي التطبيقات الافتراضية (Default apps). وتزيل أداة إزالة التثبيت التسجيل. إذا كانت ملفات .nik مضبوطة مسبقاً للفتح ببرنامج آخر، يُبقي Windows ذلك الاختيار حتى يُختار unNik مرة في "Open with".</x></body></li><li><body><x>يشغِّل "Launch NikPak" الأخير برنامج NikPak كمستخدم عادي، وليس كمسؤول أبداً، حتى يعمل السحب والإفلات. تُثبَّت التحديثات فوق الإصدار السابق (AppId ثابت). ويُحتفظ بالترخيص في %APPDATA%\nikpak عند التحديث والإزالة. ولا يحتوي برنامج الإعداد على مفاتيح أو ملفات مفاتيح أبداً.</x></body></li><li><body><x>يعمل المثبِّت بالإنجليزية أو الفرنسية، تبعاً لـWindows. وقبل النشر، وقِّع nikpak.exe وبرنامج الإعداد بشهادة توقيع أكواد، حتى لا يحذر Windows SmartScreen من ناشر غير معروف.</x></body></li></ul>
+<p><body><x>يبني <b>buildall.ps1</b> كل ما يُنشر في تشغيلة واحدة — <code>nikpak.exe</code> و<code>unNik.exe</code> وبرنامجي الإعداد و<code>SHA256SUMS.txt</code> — وينسخها إلى <code>binaries\</code>، ويعيد بناء موقع الويب ويرفعه عبر FTP (ويتخطى <code>-NoUpload</code> الرفع). ويثبِّت برنامج الإعداد الثاني، <code>unnik--setup.exe</code> (<code>installer\unnik.iss</code>)، برنامج unNik وحده، متصفح الأرشيف المجاني؛ وعندما يكون NikPak مثبتاً بالفعل يثبِّت البرنامج فقط، فلا تتكرر القوائم أبداً.</x></body></p>
+<h3 class="se" id="13-2-building-with-npm"><body><x>13.2 البناء باستخدام npm</x></body></h3>
+<p><body><x>لا تستخدم مشاريع Rust أداة npm، لذا لا تُطلب npm أبداً. وللتسهيل، يحتوي المشروع على <code>package.json</code> صغير تستدعي سكربتاته Cargo ببساطة، بحيث يستطيع المطور الذي يعيش في سير عمل Node.js كتابة أوامر مألوفة:</x></body></p>
+<pre>npm run build # cargo build --release</pre>
+<pre>npm run dist # build.ps1 -&gt; dist\nikpak.exe</pre>
+<pre>npm test # cargo test --release</pre>
+<pre>npm run clean # cargo clean</pre>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="13-3-a-self-contained-executable"><body><x>13.3 ملف تنفيذي قائم بذاته</x></body></h3>
+<p><body><x>يربط الملف <code>.cargo/config.toml</code> بيئة تشغيل C استاتيكياً لأهداف Windows MSVC. لذا لا يحتوي <code>nikpak.exe</code> الناتج (عدة MB مع الواجهة الرسومية، ونحو 2.3 MB بدونها) على اعتماديات DLL ولا يحتاج <i>Visual C++ Redistributable</i> على الأجهزة التي يعمل عليها. انسخه إلى مجلد على <code>PATH</code> لاستخدامه في أي مكان. يفعِّل ملف تعريف release التحسين الكامل، وتحسين وقت الربط، ووحدة توليد كود واحدة، وتجريد الرموز، و<code>panic = abort</code> للحصول على ملف ثنائي صغير وسريع.</x></body></p>
+<h3 class="se" id="13-4-macos-and-linux"><body><x>13.4 نظاما macOS وLinux</x></body></h3>
+<pre>./build.sh # builds and copies the result to dist/nikpak</pre>
+<pre># or: cargo build --release</pre>
+<pre>sudo cp dist/nikpak /usr/local/bin/</pre>
+<p><br>
+<br>
+
+</p>
+<p><body><x>على macOS ثبِّت أدوات سطر الأوامر أولاً (<code>xcode-select --install</code>)؛ وعلى Debian أو Ubuntu ثبِّت مترجم C (<code>sudo apt install build-essential</code>). وتأتي Rust نفسها من <code>curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh</code>. تُترجم مكتبة الضغط من مصادرها بلغة C بواسطة Cargo، لذا لا حاجة إلى مكتبة نظام.</x></body></p>
+<p><body><x>تُصنع تنزيلات macOS وLinux للموقع بواسطة <code>./package-unix.sh</code>، الذي يبني nikpak وunNik ويحزمهما مع <code>install.sh</code> في <code>binaries\nikpak--macos.zip</code> (ملف ثنائي عالمي: Intel + معالجات Apple silicon) أو <code>binaries\nikpak--linux-.tar.gz</code>. عيّن <code>ZIG=1</code> على Linux للبناء بـcargo-zigbuild مقابل glibc 2.28، حتى تعمل البرامج أيضاً على التوزيعات الأقدم.</x></body></p>
+<h3 class="se" id="13-5-dependencies"><body><x>13.5 الاعتماديات</x></body></h3>
+<p><body><x>منذ الإصدار 1.2 يحتاج nikpak إلى <b>Rust 1.89 أو أحدث</b>. يفحص build.ps1 وbuild.sh الإصدار المثبت ويشغِّلان rustup update stable عندما يكون أقدم. ومع npm، شغِّل rustup update مرة قبل npm run build.</x></body></p>
+<p><body><x>يعتمد nikpak على مجموعة صغيرة من الحزم (crates) الناضجة. تُثبَّت إصداراتها الدقيقة في <code>Cargo.lock</code>، وهو جزء من حزمة المصدر، لذا يستخدم كل بناء الكود نفسه.</x></body></p>
+<table class="tech-table"><thead><tr><th><body><x><b>الحزمة (Crate)</b></x></body></th><th><body><x><b>الغرض</b></x></body></th></tr></thead><tbody><tr><td><body><x><code>zstd</code></x></body></td><td><body><x>ضغط Zstandard، مع تعدد الخيوط</x></body></td></tr><tr><td><body><x><code>chacha20poly1305</code></x></body></td><td><body><x>XChaCha20-Poly1305 وبنية STREAM (RustCrypto)</x></body></td></tr><tr><td><body><x><code>argon2</code></x></body></td><td><body><x>اشتقاق مفتاح Argon2id (RustCrypto)</x></body></td></tr><tr><td><body><x><code>rand</code></x></body></td><td><body><x>الوصول إلى المولِّد العشوائي الآمن في نظام التشغيل</x></body></td></tr><tr><td><body><x><code>zeroize</code></x></body></td><td><body><x>مسح المفاتيح وكلمات المرور من الذاكرة</x></body></td></tr><tr><td><body><x><code>rpassword</code></x></body></td><td><body><x>قراءة كلمة مرور دون إظهارها، على كل منصة</x></body></td></tr><tr><td><body><x><code>crc32fast</code></x></body></td><td><body><x>حساب CRC32 سريع</x></body></td></tr><tr><td><body><x><code>glob</code></x></body></td><td><body><x>توسيع أحرف البدل (لا يوسِّع PowerShell أحرف البدل للبرامج الأصلية)</x></body></td></tr><tr><td><body><x><code>liblzma</code></x></body></td><td><body><x>محرك LZMA2 لـ-m5 (liblzma، مترجم استاتيكياً من مصادر C)</x></body></td></tr><tr><td><body><x><code>ppmd-rust</code></x></body></td><td><body><x>محرك PPMd variant I للنصوص عند -m5</x></body></td></tr><tr><td><body><x><code>preflate-rs</code></x></body></td><td><body><x>إعادة ضغط Deflate مطابقة بتاً ببت (Microsoft، ترخيص Apache-2.0)؛ نسخة مُضمَّنة في vendor/preflate-rs استُبدل مشفِّر الإنتروبيا LGPL (cabac) فيها بمشفِّر النطاق الخاص بـnikpak، لذا لا يحتوي nikpak على كود LGPL. يتطلب Rust 1.89 أو أحدث</x></body></td></tr><tr><td><body><x><code>eframe / egui</code></x></body></td><td><body><x>الواجهة الرسومية (خاصية cargo اختيارية باسم gui، مفعَّلة افتراضياً)</x></body></td></tr><tr><td><body><x><code>rfd</code></x></body></td><td><body><x>مربع حوار مجلدات أصلي لزر Browse</x></body></td></tr><tr><td><body><x><code>ed25519-dalek</code></x></body></td><td><body><x>التحقق من توقيعات مفتاح الترخيص (القسم 3.8)</x></body></td></tr><tr><td><body><x><code>rustybuzz, unicode-bidi</code></x></body></td><td><body><x>تشكيل وترتيب من اليمين إلى اليسار للهندية والبنغالية والعربية في النافذة (خاصية cargo اختيارية باسم gui)</x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="13-6-scripting"><body><x>13.6 البرمجة النصية</x></body></h3>
+<p><body><x>تجعل أكواد الخروج القابلة للتنبؤ وكلمة المرور عبر متغير البيئة nikpak سهل البرمجة النصية. نسخة احتياطية بـPowerShell تعتبر التحذيرات مقبولة وأي شيء أسوأ فشلاً:</x></body></p>
+<pre>$archive = "D:\Backups\docs-$(Get-Date -Format yyyy-MM-dd).nik"</pre>
+<pre># the password comes from a file or secret store, not from the script</pre>
+<pre>$env:NIKPAK_PASSWORD = Get-Content "$env:USERPROFILE\.nikpak-secret"</pre>
+<p>
+<code></code><br>
+
+</p>
+<pre>nikpak a -p -m3 -inul $archive "$env:USERPROFILE\Documents"</pre>
+<pre>if ($LASTEXITCODE -gt 1) { throw "nikpak failed: $LASTEXITCODE" }</pre>
+<p>
+<code></code><br>
+
+</p>
+<pre>nikpak t -inul $archive # verify what was written</pre>
+<pre>if ($LASTEXITCODE -ne 0) { throw "archive verification failed" }</pre>
+<p><br>
+<br>
+
+</p>
+<p><body><x>الشيء نفسه في سكربت shell، باستخدام أمر القائمة المجرَّدة لتغذية أدوات أخرى:</x></body></p>
+<pre>export NIKPAK_PASSWORD="$(cat ~/.nikpak-secret)"</pre>
+<pre>nikpak a -p -m3 -inul "backup-$(date +%F).nik" ~/Documents || [ $? -eq 1 ]</pre>
+<pre>nikpak lb backup-2026-10-16.nik | grep -i '\.wav$'</pre>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="13-7-total-commander"><body><x>13.7 Total Commander</x></body></h3>
+<p><body><x>يعتمد التكامل الموصوف في القسم 3.6 على اتباع nikpak لصياغة RAR. قائمة تحقق قصيرة: سجِّل الامتداد <code>nik</code>؛ واستخدم <code>a</code> للضغط و<code>x</code> لفك الضغط؛ ودع الواجهة الأمامية تمرر <code>@listfile</code> لقوائم الملفات الطويلة؛ وأعطِ <code>-o+</code> أو <code>-y</code> للاستخراج دون تدخل؛ ومرِّر كلمة المرور بـ<code>-p</code> أو متغير <code>NIKPAK_PASSWORD</code>، لأن الواجهة الرسومية الأمامية لا تملك طرفية للمطالبة.</x></body></p>
+<h2 class="ch" id="14-testing-and-verification"><body><x>14 الاختبار والتحقق</x></body></h2>
+<p><body><x>لأن الأرشيفي يحمل بيانات الناس، يُختبر nikpak على أربعة مستويات.</x></body></p>
+<h3 class="se" id="14-1-unit-tests"><body><x>14.1 اختبارات الوحدة</x></body></h3>
+<p><body><x>أربعة وثلاثون اختباراً آلياً تعمل بالأمر <code>cargo test --release</code>:</x></body></p>
+<table class="tech-table"><thead><tr><th><body><x><b>المجال</b></x></body></th><th><body><x><b>ما يُفحص</b></x></body></th></tr></thead><tbody><tr><td><body><x>تيار التشفير</x></body></td><td><body><x>رحلات ذهاب وإياب عند 0 و1 و100 و65,535 و65,536 و65,537 و131,072 و131,077 و327,803 بايتاً (حول حدود مقاطع 64 KiB)؛ ويجب أن يفشل كل من الترويسة الخاطئة (البيانات المرتبطة) والمفتاح الخاطئ والبتر.</x></body></td></tr><tr><td><body><x>حدود اشتقاق المفتاح</x></body></td><td><body><x>تُرفض معاملات Argon2id العدائية (ذاكرة ضخمة، صفر تمريرات، صفر حارات، تمريرات مفرطة).</x></body></td></tr><tr><td><body><x>مرمّز NAC الصوتي</x></body></td><td><body><x>رحلة ذهاب وإياب بلا فقدان لصوت 8/16/24/32 بتاً، و1 و2 و3 و6 قنوات، وتسعة أنواع إشارات (الصمت، وجيب جيبي مشوش، وضوضاء بيضاء، وموجة مربعة بكامل السعة، ومنحدر، ونبضة واحدة، وثابت أقصى، وبتات منخفضة مهدرة، وثابت أدنى)، وثمانية أطوال كتل من 1 إلى 5000 عينة، وثلاثة مستويات جهد، وترميز حرفي مجبَر.</x></body></td></tr><tr><td><body><x>طرق الصوت</x></body></td><td><body><x>NAC وShuffle وShuffle+Delta عبر جميع أعماق البتات وأعداد القنوات وترتيبات البايتات وأنواع الإشارة، بما في ذلك الكتل التي لا تنقسم بالتساوي.</x></body></td></tr><tr><td><body><x>الاكتشاف والملفات</x></body></td><td><body><x>WAV (أحادي وستيريو و8/16/24/32 بتاً وقابل للتمديد وست قنوات ومقاطع لاحقة وبايتات متبقية فردية وطول بيانات صفري ومبالغ فيه)، وAIFF، وMOD (والمبتور أيضاً)، وBMP (8/24/32 بتاً وحشو الصفوف والبيانات اللاحقة)؛ ويجب عدم اكتشاف WAV بالفاصلة العائمة والملفات الصغيرة والنصوص؛ ويقوم كل ملف برحلة ذهاب وإياب عبر كل مرشِّح ينطبق.</x></body></td></tr><tr><td><body><x>المتانة</x></body></td><td><body><x>آلاف الكتل العشوائية وذات البتات المقلوبة تُغذَّى إلى مفكِّك الصوت ومفكِّك الوسائط: يجب أن تعيد أخطاء، ولا تهلع أو تستنزف الذاكرة أبداً.</x></body></td></tr><tr><td><body><x>التأطير والمساعدات</x></body></td><td><body><x>تأطير المقاطع مع البيانات اللاحقة، وتنظيف المسارات، ومطابقة أحرف البدل والمرشِّحات، وتنسيق التاريخ، وتوليد كلمات المرور.</x></body></td></tr><tr><td><body><x>إعادة ضغط Deflate</x></body></td><td><body><x>حاويات ZIP عند مستويات Deflate 1 و3 و6 و9، وPDF بتياري zlib، وgzip بثلاثة أعضاء، وغير الحاويات؛ ويجب أن يفشل 400 تدفق معاد الضغط تالف أو مبتور بشكل نظيف (تُلتقط حالات هلع preflate).</x></body></td></tr><tr><td><body><x>الكتل متعددة المحركات</x></body></td><td><body><x>رحلات ذهاب وإياب عبر كتل zstd وLZMA2 وPPMd حول حدود إطار 256 KiB؛ و300 جسم تالف أو مبتور؛ ومعاملات محرك عدائية؛ وتجربة PPMd/LZMA2.</x></body></td></tr><tr><td><body><x>الواجهة الرسومية</x></body></td><td><body><x>التشغيل على شاشة افتراضية (Xvfb): فحص شاشات الخمول والتمرير والتقدم والإتمام بصرياً؛ وأرشفة مجلد مُفلَت واستخراجه بايتاً ببايت؛ وعدم ترك Cancel والإغلاق أثناء الضغط لأي ملف خلفهما؛ والعودة إلى نص الاستخدام عند غياب الشاشة.</x></body></td></tr><tr><td><body><x>الترخيص</x></body></td><td><body><x>المفاتيح المصنوعة بـnikpak-keygen وبأدوات PHP متطابقة ومقبولة؛ ويُرفض الاسم أو البريد الإلكتروني أو النوع أو المفتاح المغيّر، والمفاتيح الموقعة بمفتاح آخر. وعلى شاشة افتراضية: التذكير بترتيبي الأزرار، وخطأ المفتاح الخاطئ، والتسجيل الناجح، وإعادة التشغيل دون تذكير؛ ويبقى النص داخل المربعات.</x></body></td></tr><tr><td><body><x>اللغات</x></body></td><td><body><x>تترجم كل لغة كل نص بنفس العناصر النائبة؛ وتُشكَّل علامات الحركات الديفاناغارية واتصال الحروف العربية؛ وعلى شاشة افتراضية فُحصت اللغات العشر كلها شاشة بشاشة (التذكير، والخمول، والتقدم، والإتمام، وAbout، والتسجيل، وقائمة اللغة)؛ واختيار لغة يحفظها ويعيد تشغيل nikpak بها.</x></body></td></tr><tr><td><body><x>واجهة برمجة الأرشيف (API)</x></body></td><td><body><x>قراءة الفهرس، واستخراج ملف واحد من داخل مجلد (يصل بدون مسار المجلد)، وحذف مجلد بمحتوياته وحذف كل شيء، لأرشيفات -m5 وzstd مع التشفير والمخزنة؛ ويُبلَّغ عن كلمة المرور الخاطئة على هذا النحو.</x></body></td></tr><tr><td><body><x>متصفح الأرشيف</x></body></td><td><body><x>بناء الشجرة بالمجلدات الضمنية، واكتشاف النص وفك ترميزه (UTF-8 وUTF-16 وWindows-1252)، والتفاف الأسطر والبحث في العارض. وعلى شاشة افتراضية: الفتح وكلمة المرور والتنقل والتحديد والبحث والعارض والاستخراج والحذف والاختبار، بعدة لغات.</x></body></td></tr><tr><td><body><x>الواجهات الجلدية وقائمة مدير الملفات</x></body></td><td><body><x>تُولَّد ملفات قوائم Linux وتُفحص؛ وأرشيف واحد لتحديد بُدئ بثلاثة برامج؛ و--add-here مع ثلاثة عناصر و--extract-here / --extract-to تحت شاشة افتراضية؛ وتطلب الأرشيفات المشفرة كلمة مرورها وتستخرج ملفات متطابقة؛ ويُترجم كل نص واجهة جديد باللغات العشر (تأكيد أن كل لغة تترجم كل نص).</x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="14-2-end-to-end-tests"><body><x>14.2 الاختبارات الشاملة</x></body></h3>
+<ul><li><body><x>استُخرج كل أرشيف معياري وقورن بمصدره بايتاً ببايت (SHA-256 لمجموعة 10,949 ملفاً)، على عدة مستويات.</x></body></li><li><body><x>أُنشئ أرشيف مختلط (WAV وMOD وBMP ونص وبيانات عشوائية ومجلدات فرعية)، وعُرض واختُبر واستُخرج كاملاً، واستُخرج ملف واحد من منتصفه.</x></body></li><li><body><x>أُنشئ الأرشيف نفسه مع التشفير، واختُبر بكلمة المرور الصحيحة والخاطئة، واستُخرج.</x></body></li><li><body><x>فتح الإصدار 1.1 الأرشيفات التي كتبها إصدار الصيغة السابق (1.0).</x></body></li><li><body><x>اختُبر إدخال كلمة المرور التفاعلي عبر طرفية زائفة: كلمات مرور متطابقة، وعدم تطابق، وإدخال فارغ (توليد)، وكلمات مرور صحيحة وخاطئة عند الفتح.</x></body></li></ul>
+<h3 class="se" id="14-3-attack-tests"><body><x>14.3 اختبارات الهجوم</x></body></h3>
+<p><body><x>شُغِّلت اختبارات العبث والبتر وإعادة ترتيب المقاطع والتلاعب بالترويسة والملفات المهملة وأرشيفات اختراق المسارات من القسم 10.1 ضد كل مرشح إصدار. والنتائج مبوبة في القسمين 8.6 و10.1؛ والنتيجة المتوقعة في كل حالة هي الرفض ورسالة واضحة وكود خروج غير صفري، وليس الذعر أبداً ولا كتابة خارج الوجهة أبداً.</x></body></p>
+<h3 class="se" id="14-4-defects-found-by-testing"><body><x>14.4 عيوب وجدها الاختبار</x></body></h3>
+<p><body><x>حملة الاختبار هي سبب عدم وجود عدة عيوب في البرنامج المنشور. مثالان: بحث معامل Rice الذي فشل لصوت 32 بتاً وكان سيكتب كوداً بحجم عدة غيغابايتات (وجدته مصفوفة اختبارات الوحدة وأُصلح)، وفشل مجموع zstd الاختباري الذي أُبلغ عنه بكود الخروج العام 2 بدلاً من 3 (وُجد في اختبارات العبث وأُصلح). والمثال الثالث هو منهجية الاختبار المعياري نفسها: استخدمت المقارنة الأولى مع RAR افتراضيه غير solid، ما أطرى nikpak في الكود المصدري؛ وأُعيدت في الوضع solid، والنتائج في الفصل 11 هي المصححة.</x></body></p>
+<h2 class="ch" id="15-limitations-and-roadmap"><body><x>15 القيود وخارطة الطريق</x></body></h2>
+<h3 class="se" id="15-1-current-limitations"><body><x>15.1 القيود الحالية</x></body></h3>
+<table class="tech-table"><thead><tr><th><body><x><b>القيود</b></x></body></th><th><body><x><b>التفصيل والبديل</b></x></body></th></tr></thead><tbody><tr><td><body><x>لا سجلات استرداد ولا أحجاماً متعددة ولا SFX</x></body></td><td><body><x>يُكتشف التلف ولا يُصلح (احتفظ بنسخة ثانية من الأرشيفات المهمة)؛ واقسم الأرشيفات الكبيرة بأداة عامة إذا لزم.</x></body></td></tr><tr><td><body><x>لا تحديث في المكان</x></body></td><td><body><x>الصيغة تدفق solid واحد. يعيد الحذف (nikpak d، أو Delete في unNik) كتابة الأرشيف؛ وإضافة ملفات إلى أرشيف موجود غير مدعومة: أنشئ أرشيفاً جديداً، أو اكتب فوقه بـ<code>-o+</code>.</x></body></td></tr><tr><td><body><x>الوصول المتسلسل</x></body></td><td><body><x>استخراج ملف واحد من أرشيف كبير جداً يقرأ ما يسبقه (تُتخطى عناصر الوسائط دون فك ترميزها)؛ ويتوقف unNik عن القراءة بعد آخر ملف مختار.</x></body></td></tr><tr><td><body><x>تغطية الوسائط</x></body></td><td><body><x>ملفات WAV وAIFF بصيغة PCM الصحيح، وProTracker MOD، وBMP غير المضغوط. أما WAV بالفاصلة العائمة وADPCM وXM/S3M/IT والصور المضغوطة فتُخزَّن بضغط عادي.</x></body></td></tr><tr><td><body><x>الذاكرة عند المستويات العالية</x></body></td><td><body><x>تستخدم أرشيفات <code>-m4</code> و<code>-m5</code> نافذة 128 MiB؛ ويتطلب فك ضغطها ذلك القدر من الذاكرة.</x></body></td></tr><tr><td><body><x>المستوى الأقصى -m5</x></body></td><td><body><x><code>Single-threaded and the slowest level. Creating needs up to about 1.1 GB of memory, extracting up to about 350 MB.</code></x></body></td></tr><tr><td><body><x>الروابط الرمزية والتواريخ</x></body></td><td><body><x>تُتخطى الروابط عند الأرشفة وتُرفض عند الاستخراج؛ وتُعرض التواريخ بالتوقيت UTC.</x></body></td></tr><tr><td><body><x>مراجعة الأمان</x></body></td><td><body><x>لم يُدقَّق تدقيقاً مستقلاً.</x></body></td></tr><tr><td><body><x>بناءات Windows وmacOS</x></body></td><td><body><x>طُوِّر واختُبر واختُبر معيارياً على Linux. رُوجعت مسارات الكود الخاصة بـWindows وmacOS يدوياً لكنها لم تُختبَر على هذين النظامين بعد: شغِّل <code>cargo test --release</code> هناك قبل الاعتماد على أي بناء.</x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="15-2-roadmap"><body><x>15.2 خارطة الطريق</x></body></h3>
+<table class="tech-table"><thead><tr><th><body><x><b>البند</b></x></body></th><th><body><x><b>الغرض</b></x></body></th></tr></thead><tbody><tr><td><body><x>سجلات الاسترداد</x></body></td><td><body><x>تكافؤ Reed-Solomon بحيث يمكن إصلاح الأرشيفات التالفة، وهي الميزة الرئيسية التي يفتقدها مستخدمو RAR.</x></body></td></tr><tr><td><body><x>الأرشيفات متعددة الأحجام ودعم التحديث</x></body></td><td><body><x>تقسيم الأرشيفات الكبيرة، وإضافة الملفات واستبدالها.</x></body></td></tr><tr><td><body><x>مشاركة المفاتيح العامة بمخطط هجين</x></body></td><td><body><x>تشفير أرشيف بمفتاح المستلم باستخدام X25519 مدمجاً مع ML-KEM، آمن إذا صمد أي من المكونين.</x></body></td></tr><tr><td><body><x>مرشِّحات وسائط إضافية</x></body></td><td><body><x>الصوت بالفاصلة العائمة، وصيغ XM/S3M/IT trackers، وإعادة ضغط PNG، ومرشِّح ثنائي الأبعاد لـTGA وTIFF غير المضغوط.</x></body></td></tr><tr><td><body><x>قراءة ZIP وRAR، والتكامل مع الصدفة</x></body></td><td><body><x>فك ضغط الصيغ الشائعة في unNik وسحب الملفات من unNik، بحيث يمكن أن يكون nikpak الأداة الوحيدة المثبتة. (وصلت قائمتا سياق Explorer وFinder في الإصدار 1.5.5، القسم 3.11.)</x></body></td></tr><tr><td><body><x>مستوى أقصى أسرع</x></body></td><td><body><x>يكون -m5 أحادي الخيط وأبطأ حتى ثلاث مرات من 7-Zip -mx9 في ملفات Office: كتل LZMA2 وPPMd متعددة الخيوط، وإزالة تكرار الملفات المتطابقة، ومرشِّح BCJ للملفات التنفيذية.</x></body></td></tr><tr><td><body><x>مراجعة أمان خارجية</x></body></td><td><body><x>تدقيق مستقل للكود التشفيري والمستخرِج.</x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p><body><x><b>الترخيص</b>: NikPak برنامج shareware مغلق المصدر، © 2026 Nicolas Choukroun، من توزيع Nikkoid LLC (LICENSE.txt، القسم 3.8)؛ وunNik برنامج مجاني (القسم 3.9). وتُدرج المكونات مفتوحة المصدر التي يحتويها مع تراخيصها في THIRD-PARTY-NOTICES.txt، الذي يجب شحنه مع كل نسخة. أبقِ مفتاح الترخيص الخاص (keys/nikpak-private.key) خارج كل حزمة منشورة وخارج جذر الويب. وأبقِ <code>Cargo.lock</code> في المستودع حتى تكون البناءات قابلة لإعادة الإنتاج، وشغِّل <code>cargo test --release</code> في مهمة التكامل المستمر لكل منصة تدعمها.</x></body></p>
+<h2 class="ch" id="a-appendix-a-format-constants-and-limits"><body><x>أ الملحق أ: ثوابت الصيغة وحدودها</x></body></h2>
+<table class="tech-table"><thead><tr><th><body><x><b>البند</b></x></body></th><th><body><x><b>القيمة</b></x></body></th></tr></thead><tbody><tr><td><body><x>التوقيع السحري</x></body></td><td>
+				<code>89 4E 49 4B 0D 0A 1A 0A</code></td></tr><tr><td><body><x>إصدار الصيغة</x></body></td><td><body><x>3 (يقبل القراء 1 و2 و3)</x></body></td></tr><tr><td><body><x>حجم الترويسة</x></body></td><td><body><x>12 بايتاً؛ و59 بايتاً عند التشفير</x></body></td></tr><tr><td><body><x>أنواع السجلات</x></body></td><td><body><x>0 END, 1 FILE, 2 DIR, 3 MEDIA</x></body></td></tr><tr><td><body><x>طرق الأرشيف</x></body></td><td><body><x>0 store، و1 Zstandard، و2 كتل متعددة المحركات</x></body></td></tr><tr><td><body><x>محركات الكتل</x></body></td><td><body><x>1 Zstandard؛ و2 LZMA2 (قاموس حتى 128 MiB مكتوب، ويُقبل 1.5 GiB)؛ و3 PPMd8 (رتبة 8، و192 MiB مكتوب؛ ورتبة 2-16، ويُقبل 1 GiB)</x></body></td></tr><tr><td><body><x>إعادة ضغط Deflate</x></body></td><td><body><x>ZIP وPDF وgzip؛ وملف حتى 512 MiB؛ ولكل تدفق حتى 512 MiB من البيانات الصريحة و64 MiB من التصحيحات</x></body></td></tr><tr><td><body><x>أقصى طول للاسم</x></body></td><td><body><x>4096 بايتاً</x></body></td></tr><tr><td><body><x>المقطع المشفر</x></body></td><td><body><x>64 KiB من النص الصريح + وسم 16 بايتاً، وطول <code>u32</code> بترتيب big endian في المقدمة</x></body></td></tr><tr><td><body><x>Argon2id (مكتوب)</x></body></td><td><body><x>64 MiB، و3 تمريرات، و4 حارات، وملح 16 بايتاً، ومفتاح 32 بايتاً</x></body></td></tr><tr><td><body><x>Argon2id (مقبول)</x></body></td><td><body><x>الذاكرة 8 × الحارات .. 1 GiB، والتمريرات 1 .. 64، والحارات 1 .. 64</x></body></td></tr><tr><td><body><x>nonce التدفق</x></body></td><td><body><x>بادئة عشوائية 19 بايتاً + عداد 32 بتاً + علم أخير 1 بايت = 24 بايتاً</x></body></td></tr><tr><td><body><x>أدنى طول لكلمة المرور</x></body></td><td><body><x>8 أحرف</x></body></td></tr><tr><td><body><x>كلمة المرور المولَّدة</x></body></td><td><body><x>24 حرفاً، وأبجدية من 56 رمزاً، ونحو 139 بتاً</x></body></td></tr><tr><td><body><x>أدنى حجم لملف الوسائط</x></body></td><td><body><x>8 KiB (المنطقة 4 KiB على الأقل)</x></body></td></tr><tr><td><body><x>كتلة NAC</x></body></td><td><body><x>4096 إطار عينات؛ وكتلة Shuffle 32768 إطاراً</x></body></td></tr><tr><td><body><x>التجربة</x></body></td><td><body><x>حتى ثلاث نوافذ بحجم 768 KiB (5 % و45 % و85 %)؛ والمنطقة كاملة إذا وصلت إلى 3 MiB؛ وهامش 2 %</x></body></td></tr><tr><td><body><x>حد منطقة BMP</x></body></td><td><body><x>256 MiB</x></body></td></tr><tr><td><body><x>نافذة Zstandard</x></body></td><td><body><x>الافتراضية؛ و2^27 مع مطابقة المسافات الطويلة عند -m4 و-m5</x></body></td></tr><tr><td><body><x>الخيوط</x></body></td><td><body><x>1 .. 256 (<code>-mt</code>)</x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h2 class="ch" id="b-appendix-b-glossary"><body><x>ب الملحق ب: المسرد</x></body></h2>
+<table class="tech-table"><thead><tr><th><body><x><b>المصطلح</b></x></body></th><th><body><x><b>المعنى</b></x></body></th></tr></thead><tbody><tr><td><body><x><b>AEAD</b></x></body></td><td><body><x>التشفير الموثَّق مع البيانات المرتبطة: يشفِّر ويكتشف أي تعديل، بما في ذلك تعديل البيانات المرسلة صراحةً (مثل الترويسة).</x></body></td></tr><tr><td><body><x><b>Argon2id</b></x></body></td><td><body><x>دالة تهشير كلمات مرور مستهلكة للذاكرة مقننة في RFC 9106؛ تحوِّل كلمة المرور إلى مفتاح بكلفة ذاكرة عالية عمداً.</x></body></td></tr><tr><td><body><x><b>CRC32</b></x></body></td><td><body><x>مجموع اختباري 32 بتاً يكتشف التلف العرضي. وليست ميزة أمان.</x></body></td></tr><tr><td><body><x><b>FSE</b></x></body></td><td><body><x>إنتروبيا الحالات المحدودة: مشفِّر الإنتروبيا القائم على الجداول الذي يستخدمه Zstandard.</x></body></td></tr><tr><td><body><x><b>خوارزمية Grover</b></x></body></td><td><body><x>خوارزمية بحث كمومية بتسريع تربيعي؛ تنصِّف الطول الفعال للمفاتيح المتماثلة.</x></body></td></tr><tr><td><body><x>LPC</x></body></td><td><body><x>الترميز التنبئي الخطي: التنبؤ بعينة من مجموع موزون للعينات السابقة.</x></body></td></tr><tr><td><body><x><b>Levinson-Durbin</b></x></body></td><td><body><x>استدعاء يحسب معاملات المتنبئ المثلى لكل رتبة من الارتباط الذاتي للإشارة.</x></body></td></tr><tr><td><body><x><b>LZMA2</b></x></body></td><td><body><x>خوارزمية سلسلة Lempel-Ziv-Markov التي يستخدمها 7-Zip وxz: مطابقة LZ77 مع تحليل أمثل ومشفِّر نطاق ثنائي.</x></body></td></tr><tr><td><body><x><b>MED</b></x></body></td><td><body><x>كاشف الحواف الوسيطي: متنبئ بكسل من مرمّز الصور LOCO-I / JPEG-LS.</x></body></td></tr><tr><td><body><x><b>مستهلك للذاكرة</b></x></body></td><td><body><x>دالة تهيمن الذاكرة على كلفتها، ما يحد من التسريع المتاح من وحدات معالجة الرسوميات والشرائح المخصصة.</x></body></td></tr><tr><td><body><x><b>NAC</b></x></body></td><td><body><x>مرمّز nikpak الصوتي بلا فقدان.</x></body></td></tr><tr><td><body><x><b>PPMd</b></x></body></td><td><body><x>التنبؤ بالمطابقة الجزئية (variant I): يتنبأ بكل بايت من البايتات السابقة حتى 8 بايتات؛ قوي جداً في النصوص.</x></body></td></tr><tr><td><body><x><b>preflate</b></x></body></td><td><body><x>طريقة (ومكتبة) تحوِّل تدفق Deflate إلى بياناته الصريحة إضافة إلى تصحيحات صغيرة، يمكن إعادة بناء تدفق Deflate المطابق منها.</x></body></td></tr><tr><td><body><x><b>ترميز Rice</b></x></body></td><td><body><x>كود بسيط وسريع للأعداد ذات التوزيع الهندسي تقريباً: خارج قسمة أحادي وعدد ثابت من البتات المنخفضة.</x></body></td></tr><tr><td><body><x><b>خوارزمية Shor</b></x></body></td><td><body><x>خوارزمية كمومية تحلل الأعداد الصحيحة إلى عوامل وتحسب اللوغاريتمات المتقطعة، ما يكسر RSA وتشفير المنحنيات الإهليلجية.</x></body></td></tr><tr><td><body><x><b>أرشيف solid</b></x></body></td><td><body><x>أرشيف يُضغط كتدفق متصل واحد، بحيث يمكن استغلال التكرار بين الملفات.</x></body></td></tr><tr><td><body><x><b>STREAM</b></x></body></td><td><body><x>بنية تشفِّر رسالة طويلة كمقاطع موثَّقة مع عداد وعلم المقطع الأخير في nonce.</x></body></td></tr><tr><td><body><x><b>رسم الخرائط المتعرج (Zig-zag)</b></x></body></td><td><body><x>ربط الأعداد الصحيحة ذات الإشارة بغير الموقعة (0 و-1 و1 و-2 ... إلى 0 و1 و2 و3 ...)، بحيث تصبح المقدار الصغيرة أعداداً صغيرة.</x></body></td></tr><tr><td><body><x><b>Zstandard</b></x></body></td><td><body><x>صيغة ضغط مفتوحة حديثة تجمع بين مطابقة LZ77 وترميز إنتروبيا Huffman وFSE.</x></body></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p><body><x>الإصدار 1.6.2 · أكتوبر 2026 الصفحة 19</x></body></p>

@@ -601,7 +601,8 @@
    "The commands run through unNik.exe, so no console window flashes; the labels follow the language of NikPak. Windows 10 shows the submenu directly, Windows 11 under <b>Show more options</b> (Shift+F10).",
    "The menu uses <code>nikpak --add</code> and <code>--add-here</code>, and <code>unNik --extract</code>, <code>--extract-here</code> and <code>--extract-to</code>."
   ],
-  "menu_note": "A second setup, <code>unnik-&lt;version&gt;-setup.exe</code>, installs unNik alone — the free archive browser — for people who only receive .nik archives."
+  "menu_note": "A second setup, <code>unnik-&lt;version&gt;-setup.exe</code>, installs unNik alone — the free archive browser — for people who only receive .nik archives.",
+  "tech_sub": "The complete technical guide: architecture and the .nik format, the compression engine and the media codecs, the encryption design and quantum resistance, hardening, the full benchmarks, and the build, test and roadmap notes."
  },
  "buy": {
   "title": "Buy NikPak",
