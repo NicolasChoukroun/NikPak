@@ -44,14 +44,34 @@ $root = Get-Location
 # The pictures must show the program as users normally see it. NikPak / unNik
 # refuse to run their window as administrator (they relaunch it through
 # Explorer), which both breaks the capture and puts a "Running as
-# administrator" warning in the window. Run this from a normal PowerShell.
+# administrator" warning in the window. If this script was started elevated,
+# relaunch it as a normal user by asking Explorer (which always runs in the
+# normal user's context) to run a one-line launcher, then exit. NIKPAK_DEELEVATE
+# stops a relaunch loop when Windows cannot drop the rights (UAC off).
 $principal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 if ($principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    Write-Host 'Do not run this as administrator.' -ForegroundColor Red
-    Write-Host 'NikPak/unNik relaunch their window as a normal user when started elevated,'
-    Write-Host 'so the capture fails. Open a normal PowerShell (Win+X, "Windows PowerShell"'
-    Write-Host 'without "Administrator", or Win+R then "powershell") and run the command there.'
-    exit 1
+    if ($env:NIKPAK_DEELEVATE -eq '1') {
+        Write-Host 'Could not drop administrator rights (is UAC disabled?).' -ForegroundColor Red
+        Write-Host 'Run this script from a normal (non-administrator) PowerShell instead.'
+        exit 1
+    }
+    Write-Host 'Running elevated - relaunching this script as a normal user via Explorer...' -ForegroundColor Yellow
+    $parts = @()
+    foreach ($k in $PSBoundParameters.Keys) {
+        $v = $PSBoundParameters[$k]
+        if ($v -is [switch]) {
+            if ($v) { $parts += "-$k" }
+        } else {
+            $parts += "-$k"
+            $parts += ('"' + $v + '"')
+        }
+    }
+    $argLine = $parts -join ' '
+    $launcher = Join-Path $env:TEMP ('nikpak-deelevate-' + [guid]::NewGuid().ToString('N') + '.cmd')
+    $body = "@echo off`r`nset NIKPAK_DEELEVATE=1`r`npowershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$($MyInvocation.MyCommand.Path)`" $argLine`r`ndel `"%~f0`" >nul 2>&1`r`n"
+    Set-Content -Path $launcher -Value $body -Encoding Ascii
+    Start-Process explorer.exe -ArgumentList ('"' + $launcher + '"')
+    exit 0
 }
 
 # Close any NikPak / unNik windows left over from an earlier (interrupted) run,
