@@ -240,7 +240,11 @@
    "<b>Audit keamanan eksternal</b> atas kriptografi dan pengekstrak."
   ],
   "skins_t": "Skin",
-  "skins_p": "55 skin untuk NikPak dan unNik: 41 dari Nikkomander dan 14 skin bergambar buatan kami. Pilihan disimpan dan dipakai bersama oleh kedua program, dan Anda dapat mengimpor skin .skin.json Anda sendiri."
+  "skins_p": "55 skin untuk NikPak dan unNik: 41 dari Nikkomander dan 14 skin bergambar buatan kami. Pilihan disimpan dan dipakai bersama oleh kedua program, dan Anda dapat mengimpor skin .skin.json Anda sendiri.",
+  "cli_t": "Baris perintah",
+  "cli_p": "NikPak mengikuti sintaks RAR (a, x, e, l, v, lb, t, p, d, mt), dengan opsi gaya RAR dan zip, kode keluar yang dapat diprediksi, dan -help yang mendokumentasikan setiap opsi. Kata sandi bisa berasal dari variabel lingkungan, dan front-end seperti Total Commander dapat mengendalikannya seperti rar.exe.",
+  "menu_t": "Menu pengelola berkas",
+  "menu_p": "Submenu “NikPak” di menu klik kanan Explorer, Dolphin, Nemo, Nautilus, dan Finder: Tambahkan ke arsip, Ekstrak di sini, Ekstrak ke foldernya sendiri, dan Buka dengan unNik, dalam bahasa Anda."
  },
  "bench": {
   "title": "Uji perbandingan",

@@ -240,7 +240,11 @@
    "<b>外部安全审计：</b>审查密码学部分和解压器。"
   ],
   "skins_t": "皮肤",
-  "skins_p": "NikPak 和 unNik 共有 55 款皮肤：41 款来自 Nikkomander，另有 14 款手绘皮肤。选择会被保存并由两个程序共用，还可以导入自己的 .skin.json 皮肤。"
+  "skins_p": "NikPak 和 unNik 共有 55 款皮肤：41 款来自 Nikkomander，另有 14 款手绘皮肤。选择会被保存并由两个程序共用，还可以导入自己的 .skin.json 皮肤。",
+  "cli_t": "命令行",
+  "cli_p": "NikPak 遵循 RAR 的命令语法（a、x、e、l、v、lb、t、p、d、mt），支持 RAR 和 zip 风格的选项、可预测的退出码，以及记录每个选项的 -help。密码可以从环境变量读取，Total Commander 等前端可以像调用 rar.exe 一样调用它。",
+  "menu_t": "文件管理器菜单",
+  "menu_p": "在资源管理器、Dolphin、Nemo、Nautilus 和访达的右键菜单中有一个「NikPak」子菜单：添加到压缩包、提取到此处、提取到独立文件夹，以及用 unNik 打开，并使用你的语言。"
  },
  "bench": {
   "title": "基准测试",

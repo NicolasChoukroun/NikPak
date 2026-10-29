@@ -240,7 +240,11 @@
    "<b>Un audit de sécurité externe</b> de la cryptographie et de l'extracteur."
   ],
   "skins_t": "Thèmes",
-  "skins_p": "55 thèmes pour NikPak et unNik : les 41 de Nikkomander et 14 thèmes peints de notre cru. Le choix est enregistré et partagé par les deux programmes, et vous pouvez importer vos propres thèmes .skin.json."
+  "skins_p": "55 thèmes pour NikPak et unNik : les 41 de Nikkomander et 14 thèmes peints de notre cru. Le choix est enregistré et partagé par les deux programmes, et vous pouvez importer vos propres thèmes .skin.json.",
+  "cli_t": "Ligne de commande",
+  "cli_p": "NikPak suit la syntaxe RAR (a, x, e, l, v, lb, t, p, d, mt), avec les options RAR et zip, des codes de sortie prévisibles et un -help qui documente chaque option. Le mot de passe peut venir d’une variable d’environnement, et des front-ends comme Total Commander peuvent le piloter comme rar.exe.",
+  "menu_t": "Le menu de l’explorateur de fichiers",
+  "menu_p": "Un sous-menu « NikPak » dans le menu contextuel de l’Explorateur, Dolphin, Nemo, Nautilus et Finder : Ajouter à l’archive, Extraire ici, Extraire dans son propre dossier et Ouvrir avec unNik, dans votre langue."
  },
  "bench": {
   "title": "Comparatifs",

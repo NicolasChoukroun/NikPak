@@ -240,7 +240,11 @@
    "<b>Una auditoría de seguridad externa</b> de la criptografía y del extractor."
   ],
   "skins_t": "Aspectos",
-  "skins_p": "55 aspectos para NikPak y unNik: los 41 de Nikkomander y 14 aspectos pintados propios. La elección se guarda y la comparten ambos programas, y puede importar sus propios aspectos .skin.json."
+  "skins_p": "55 aspectos para NikPak y unNik: los 41 de Nikkomander y 14 aspectos pintados propios. La elección se guarda y la comparten ambos programas, y puede importar sus propios aspectos .skin.json.",
+  "cli_t": "Línea de comandos",
+  "cli_p": "NikPak sigue la sintaxis de RAR (a, x, e, l, v, lb, t, p, d, mt), con opciones de RAR y de zip, códigos de salida predecibles y un -help que documenta cada opción. La contraseña puede venir de una variable de entorno, y front-ends como Total Commander pueden manejarlo como si fuera rar.exe.",
+  "menu_t": "El menú del administrador de archivos",
+  "menu_p": "Un submenú «NikPak» en el menú contextual de Explorer, Dolphin, Nemo, Nautilus y Finder: Añadir al archivo, Extraer aquí, Extraer a su propia carpeta y Abrir con unNik, en tu idioma."
  },
  "bench": {
   "title": "Pruebas comparativas",

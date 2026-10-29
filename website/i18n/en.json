@@ -240,7 +240,11 @@
    "<b>An external security review</b> of the cryptography and the extractor."
   ],
   "skins_t": "Skins",
-  "skins_p": "55 skins for NikPak and unNik: the 41 of Nikkomander plus 14 painted ones of our own. The choice is saved and shared by both programs, and you can import your own .skin.json skins."
+  "skins_p": "55 skins for NikPak and unNik: the 41 of Nikkomander plus 14 painted ones of our own. The choice is saved and shared by both programs, and you can import your own .skin.json skins.",
+  "cli_t": "Command line",
+  "cli_p": "NikPak follows the RAR command syntax (a, x, e, l, v, lb, t, p, d, mt) with RAR and zip-style options, predictable exit codes and a -help that documents every option. The password can come from an environment variable, and front-ends such as Total Commander can drive it like rar.exe.",
+  "menu_t": "The file-manager menu",
+  "menu_p": "A “NikPak” submenu in the right-click menu of Explorer, Dolphin, Nemo, Nautilus and Finder: Add to archive, Extract here, Extract to its own folder and Open with unNik, in your language."
  },
  "bench": {
   "title": "Benchmarks",

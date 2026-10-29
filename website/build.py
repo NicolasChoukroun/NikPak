@@ -560,6 +560,8 @@ def page_features(L):
         ("encryption", f("crypto_t"), f'<p>{esc(f("crypto_p"))}</p>{checks([esc(x) for x in L.raw("features.crypto_list")])}{cmp}'),
         ("safety", f("safety_t"), checks([esc(x) for x in L.raw("features.safety_list")])),
         ("apps", f("apps_t"), f'<p>{esc(f("apps_p"))}</p><div class="shots"><img class="shot" src="../assets/img/nikpak-choose.webp" alt="NikPak" width="500" height="560" loading="lazy"><img class="shot" src="../assets/img/nikpak-about.webp" alt="NikPak" width="500" height="560" loading="lazy"></div><figure style="margin-top:24px"><img class="shot" src="../assets/img/unnik-dialogs.webp" alt="unNik" width="1393" height="560" loading="lazy"></figure>'),
+        ("menu", f("menu_t"), f'<p>{esc(f("menu_p"))}</p>'),
+        ("cli", f("cli_t"), f'<p>{esc(f("cli_p"))} <a href="tech.html#3-command-line-reference">{esc(L("nav.tech"))} →</a></p>'),
         ("skins", f("skins_t"), f'<p>{esc(f("skins_p"))} <a href="skins.html">{esc(L("home.skins_link"))} →</a></p><a class="skin-strip" href="skins.html" aria-label="{esc(L("home.skins_link"))}">{skin_strip()}</a>'),
         ("limits", f("limits_t"), ul([esc(x) for x in L.raw("features.limits_list")])),
         ("roadmap", f("roadmap_t"), ul(L.raw("features.roadmap_list"))),
