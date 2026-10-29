@@ -428,6 +428,16 @@
     "Kata sandi di baris perintah (terlihat oleh pengguna lain di mesin itu)."
    ],
    [
+    "-hp[password]",
+    "",
+    "Sama seperti -p; nama berkas selalu dienkripsi di NikPak."
+   ],
+   [
+    "-r",
+    "",
+    "Telusuri subfolder (selalu aktif; diterima demi kompatibilitas)."
+   ],
+   [
     "-m0 … -m5",
     "-0 … -9",
     "Tingkat kompresi: simpan, tercepat, cepat, baik, tinggi, maksimum (bawaan)."
@@ -574,7 +584,17 @@
    "Geser kotak lewat bilah judulnya bila ingin memindahkannya, atau membandingkannya dengan antarmuka di belakang.",
    "Klik <b>Terapkan skin</b> untuk memakainya, atau <b>Batal</b> (Esc atau ×) untuk kembali ke skin sebelumnya."
   ],
-  "skins_note": "Pilihan disimpan dan dipakai bersama oleh NikPak dan unNik. Skin bergambar (Bulan, Pattaya Neon, Amiga, Catur…) dilukis oleh program itu sendiri; <b>Impor skin…</b> di bagian bawah kotak menambahkan .skin.json dari Nikkomander."
+  "skins_note": "Pilihan disimpan dan dipakai bersama oleh NikPak dan unNik. Skin bergambar (Bulan, Pattaya Neon, Amiga, Catur…) dilukis oleh program itu sendiri; <b>Impor skin…</b> di bagian bawah kotak menambahkan .skin.json dari Nikkomander.",
+  "menu_t": "Menu pengelola berkas",
+  "menu_p": "Submenu “NikPak” di menu klik kanan pengelola berkas, seperti milik WinRAR, dipasang oleh penginstal Windows (opsi dicentang secara bawaan) dan oleh <code>nikpak --install-menu</code> di Linux; macOS mendapat Tindakan Cepat Finder.",
+  "menu_list": [
+   "<b>Pada berkas dan folder:</b> <b>Tambahkan ke arsip…</b> (menanyakan nama dan folder, lalu memampatkan di jendela NikPak) dan <b>Tambahkan ke arsip di sini</b> (arsip diletakkan di samping item, diberi nama seperti peletakan di jendela).",
+   "<b>Pada arsip .nik:</b> <b>Buka dengan unNik</b>, <b>Ekstrak berkas…</b>, <b>Ekstrak di sini</b> dan <b>Ekstrak ke foldernya sendiri</b>.",
+   "<b>Beberapa item</b> masuk ke satu arsip; beberapa arsip terpilih diekstrak satu per satu dalam satu jendela.",
+   "Perintah berjalan melalui unNik.exe, jadi tidak ada jendela konsol yang berkedip; label mengikuti bahasa NikPak. Windows 10 menampilkan submenu langsung, Windows 11 di bawah <b>Tampilkan opsi lainnya</b> (Shift+F10).",
+   "Menu ini memakai <code>nikpak --add</code> dan <code>--add-here</code>, serta <code>unNik --extract</code>, <code>--extract-here</code> dan <code>--extract-to</code>."
+  ],
+  "menu_note": "Penginstal kedua, <code>unnik-&lt;version&gt;-setup.exe</code>, memasang unNik saja — penjelajah arsip gratis — untuk orang yang hanya menerima arsip .nik."
  },
  "buy": {
   "title": "Beli NikPak",

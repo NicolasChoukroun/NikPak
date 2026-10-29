@@ -428,6 +428,16 @@
     "Password on the command line (visible to other users of the machine)."
    ],
    [
+    "-hp[password]",
+    "",
+    "Same as -p; file names are always encrypted in NikPak."
+   ],
+   [
+    "-r",
+    "",
+    "Recurse into folders (always on; accepted for compatibility)."
+   ],
+   [
     "-m0 … -m5",
     "-0 … -9",
     "Compression level: store, fastest, fast, good, high, maximum (default)."
@@ -574,7 +584,17 @@
    "Drag the box by its title bar if you want it elsewhere, or to compare it with the interface behind.",
    "Click <b>Apply Skin</b> to keep it, or <b>Cancel</b> (Esc, or the ×) to go back to the skin you had."
   ],
-  "skins_note": "The choice is saved and shared by NikPak and unNik. The painted skins (Moon, Pattaya Neons, Amiga, Chess…) are drawn by the program itself; <b>Import a skin…</b> at the bottom of the box adds a Nikkomander .skin.json."
+  "skins_note": "The choice is saved and shared by NikPak and unNik. The painted skins (Moon, Pattaya Neons, Amiga, Chess…) are drawn by the program itself; <b>Import a skin…</b> at the bottom of the box adds a Nikkomander .skin.json.",
+  "menu_t": "The file-manager menu",
+  "menu_p": "A “NikPak” submenu in the file manager’s right-click menu, like WinRAR’s, is installed by the Windows setup (a checked-by-default option) and by <code>nikpak --install-menu</code> on Linux; macOS gets Finder Quick Actions.",
+  "menu_list": [
+   "<b>On files and folders:</b> <b>Add to archive…</b> (asks for the name and the folder, then compresses in the NikPak window) and <b>Add to archive here</b> (the archive goes next to the items, named like a drop on the window).",
+   "<b>On .nik archives:</b> <b>Open with unNik</b>, <b>Extract files…</b>, <b>Extract here</b> and <b>Extract to its own folder</b>.",
+   "<b>Several items</b> go into one archive; several selected archives are extracted one after the other in one window.",
+   "The commands run through unNik.exe, so no console window flashes; the labels follow the language of NikPak. Windows 10 shows the submenu directly, Windows 11 under <b>Show more options</b> (Shift+F10).",
+   "The menu uses <code>nikpak --add</code> and <code>--add-here</code>, and <code>unNik --extract</code>, <code>--extract-here</code> and <code>--extract-to</code>."
+  ],
+  "menu_note": "A second setup, <code>unnik-&lt;version&gt;-setup.exe</code>, installs unNik alone — the free archive browser — for people who only receive .nik archives."
  },
  "buy": {
   "title": "Buy NikPak",

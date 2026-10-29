@@ -428,6 +428,16 @@
     "在命令行中提供密码（本机其他用户可见）。"
    ],
    [
+    "-hp[password]",
+    "",
+    "与 -p 相同；NikPak 中的文件名始终加密。"
+   ],
+   [
+    "-r",
+    "",
+    "递归处理子文件夹（始终开启；为兼容性而接受）。"
+   ],
+   [
     "-m0 … -m5",
     "-0 … -9",
     "压缩级别：存储、最快、快速、良好、高、最高（默认）。"
@@ -574,7 +584,17 @@
    "需要时用标题栏拖动面板到别处，或与后面的界面对比。",
    "点击<b>应用皮肤</b>保留，或点击<b>取消</b>（Esc 或 ×）回到原来的皮肤。"
   ],
-  "skins_note": "选择会被保存，并由 NikPak 和 unNik 共用。手绘皮肤（月亮、芭提雅霓虹、Amiga、国际象棋……）由程序自己绘制；面板底部的<b>导入皮肤…</b>可添加 Nikkomander 的 .skin.json。"
+  "skins_note": "选择会被保存，并由 NikPak 和 unNik 共用。手绘皮肤（月亮、芭提雅霓虹、Amiga、国际象棋……）由程序自己绘制；面板底部的<b>导入皮肤…</b>可添加 Nikkomander 的 .skin.json。",
+  "menu_t": "文件管理器菜单",
+  "menu_p": "Windows 安装程序（默认勾选的选项）以及 Linux 上的 <code>nikpak --install-menu</code> 会在文件管理器的右键菜单中安装一个「NikPak」子菜单，就像 WinRAR 一样；macOS 则获得访达快速操作。",
+  "menu_list": [
+   "<b>在文件和文件夹上：</b><b>添加到压缩包…</b>（询问名称和文件夹，然后在 NikPak 窗口中压缩）以及 <b>在此添加到压缩包</b>（压缩包放在这些项目旁边，命名方式与拖到窗口上一致）。",
+   "<b>在 .nik 压缩包上：</b><b>用 unNik 打开</b>、<b>提取文件…</b>、<b>提取到此处</b> 和 <b>提取到独立文件夹</b>。",
+   "<b>多个项目</b>会进入同一个压缩包；多个选中的压缩包会在同一个窗口中逐一提取。",
+   "这些命令通过 unNik.exe 运行，因此不会闪现控制台窗口；标签会跟随 NikPak 的语言。Windows 10 直接显示子菜单，Windows 11 则在 <b>显示更多选项</b>（Shift+F10）下。",
+   "该菜单使用 <code>nikpak --add</code> 和 <code>--add-here</code>，以及 <code>unNik --extract</code>、<code>--extract-here</code> 和 <code>--extract-to</code>。"
+  ],
+  "menu_note": "第二个安装程序 <code>unnik-&lt;version&gt;-setup.exe</code> 只安装 unNik——这个免费的压缩包浏览器——供只接收 .nik 压缩包的用户使用。"
  },
  "buy": {
   "title": "购买 NikPak",

@@ -428,6 +428,16 @@
     "Mot de passe sur la ligne de commande (visible des autres utilisateurs de la machine)."
    ],
    [
+    "-hp[password]",
+    "",
+    "Identique à -p ; les noms de fichiers sont toujours chiffrés dans NikPak."
+   ],
+   [
+    "-r",
+    "",
+    "Parcourir les sous-dossiers (toujours actif ; accepté par compatibilité)."
+   ],
+   [
     "-m0 … -m5",
     "-0 … -9",
     "Niveau de compression : stockage, le plus rapide, rapide, bon, élevé, maximal (par défaut)."
@@ -574,7 +584,17 @@
    "Déplacez la boîte par sa barre de titre pour la mettre ailleurs ou comparer avec l'interface derrière.",
    "Cliquez <b>Appliquer le thème</b> pour le garder, ou <b>Annuler</b> (Échap ou le ×) pour revenir au thème précédent."
   ],
-  "skins_note": "Le choix est enregistré et partagé par NikPak et unNik. Les thèmes peints (Lune, Pattaya Néons, Amiga, Échecs…) sont dessinés par le programme lui-même ; <b>Importer un thème…</b> en bas de la boîte ajoute un .skin.json de Nikkomander."
+  "skins_note": "Le choix est enregistré et partagé par NikPak et unNik. Les thèmes peints (Lune, Pattaya Néons, Amiga, Échecs…) sont dessinés par le programme lui-même ; <b>Importer un thème…</b> en bas de la boîte ajoute un .skin.json de Nikkomander.",
+  "menu_t": "Le menu de l’explorateur de fichiers",
+  "menu_p": "Un sous-menu « NikPak » dans le menu contextuel de l’explorateur de fichiers, comme celui de WinRAR, est installé par le programme d’installation Windows (option cochée par défaut) et par <code>nikpak --install-menu</code> sous Linux ; macOS reçoit des Actions rapides du Finder.",
+  "menu_list": [
+   "<b>Sur les fichiers et dossiers :</b> <b>Ajouter à l’archive…</b> (demande le nom et le dossier, puis compresse dans la fenêtre NikPak) et <b>Ajouter à l’archive ici</b> (l’archive va à côté des éléments, nommée comme un dépôt sur la fenêtre).",
+   "<b>Sur les archives .nik :</b> <b>Ouvrir avec unNik</b>, <b>Extraire les fichiers…</b>, <b>Extraire ici</b> et <b>Extraire dans son propre dossier</b>.",
+   "<b>Plusieurs éléments</b> vont dans une seule archive ; plusieurs archives sélectionnées sont extraites l’une après l’autre dans une seule fenêtre.",
+   "Les commandes passent par unNik.exe, sans fenêtre de console qui clignote ; les libellés suivent la langue de NikPak. Windows 10 affiche le sous-menu directement, Windows 11 sous <b>Afficher plus d’options</b> (Maj+F10).",
+   "Le menu utilise <code>nikpak --add</code> et <code>--add-here</code>, ainsi que <code>unNik --extract</code>, <code>--extract-here</code> et <code>--extract-to</code>."
+  ],
+  "menu_note": "Un second programme d’installation, <code>unnik-&lt;version&gt;-setup.exe</code>, installe unNik seul — le navigateur d’archives gratuit — pour ceux qui ne reçoivent que des archives .nik."
  },
  "buy": {
   "title": "Acheter NikPak",

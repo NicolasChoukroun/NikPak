@@ -428,6 +428,16 @@
     "Contraseña en la línea de comandos (visible para otros usuarios del equipo)."
    ],
    [
+    "-hp[password]",
+    "",
+    "Igual que -p; los nombres de archivo van siempre cifrados en NikPak."
+   ],
+   [
+    "-r",
+    "",
+    "Incluye subcarpetas (siempre activo; se acepta por compatibilidad)."
+   ],
+   [
     "-m0 … -m5",
     "-0 … -9",
     "Nivel de compresión: almacenar, más rápido, rápido, bueno, alto, máximo (predeterminado)."
@@ -574,7 +584,17 @@
    "Arrastre el cuadro por su barra de título si lo quiere en otro sitio, o para compararlo con la interfaz de detrás.",
    "Haga clic en <b>Aplicar aspecto</b> para quedárselo, o en <b>Cancelar</b> (Esc o la ×) para volver al anterior."
   ],
-  "skins_note": "La elección se guarda y la comparten NikPak y unNik. Los aspectos pintados (Luna, Pattaya Neón, Amiga, Ajedrez…) los dibuja el propio programa; <b>Importar un aspecto…</b> al pie del cuadro añade un .skin.json de Nikkomander."
+  "skins_note": "La elección se guarda y la comparten NikPak y unNik. Los aspectos pintados (Luna, Pattaya Neón, Amiga, Ajedrez…) los dibuja el propio programa; <b>Importar un aspecto…</b> al pie del cuadro añade un .skin.json de Nikkomander.",
+  "menu_t": "El menú del administrador de archivos",
+  "menu_p": "Un submenú «NikPak» en el menú contextual del administrador de archivos, como el de WinRAR, lo instala el instalador de Windows (opción marcada por defecto) y <code>nikpak --install-menu</code> en Linux; macOS obtiene las Acciones rápidas del Finder.",
+  "menu_list": [
+   "<b>En archivos y carpetas:</b> <b>Añadir al archivo…</b> (pide el nombre y la carpeta y comprime en la ventana de NikPak) y <b>Añadir al archivo aquí</b> (el archivo queda junto a los elementos, con el nombre de un arrastre a la ventana).",
+   "<b>En archivos .nik:</b> <b>Abrir con unNik</b>, <b>Extraer archivos…</b>, <b>Extraer aquí</b> y <b>Extraer a su propia carpeta</b>.",
+   "<b>Varios elementos</b> entran en un solo archivo; varios archivos seleccionados se extraen uno tras otro en una sola ventana.",
+   "Los comandos se ejecutan a través de unNik.exe, sin que parpadee ninguna ventana de consola; las etiquetas siguen el idioma de NikPak. Windows 10 muestra el submenú directamente, Windows 11 bajo <b>Mostrar más opciones</b> (Mayús+F10).",
+   "El menú usa <code>nikpak --add</code> y <code>--add-here</code>, y <code>unNik --extract</code>, <code>--extract-here</code> y <code>--extract-to</code>."
+  ],
+  "menu_note": "Un segundo instalador, <code>unnik-&lt;version&gt;-setup.exe</code>, instala unNik solo —el navegador de archivos gratuito— para quienes solo reciben archivos .nik."
  },
  "buy": {
   "title": "Comprar NikPak",
