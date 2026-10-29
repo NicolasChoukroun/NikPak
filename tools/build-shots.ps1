@@ -29,35 +29,14 @@ $root = Get-Location
 
 # The skins must be shown as users normally see them. NikPak refuses to run its
 # window as administrator (it relaunches it through Explorer), which breaks the
-# capture. If this script was started elevated, relaunch it as a normal user by
-# asking Explorer (which always runs in the normal user's context) to run a
-# one-line launcher, then exit. NIKPAK_DEELEVATE stops a relaunch loop when
-# Windows cannot drop the rights (for example when UAC is disabled).
+# capture. Run this from a normal (non-administrator) PowerShell.
 $principal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 if ($principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    if ($env:NIKPAK_DEELEVATE -eq '1') {
-        Write-Host 'Could not drop administrator rights (is UAC disabled?).' -ForegroundColor Red
-        Write-Host 'The window capture cannot run elevated, but the backgrounds dump still works:'
-        Write-Host '  set NIKPAK_SKIN_DUMP to a folder, then:  cargo test --release --lib dump_backgrounds -- --ignored'
-        exit 1
-    }
-    Write-Host 'Running elevated - relaunching this script as a normal user via Explorer...' -ForegroundColor Yellow
-    $parts = @()
-    foreach ($k in $PSBoundParameters.Keys) {
-        $v = $PSBoundParameters[$k]
-        if ($v -is [switch]) {
-            if ($v) { $parts += "-$k" }
-        } else {
-            $parts += "-$k"
-            $parts += ('"' + $v + '"')
-        }
-    }
-    $argLine = $parts -join ' '
-    $launcher = Join-Path $env:TEMP ('nikpak-deelevate-' + [guid]::NewGuid().ToString('N') + '.cmd')
-    $body = "@echo off`r`nset NIKPAK_DEELEVATE=1`r`npowershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$($MyInvocation.MyCommand.Path)`" $argLine`r`ndel `"%~f0`" >nul 2>&1`r`n"
-    Set-Content -Path $launcher -Value $body -Encoding Ascii
-    Start-Process explorer.exe -ArgumentList ('"' + $launcher + '"')
-    exit 0
+    Write-Host 'Do not run this as administrator.' -ForegroundColor Red
+    Write-Host 'NikPak relaunches its window as a normal user when started elevated, so the'
+    Write-Host 'capture fails. Open a normal PowerShell (Win+X, "Windows PowerShell" without'
+    Write-Host '"Administrator", or Win+R then "powershell") and run the command there.'
+    exit 1
 }
 
 # --- 1. cargo ---------------------------------------------------------------
