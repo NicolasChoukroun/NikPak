@@ -759,7 +759,7 @@
    "<b>Terapkan atau batal:</b> kotak dapat digeser lewat bilah judulnya. <b>Terapkan skin</b> menyimpannya untuk NikPak dan unNik; <b>Batal</b> (atau Esc) kembali ke skin sebelumnya.",
    "<b>Matahari dan bulan:</b> tombol di sebelahnya beralih antara Nikkoid Blue (gelap) dan Nikkoid Bright dengan satu klik, seperti di Nikkomander.",
    "<b>Diingat:</b> skin yang dipilih disimpan dan dipakai saat program dibuka lagi. NikPak dan unNik berbagi skin: ubah di satu program, yang lain mengikuti dalam beberapa detik.",
-   "<b>Bergambar dan datar:</b> 41 skin dari gradien CSS Nikkomander — garis, bintang, bata — dan 14 skin baru yang gambarnya dilukis NikPak sendiri: badai, gunung saat senja, jalan neon, komputer lama, papan catur. Tetap tajam di ukuran jendela apa pun."
+   "<b>Bergambar dan datar:</b> 41 skin dari gradien CSS Nikkomander — garis, bintang, bata — dan 14 skin baru yang gambarnya dilukis NikPak sendiri: badai, gunung saat senja, jalan neon, komputer lama, papan catur. Tetap tajam di ukuran jendela apa pun. Sejak 1.6.2, gambar yang dilukis mundur ke belakang antarmuka — diperhalus dan dipudarkan di belakang judul, cincin, dan teks status — sehingga tidak bersaing dengan jendela."
   ],
   "gallery_t": "Galeri",
   "gallery_sub": "NikPak dalam setiap skin. Klik gambar untuk melihatnya dalam ukuran penuh.",
