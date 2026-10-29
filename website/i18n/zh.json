@@ -24,7 +24,8 @@
   "language": "语言",
   "skip": "跳到正文",
   "skins": "皮肤",
-  "tech": "技术指南"
+  "tech": "技术",
+  "tech_full": "技术指南"
  },
  "common": {
   "download": "免费下载",

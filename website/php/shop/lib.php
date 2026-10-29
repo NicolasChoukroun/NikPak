@@ -4,7 +4,8 @@
  * PHP 7.2+ (also PHP 8.x), extensions: curl, openssl, sodium, pdo_mysql, mbstring.
  *
  * Secrets live in shop-config.php OUTSIDE the web root (see shop-config.sample.php).
- * Licences are created with the existing kit in server/ (license_store.php: nikpak_issue).
+ * Licences are delivered by Nikkoid with the local Nikkoid License Manager (the PHP
+ * server in server/ is retired); shop_fulfil() e-mails the `niklicense` command.
  */
 require_once dirname(__DIR__) . '/inc/common.php';
 
@@ -99,36 +100,37 @@ function shop_load_order(string $id): ?array
 }
 
 /**
- * The payment is confirmed: create the licence (once per payment reference) and e-mail it.
+ * The payment is confirmed. The licence is no longer issued by the PHP server:
+ * it is delivered by Nikkoid with the local Nikkoid License Manager, like the
+ * other Nik* products. This e-mails Nikkoid the exact `niklicense` command and
+ * tells the customer the key arrives by hand (within 24h).
  * Safe to call several times for the same payment (webhooks are retried).
  */
 function shop_fulfil(array $o, string $provider, string $ref, float $paid, string $currency): array
 {
     $c = shop_config();
-    require_once rtrim((string) $c['server_dir'], '/\\') . '/license_store.php';
-    $pdo = nikpak_db();
-    $lic = nikpak_issue($pdo, $o['name'], $o['email'], $o['type'], (int) $o['seats'], [
-        'payment_ref' => $provider . ':' . $ref,
-        'provider'    => $provider,
-        'amount'      => $paid,
-        'currency'    => $currency,
-        'note'        => 'order ' . $o['id'],
-    ]);
+    $plan  = $o['type'] === 'company' ? 'company' : 'personal';
+    $seats = (int) $o['seats'];
+    $total = (float) $o['total'];
+    $cmd = sprintf('niklicense nikpak issue "%s" %s %s %d --ref %s --amount %d --provider "%s"',
+        str_replace('"', "'", $o['name']), $o['email'], $plan, $seats, $provider . ':' . $ref, (int) $total, $provider);
     $marker = shop_data_dir() . '/orders/' . $o['id'] . '.mailed';
     if (!is_file($marker)) {
-        $att = [];
-        if ($lic['type'] === 'company' && function_exists('nikpak_license_file')) {
-            $att[] = ['name' => 'nikpak.key', 'type' => 'text/plain', 'data' => nikpak_license_file($lic['name'], $lic['email'], $lic['license_key'])];
-        }
-        $sent = nikpak_mail($lic['email'], 'NikPak - your licence key', nikpak_license_email($lic), (string) nikpak_site()['contact_email'], $att);
         $notify = (string) ($c['notify_email'] ?? nikpak_site()['contact_email']);
         nikpak_mail($notify, 'NikPak - sale ' . $provider . ' ' . $o['total'] . ' USD',
             "New sale\n\nProvider: $provider\nReference: $ref\nPaid: $paid $currency\nOrder: {$o['id']}\n"
-            . "Licence: {$lic['type']} x{$lic['seats']}\nHolder: {$lic['name']}\nE-mail: {$lic['email']}\nKey e-mail sent: " . ($sent ? 'yes' : 'NO - send it by hand') . "\n");
-        if ($sent) @file_put_contents($marker, (string) time());
-        shop_log("fulfilled {$o['id']} $provider $ref $paid $currency -> licence #{$lic['id']}" . ($sent ? '' : ' (MAIL FAILED)'));
+            . "Licence: {$plan} x{$seats}\nHolder: {$o['name']}\nE-mail: {$o['email']}\n\n"
+            . "Deliver the licence with the licence manager:\n  {$cmd}\n");
+        nikpak_mail($o['email'], 'NikPak - your order ' . $o['id'],
+            "Hello {$o['name']},\n\nThank you for buying NikPak!\n\n"
+            . "Order:    {$o['id']}\nLicence:  " . shop_item_name($o) . "\nTotal:    \$" . $total . " USD\n\n"
+            . "Your licence key will be sent to this address, usually within 24 hours.\n\n"
+            . "Nicolas Choukroun - Nikkoid LLC\n" . (string) nikpak_site()['domain'] . "\n",
+            (string) nikpak_site()['contact_email']);
+        @file_put_contents($marker, (string) time());
+        shop_log("fulfilled {$o['id']} $provider $ref $paid $currency -> command e-mailed to Nikkoid");
     }
-    return $lic;
+    return $o;
 }
 
 /* ------------------------------------------------------------------ HTTP */

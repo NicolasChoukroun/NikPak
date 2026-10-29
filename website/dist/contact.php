@@ -83,8 +83,8 @@ if ($crypto) {
     $body .= "\nCRYPTO PAYMENT - check the transaction before issuing the key:\n";
     foreach ($crypto as $k => $v) $body .= str_pad($k . ':', 16) . $v . "\n";
     $holderArg = str_replace('"', "'", $crypto['Licence holder']);
-    $body .= "\nIssue the key on the server (php tools/licenses.php issue \"Name\" email type seats note):\n"
-        . "  php tools/licenses.php issue \"$holderArg\" $email $licence $seats \"crypto $coin $txid\"\n"
+    $body .= "\nIssue the key with the licence manager (niklicense nikpak issue \"Name\" email type seats):\n"
+        . "  niklicense nikpak issue \"$holderArg\" $email $licence $seats --ref \"crypto $coin $txid\" --provider crypto\n"
         . "Then e-mail the printed text to the customer, with NikPak in the subject.\n";
 }
 if ($message !== '') $body .= "\nMessage:\n" . $message . "\n";

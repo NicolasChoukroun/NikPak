@@ -24,7 +24,8 @@
   "language": "Idioma",
   "skip": "Ir para o conteúdo",
   "skins": "Temas",
-  "tech": "Guia técnico"
+  "tech": "Técnico",
+  "tech_full": "Guia técnico"
  },
  "common": {
   "download": "Download gratuito",

@@ -515,3 +515,16 @@ html[lang="zh-Hans"] .skin-tile .tag, html[lang="hi"] .skin-tile .tag, html[lang
 .tech-content table { margin: 1.2em 0; }
 .tech-content td { word-break: break-word; }
 .toc a.sub { padding-inline-start: 26px; font-size: .88em; }
+
+/* wrap everything inside the technical guide so nothing runs off the right edge */
+.tech-content { overflow-wrap: break-word; word-break: break-word; }
+.tech-content th { white-space: normal; overflow-wrap: anywhere; }
+.tech-content td code { white-space: normal; overflow-wrap: anywhere; }
+.tech-content pre { white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; overflow-x: hidden; }
+.tech-content table { max-width: 100%; }
+.tech-content figure img { width: auto; max-width: 100%; }
+
+/* icon-only apps dropdown in the top bar */
+.apps summary { padding: 0 11px; gap: 0; }
+.apps-ico { color: var(--accent-soft); }
+.apps summary:hover .apps-ico, .apps[open] .apps-ico { color: var(--accent); }

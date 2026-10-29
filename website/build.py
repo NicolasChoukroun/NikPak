@@ -228,7 +228,7 @@ def layout(L, page, body, extra_head="", scripts=""):
   <div class="wrap">
     <a class="brand" href="index.html"><img src="../assets/img/favicon.png" alt="" width="30" height="30">NikPak</a>
     <details class="apps">
-      <summary aria-label="Our Apps"><svg class="apps-ico" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><rect x="1.5" y="1.5" width="5" height="5" rx="1.3" fill="currentColor"/><rect x="9.5" y="1.5" width="5" height="5" rx="1.3" fill="currentColor"/><rect x="1.5" y="9.5" width="5" height="5" rx="1.3" fill="currentColor"/><rect x="9.5" y="9.5" width="5" height="5" rx="1.3" fill="currentColor"/></svg><span class="apps-name">Our Apps</span><svg class="chev" viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+      <summary aria-label="Our Apps"><svg class="apps-ico" viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><rect x="1.5" y="1.5" width="5" height="5" rx="1.3" fill="currentColor"/><rect x="9.5" y="1.5" width="5" height="5" rx="1.3" fill="currentColor"/><rect x="1.5" y="9.5" width="5" height="5" rx="1.3" fill="currentColor"/><rect x="9.5" y="9.5" width="5" height="5" rx="1.3" fill="currentColor"/></svg></summary>
       <div class="apps-menu" role="list"><a class="apps-home" href="https://nikkoid.com">Nikkoid Network</a><hr><a href="https://nikkomander.nikkoid.com/index.html">Nikkomander</a><a href="https://nikedit.nikkoid.com/index.html">NikEDIT</a><a href="https://niksql.nikkoid.com/index.html">NikSQL</a><a href="https://nikpak.nikkoid.com/en/index.html" aria-current="true">NikPak</a><a href="https://hexawar.nikkoid.com/website/">Hexawar</a></div>
     </details>
     <nav class="nav" aria-label="{esc(L('nav.menu'))}">{''.join(nav)}</nav>
@@ -633,7 +633,7 @@ def page_guide(L):
 def page_tech(L):
     toc = open(os.path.join(ROOT, "tech-toc.html"), encoding="utf-8").read()
     content = open(os.path.join(ROOT, "tech-body.html"), encoding="utf-8").read()
-    head = page_head(L, L("nav.tech"), "The complete technical guide: architecture and the .nik format, the compression engine and the media codecs, the encryption design and quantum resistance, hardening, the full benchmarks, and the build, test and roadmap notes.")
+    head = page_head(L, L("nav.tech_full"), "The complete technical guide: architecture and the .nik format, the compression engine and the media codecs, the encryption design and quantum resistance, hardening, the full benchmarks, and the build, test and roadmap notes.")
     body = f'<div class="wrap doc tech-doc"><aside class="toc"><span class="label">{esc(L("guide.toc"))}</span>{toc}</aside><div class="tech-content">{content}</div></div>'
     return layout(L, "tech", head + body)
 
