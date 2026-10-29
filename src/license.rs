@@ -25,6 +25,8 @@
 use std::path::PathBuf;
 
 include!("license_pubkey.rs");
+// keys blocked in the licence manager (refunds, keys published on the Internet)
+include!("license_revoked.rs");
 
 pub const BUY_URL: &str = "https://nikpak.nikkoid.com/buy.php";
 pub const PRICE_PERSONAL: &str = "$19";
@@ -156,6 +158,12 @@ pub fn parse_key(key: &str) -> Option<(Kind, u16, [u8; 64])> {
     Some((kind, seats, sig))
 }
 
+/// Short fingerprint of a key (its signature), used for the list of blocked keys.
+pub fn fingerprint(sig: &[u8; 64]) -> String {
+    use sha2::{Digest, Sha256};
+    Sha256::digest(sig)[..12].iter().map(|b| format!("{b:02x}")).collect()
+}
+
 /// Check name + e-mail + key against the public key.
 pub fn verify(name: &str, email: &str, key: &str) -> Result<License, &'static str> {
     use ed25519_dalek::{Signature, VerifyingKey};
@@ -166,6 +174,9 @@ pub fn verify(name: &str, email: &str, key: &str) -> Result<License, &'static st
     let vk = VerifyingKey::from_bytes(&PUBLIC_KEY).map_err(|_| "Internal error: invalid public key.")?;
     vk.verify_strict(&message(kind, seats, name, email), &Signature::from_bytes(&sig))
         .map_err(|_| "Name, e-mail address and licence key do not match.")?;
+    if REVOKED.contains(&fingerprint(&sig).as_str()) {
+        return Err("This licence key has been blocked. Please contact us.");
+    }
     Ok(License { name: name.split_ascii_whitespace().collect::<Vec<_>>().join(" "), email: normalize(email), kind, seats })
 }
 

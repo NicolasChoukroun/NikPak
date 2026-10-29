@@ -1892,6 +1892,7 @@ dependencies = [
  "rfd",
  "rpassword",
  "rustybuzz",
+ "sha2",
  "unicode-bidi",
  "zeroize",
  "zstd",

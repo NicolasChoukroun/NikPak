@@ -23,6 +23,7 @@ ppmd-rust = "1.5.1"
 preflate-rs = { path = "vendor/preflate-rs" }
 # Shareware licence keys: Ed25519 signatures (nikpak only holds the public key)
 ed25519-dalek = "2"
+sha2 = "0.10"
 
 # Graphical interface (nikpak started without arguments). Optional: build a
 # command-line-only binary with  cargo build --release --no-default-features
