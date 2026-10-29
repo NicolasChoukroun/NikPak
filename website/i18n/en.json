@@ -10,7 +10,8 @@
   "t_buy": "Buy a licence",
   "t_contact": "Contact",
   "t_thanks": "Thank you",
-  "t_skins": "Skins"
+  "t_skins": "Skins",
+  "t_tech": "Technical guide · NikPak"
  },
  "nav": {
   "home": "Home",
@@ -22,7 +23,8 @@
   "menu": "Menu",
   "language": "Language",
   "skip": "Skip to content",
-  "skins": "Skins"
+  "skins": "Skins",
+  "tech": "Technical guide"
  },
  "common": {
   "download": "Free download",
@@ -574,7 +576,7 @@
   "tc_p": "Because NikPak accepts RAR's command syntax, a program that can drive an external rar.exe can drive nikpak.exe. In Total Commander, register the extension <code>nik</code> as an additional packer and point the packer and unpacker commands to nikpak.exe. Use <code>-o+</code> or <code>-y</code> for unattended extraction. Options that RAR front-ends often send (<code>-s</code>, <code>-ma5</code>, <code>-md64m</code>, <code>-ibck</code>, <code>-rr</code> and similar) are accepted and ignored.",
   "tc_note": "<b>Folders with spaces on Windows:</b> a quoted path that ends with a backslash, such as \"C:\\My Folder\\\", is misread by Windows. Use <code>-d \"C:\\My Folder\"</code> instead.",
   "more_t": "Going further",
-  "more_p": "The technical guide describes the .nik format, the NAC codec, the encryption design and the complete benchmarks. Questions? <a href=\"contact.html\">Write to us</a>.",
+  "more_p": "The complete technical guide — architecture, the .nik format, the NAC codec, the encryption design and the full benchmarks — is <a href=\"tech.html\">on this page</a>. Questions? <a href=\"contact.html\">Write to us</a>.",
   "install_unix": "<b>macOS and Linux:</b> unpack the archive and run <code>./install.sh</code>. It copies nikpak and unNik to <code>~/.local/bin</code> (Linux) or <code>/usr/local/bin</code> (macOS) and adds the right-click menu of the file manager (Dolphin, Nemo, Nautilus; Quick Actions in the Finder). Then start the window with <code>nikpak</code>.",
   "skins_t": "Skins",
   "skins_p": "NikPak and unNik share 55 skins. The menu opens beside the program, so you can see the whole interface in the skin you are trying.",

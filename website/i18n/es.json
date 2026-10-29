@@ -10,7 +10,8 @@
   "t_buy": "Comprar una licencia",
   "t_contact": "Contacto",
   "t_thanks": "Gracias",
-  "t_skins": "Aspectos"
+  "t_skins": "Aspectos",
+  "t_tech": "Guía técnica · NikPak"
  },
  "nav": {
   "home": "Inicio",
@@ -22,7 +23,8 @@
   "menu": "Menú",
   "language": "Idioma",
   "skip": "Ir al contenido",
-  "skins": "Aspectos"
+  "skins": "Aspectos",
+  "tech": "Guía técnica"
  },
  "common": {
   "download": "Descarga gratuita",
@@ -574,7 +576,7 @@
   "tc_p": "Como NikPak acepta la sintaxis de comandos de RAR, un programa capaz de manejar un rar.exe externo puede manejar nikpak.exe. En Total Commander, registre la extensión <code>nik</code> como compresor adicional y apunte los comandos de compresión y descompresión a nikpak.exe. Use <code>-o+</code> o <code>-y</code> para extraer sin intervención. Las opciones que suelen enviar las interfaces de RAR (<code>-s</code>, <code>-ma5</code>, <code>-md64m</code>, <code>-ibck</code>, <code>-rr</code> y similares) se aceptan y se ignoran.",
   "tc_note": "<b>Carpetas con espacios en Windows:</b> Windows interpreta mal una ruta entre comillas que termina en barra invertida, como \"C:\\Mi Carpeta\\\". Use en su lugar <code>-d \"C:\\Mi Carpeta\"</code>.",
   "more_t": "Para saber más",
-  "more_p": "La guía técnica describe el formato .nik, el códec NAC, el diseño del cifrado y todas las pruebas comparativas. ¿Preguntas? <a href=\"contact.html\">Escríbanos</a>.",
+  "more_p": "La guía técnica completa — arquitectura, el formato .nik, el códec NAC, el diseño de cifrado y todos los benchmarks — está <a href=\"tech.html\">en esta página</a>. ¿Preguntas? <a href=\"contact.html\">Escríbenos</a>.",
   "install_unix": "<b>macOS y Linux:</b> descomprima el archivo y ejecute <code>./install.sh</code>. Copia nikpak y unNik en <code>~/.local/bin</code> (Linux) o <code>/usr/local/bin</code> (macOS) y añade el menú contextual del gestor de archivos (Dolphin, Nemo, Nautilus; acciones rápidas del Finder). Después abra la ventana con <code>nikpak</code>.",
   "skins_t": "Aspectos",
   "skins_p": "NikPak y unNik comparten 55 aspectos. El menú se abre junto al programa, para que toda la interfaz siga visible con el aspecto que prueba.",

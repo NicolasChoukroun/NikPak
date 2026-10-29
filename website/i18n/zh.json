@@ -10,7 +10,8 @@
   "t_buy": "购买许可证",
   "t_contact": "联系我们",
   "t_thanks": "感谢",
-  "t_skins": "皮肤"
+  "t_skins": "皮肤",
+  "t_tech": "技术指南 · NikPak"
  },
  "nav": {
   "home": "首页",
@@ -22,7 +23,8 @@
   "menu": "菜单",
   "language": "语言",
   "skip": "跳到正文",
-  "skins": "皮肤"
+  "skins": "皮肤",
+  "tech": "技术指南"
  },
  "common": {
   "download": "免费下载",
@@ -574,7 +576,7 @@
   "tc_p": "由于 NikPak 接受 RAR 的命令语法，能调用外部 rar.exe 的程序也能调用 nikpak.exe。在 Total Commander 中，将扩展名 <code>nik</code> 注册为附加打包程序，并将打包和解包命令指向 nikpak.exe。无人值守解压时请使用 <code>-o+</code> 或 <code>-y</code>。RAR 前端常发送的选项（<code>-s</code>、<code>-ma5</code>、<code>-md64m</code>、<code>-ibck</code>、<code>-rr</code> 等）会被接受并忽略。",
   "tc_note": "<b>Windows 中带空格的文件夹：</b>以反斜杠结尾的带引号路径，例如 \"C:\\My Folder\\\"，会被 Windows 错误解析。请改用 <code>-d \"C:\\My Folder\"</code>。",
   "more_t": "深入了解",
-  "more_p": "技术指南介绍了 .nik 格式、NAC 编解码器、加密设计和完整的基准测试。有问题？<a href=\"contact.html\">联系我们</a>。",
+  "more_p": "完整的技术指南——架构、.nik 格式、NAC 编解码器、加密设计和全部基准测试——都在<a href=\"tech.html\">这个页面</a>。有问题？<a href=\"contact.html\">联系我们</a>。",
   "install_unix": "<b>macOS 和 Linux：</b>解压后运行 <code>./install.sh</code>。它会把 nikpak 和 unNik 复制到 <code>~/.local/bin</code>（Linux）或 <code>/usr/local/bin</code>（macOS），并添加文件管理器的右键菜单（Dolphin、Nemo、Nautilus；Finder 的快速操作）。然后用 <code>nikpak</code> 打开窗口。",
   "skins_t": "皮肤",
   "skins_p": "NikPak 和 unNik 共用 55 款皮肤。菜单在程序旁边打开，试用时整个界面都清晰可见。",

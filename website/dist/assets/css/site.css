@@ -501,3 +501,17 @@ html[lang="zh-Hans"] .skin-tile .tag, html[lang="hi"] .skin-tile .tag, html[lang
 .apps-menu .apps-home { font-weight: 600; letter-spacing: .02em; }
 .apps-menu hr { border: 0; height: 1px; margin: 4px 8px; background: linear-gradient(90deg, transparent, var(--accent-soft), transparent); opacity: .55; }
 @media (max-width: 600px) { .apps summary { padding: 0 11px; } .apps-name { display: none; } }
+
+/* ---------- technical guide page ---------- */
+.tech-content { min-width: 0; }
+.tech-content h2.ch { font-size: 1.65rem; color: var(--text); border-bottom: 2px solid var(--accent); padding-bottom: 10px; margin: 2.4em 0 1em; scroll-margin-top: 84px; }
+.tech-content h2.ch:first-child { margin-top: 0.3em; }
+.tech-content h3.se { color: var(--accent-soft); font-size: 1.22rem; margin-top: 1.9em; scroll-margin-top: 84px; }
+.tech-content h4.su { color: var(--text); font-size: 1.05rem; margin-top: 1.5em; }
+.tech-content p, .tech-content li { color: #C6DAF2; line-height: 1.66; }
+.tech-content figure { margin: 1.5em 0; }
+.tech-content figure img { max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: var(--radius-sm); background: #04122e; }
+.tech-content pre { background: rgba(2, 8, 26, .55); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 14px 16px; overflow-x: auto; font-size: .88rem; line-height: 1.65; color: #CFE8FF; margin: 1.1em 0; }
+.tech-content table { margin: 1.2em 0; }
+.tech-content td { word-break: break-word; }
+.toc a.sub { padding-inline-start: 26px; font-size: .88em; }

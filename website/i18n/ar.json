@@ -10,7 +10,8 @@
   "t_buy": "شراء ترخيص",
   "t_contact": "اتصل بنا",
   "t_thanks": "شكرًا",
-  "t_skins": "السمات"
+  "t_skins": "السمات",
+  "t_tech": "الدليل التقني · NikPak"
  },
  "nav": {
   "home": "الرئيسية",
@@ -22,7 +23,8 @@
   "menu": "القائمة",
   "language": "اللغة",
   "skip": "انتقل إلى المحتوى",
-  "skins": "السمات"
+  "skins": "السمات",
+  "tech": "الدليل التقني"
  },
  "common": {
   "download": "تنزيل مجاني",
@@ -574,7 +576,7 @@
   "tc_p": "بما أن NikPak يقبل صياغة أوامر RAR، فإن أي برنامج يستطيع تشغيل rar.exe خارجي يستطيع تشغيل nikpak.exe. في Total Commander، سجّل الامتداد <code>nik</code> كأداة ضغط إضافية ووجّه أوامر الضغط وفكّه إلى nikpak.exe. استخدم <code>-o+</code> أو <code>-y</code> للاستخراج دون تدخّل. أما الخيارات التي ترسلها واجهات RAR غالبًا (<code>-s</code> و<code>-ma5</code> و<code>-md64m</code> و<code>-ibck</code> و<code>-rr</code> وما شابهها) فتُقبل وتُتجاهل.",
   "tc_note": "<b>المجلدات التي تحوي مسافات في Windows:</b> يخطئ Windows في قراءة المسار المقتبس المنتهي بشرطة مائلة عكسية مثل \"C:\\My Folder\\\". استخدم بدلًا منه <code>-d \"C:\\My Folder\"</code>.",
   "more_t": "للمزيد",
-  "more_p": "يشرح الدليل التقني تنسيق ‎.nik ومرمّز NAC وتصميم التشفير واختبارات الأداء كاملة. لديك سؤال؟ <a href=\"contact.html\">راسلنا</a>.",
+  "more_p": "الدليل التقني الكامل — البنية، وصيغة .nik، وترميز NAC، وتصميم التشفير، وكل الاختبارات المعيارية — موجود <a href=\"tech.html\">في هذه الصفحة</a>. أسئلة؟ <a href=\"contact.html\">راسلنا</a>.",
   "install_unix": "<b>على macOS وLinux:</b> فُكّ ضغط الأرشيف وشغّل <code>./install.sh</code>. ينسخ nikpak وunNik إلى <code>~/.local/bin</code> (Linux) أو <code>/usr/local/bin</code> (macOS) ويضيف قائمة النقر بزر الفأرة الأيمن في مدير الملفات (Dolphin وNemo وNautilus؛ والإجراءات السريعة في Finder). ثم افتح النافذة بالأمر <code>nikpak</code>.",
   "skins_t": "السمات",
   "skins_p": "يتشارك NikPak وunNik خمسًا وخمسين سمة. تُفتح القائمة بجانب البرنامج لتبقى الواجهة كلها ظاهرة بالسمة التي تجربها.",

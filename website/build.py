@@ -26,10 +26,10 @@ FONTS = {
     "bn": "&family=Noto+Sans+Bengali:wght@300;400;500;600",
     "ar": "&family=Noto+Sans+Arabic:wght@300;400;500;600",
 }
-PAGES = ["index", "features", "benchmarks", "guide", "skins", "buy", "contact", "thanks"]
-NAV = ["index", "features", "benchmarks", "guide", "skins", "buy", "contact"]
-NAV_KEY = {"index": "home", "features": "features", "benchmarks": "benchmarks", "guide": "guide", "skins": "skins", "buy": "buy", "contact": "contact"}
-TITLE_KEY = {"index": "t_home", "features": "t_features", "benchmarks": "t_benchmarks", "guide": "t_guide", "skins": "t_skins", "buy": "t_buy", "contact": "t_contact", "thanks": "t_thanks"}
+PAGES = ["index", "features", "benchmarks", "guide", "tech", "skins", "buy", "contact", "thanks"]
+NAV = ["index", "features", "benchmarks", "guide", "tech", "skins", "buy", "contact"]
+NAV_KEY = {"index": "home", "features": "features", "benchmarks": "benchmarks", "guide": "guide", "tech": "tech", "skins": "skins", "buy": "buy", "contact": "contact"}
+TITLE_KEY = {"index": "t_home", "features": "t_features", "benchmarks": "t_benchmarks", "guide": "t_guide", "tech": "t_tech", "skins": "t_skins", "buy": "t_buy", "contact": "t_contact", "thanks": "t_thanks"}
 
 # Number format per language: (thousands separator, decimal separator)
 NUMFMT = {"en": (",", "."), "zh": (",", "."), "hi": (",", "."), "bn": (",", "."), "ar": (",", "."),
@@ -628,6 +628,14 @@ def page_guide(L):
     return layout(L, "guide", body)
 
 
+def page_tech(L):
+    toc = open(os.path.join(ROOT, "tech-toc.html"), encoding="utf-8").read()
+    content = open(os.path.join(ROOT, "tech-body.html"), encoding="utf-8").read()
+    head = page_head(L, L("nav.tech"), "The complete technical guide: architecture and the .nik format, the compression engine and the media codecs, the encryption design and quantum resistance, hardening, the full benchmarks, and the build, test and roadmap notes.")
+    body = f'<div class="wrap doc tech-doc"><aside class="toc"><span class="label">{esc(L("guide.toc"))}</span>{toc}</aside><div class="tech-content">{content}</div></div>'
+    return layout(L, "tech", head + body)
+
+
 COIN_SVG = {
     "BTC": '<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="16" fill="#F7931A"/><text x="16" y="22" text-anchor="middle" font-size="18" font-weight="700" fill="#fff" font-family="Arial">₿</text></svg>',
     "ETH": '<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="16" fill="#627EEA"/><path fill="#fff" d="M16 5v8.1l6.9 3.1zm0 0-6.9 11.2 6.9-3.1zm0 16.5V27l6.9-9.6zm0 5.5v-5.5l-6.9-4.1zm0-6.8 6.9-4-6.9-3.1zm-6.9-4 6.9 4v-7.1z" opacity=".95"/></svg>',
@@ -925,7 +933,7 @@ def page_skins(L):
 
 
 BUILDERS = {"index": page_index, "features": page_features, "benchmarks": page_benchmarks, "guide": page_guide,
-            "skins": page_skins, "buy": page_buy, "contact": page_contact, "thanks": page_thanks}
+            "tech": page_tech, "skins": page_skins, "buy": page_buy, "contact": page_contact, "thanks": page_thanks}
 
 
 def root_index():

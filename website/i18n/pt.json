@@ -10,7 +10,8 @@
   "t_buy": "Comprar uma licença",
   "t_contact": "Contato",
   "t_thanks": "Obrigado",
-  "t_skins": "Temas"
+  "t_skins": "Temas",
+  "t_tech": "Guia técnico · NikPak"
  },
  "nav": {
   "home": "Início",
@@ -22,7 +23,8 @@
   "menu": "Menu",
   "language": "Idioma",
   "skip": "Ir para o conteúdo",
-  "skins": "Temas"
+  "skins": "Temas",
+  "tech": "Guia técnico"
  },
  "common": {
   "download": "Download gratuito",
@@ -574,7 +576,7 @@
   "tc_p": "Como o NikPak aceita a sintaxe de comandos do RAR, um programa que controla um rar.exe externo pode controlar o nikpak.exe. No Total Commander, registre a extensão <code>nik</code> como compactador adicional e aponte os comandos de compactação e descompactação para o nikpak.exe. Use <code>-o+</code> ou <code>-y</code> para extração sem intervenção. As opções que interfaces do RAR costumam enviar (<code>-s</code>, <code>-ma5</code>, <code>-md64m</code>, <code>-ibck</code>, <code>-rr</code> e similares) são aceitas e ignoradas.",
   "tc_note": "<b>Pastas com espaços no Windows:</b> um caminho entre aspas que termina com barra invertida, como \"C:\\Minha Pasta\\\", é lido de forma errada pelo Windows. Use <code>-d \"C:\\Minha Pasta\"</code>.",
   "more_t": "Para ir além",
-  "more_p": "O guia técnico descreve o formato .nik, o codec NAC, o projeto da criptografia e todos os comparativos. Dúvidas? <a href=\"contact.html\">Fale conosco</a>.",
+  "more_p": "O guia técnico completo — arquitetura, o formato .nik, o codec NAC, o design de criptografia e todos os benchmarks — está <a href=\"tech.html\">nesta página</a>. Dúvidas? <a href=\"contact.html\">Escreva-nos</a>.",
   "install_unix": "<b>macOS e Linux:</b> descompacte o arquivo e execute <code>./install.sh</code>. Ele copia nikpak e unNik para <code>~/.local/bin</code> (Linux) ou <code>/usr/local/bin</code> (macOS) e adiciona o menu de contexto do gerenciador de arquivos (Dolphin, Nemo, Nautilus; ações rápidas do Finder). Depois abra a janela com <code>nikpak</code>.",
   "skins_t": "Temas",
   "skins_p": "NikPak e unNik compartilham 55 temas. O menu abre ao lado do programa, para que toda a interface fique visível no tema que você experimenta.",

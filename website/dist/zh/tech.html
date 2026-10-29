@@ -1,0 +1,4424 @@
+<!doctype html>
+<html lang="zh-Hans" dir="ltr" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>技术指南 · NikPak · NikPak</title>
+<meta name="description" content="NikPak 生成的压缩包比 7-Zip、RAR 7 和 ZIP 更小，并采用抗量子计算的加密保护：256 位 XChaCha20-Poly1305 与 Argon2id，不含任何可被量子计算机破解的 RSA 或椭圆曲线。识别媒体内容的压缩。支持 Windows、macOS、Linux。">
+<meta name="theme-color" content="#102658">
+<link rel="canonical" href="https://nikpak.nikkoid.com/zh/tech.html">
+<link rel="alternate" hreflang="en" href="https://nikpak.nikkoid.com/en/tech.html"><link rel="alternate" hreflang="zh-Hans" href="https://nikpak.nikkoid.com/zh/tech.html"><link rel="alternate" hreflang="hi" href="https://nikpak.nikkoid.com/hi/tech.html"><link rel="alternate" hreflang="es" href="https://nikpak.nikkoid.com/es/tech.html"><link rel="alternate" hreflang="ar" href="https://nikpak.nikkoid.com/ar/tech.html"><link rel="alternate" hreflang="fr" href="https://nikpak.nikkoid.com/fr/tech.html"><link rel="alternate" hreflang="bn" href="https://nikpak.nikkoid.com/bn/tech.html"><link rel="alternate" hreflang="pt" href="https://nikpak.nikkoid.com/pt/tech.html"><link rel="alternate" hreflang="ru" href="https://nikpak.nikkoid.com/ru/tech.html"><link rel="alternate" hreflang="id" href="https://nikpak.nikkoid.com/id/tech.html"><link rel="alternate" hreflang="x-default" href="https://nikpak.nikkoid.com/en/tech.html">
+<meta property="og:title" content="技术指南 · NikPak · NikPak">
+<meta property="og:description" content="NikPak 生成的压缩包比 7-Zip、RAR 7 和 ZIP 更小，并采用抗量子计算的加密保护：256 位 XChaCha20-Poly1305 与 Argon2id，不含任何可被量子计算机破解的 RSA 或椭圆曲线。识别媒体内容的压缩。支持 Windows、macOS、Linux。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://nikpak.nikkoid.com/zh/tech.html">
+<meta property="og:image" content="https://nikpak.nikkoid.com/assets/img/nikpak-drop.webp">
+<link rel="icon" href="../assets/favicon.ico" sizes="any">
+<link rel="icon" href="../assets/img/favicon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&family=JetBrains+Mono:wght@400&family=Noto+Sans+SC:wght@300;400;500&display=swap">
+<link rel="stylesheet" href="../assets/css/site.css">
+
+</head>
+<body data-page="tech" data-lang="zh">
+<a class="skip" href="#main">跳到正文</a>
+<header class="top" id="top">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="../assets/img/favicon.png" alt="" width="30" height="30">NikPak</a>
+    <details class="apps">
+      <summary aria-label="Our Apps"><svg class="apps-ico" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><rect x="1.5" y="1.5" width="5" height="5" rx="1.3" fill="currentColor"/><rect x="9.5" y="1.5" width="5" height="5" rx="1.3" fill="currentColor"/><rect x="1.5" y="9.5" width="5" height="5" rx="1.3" fill="currentColor"/><rect x="9.5" y="9.5" width="5" height="5" rx="1.3" fill="currentColor"/></svg><span class="apps-name">Our Apps</span><svg class="chev" viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+      <div class="apps-menu" role="list"><a class="apps-home" href="https://nikkoid.com">Nikkoid Network</a><hr><a href="https://nikkomander.nikkoid.com/index.html">Nikkomander</a><a href="https://nikedit.nikkoid.com/index.html">NikEDIT</a><a href="https://niksql.nikkoid.com/index.html">NikSQL</a><a href="https://nikpak.nikkoid.com/en/index.html" aria-current="true">NikPak</a><a href="https://hexawar.nikkoid.com/website/">Hexawar</a></div>
+    </details>
+    <nav class="nav" aria-label="菜单"><a href="index.html">首页</a><a href="features.html">功能</a><a href="benchmarks.html">基准测试</a><a href="guide.html">用户指南</a><a href="tech.html" aria-current="page">技术指南</a><a href="skins.html">皮肤</a><a href="buy.html">购买</a><a href="contact.html">联系我们</a></nav>
+    <div class="lang" id="lang">
+      <button type="button" aria-haspopup="true" aria-expanded="false" aria-label="语言"><svg class="flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#DE2910"/><path fill="#FFDE00" d="m6 3 .9 2.8h2.9L7.5 7.5l.9 2.8L6 8.6l-2.4 1.7.9-2.8-2.3-1.7h2.9z"/><circle cx="11" cy="2.6" r=".8" fill="#FFDE00"/><circle cx="12.6" cy="4.6" r=".8" fill="#FFDE00"/><circle cx="12.6" cy="7.2" r=".8" fill="#FFDE00"/><circle cx="11" cy="9.2" r=".8" fill="#FFDE00"/></svg><span>中文</span><i class="caret"></i></button>
+      <div class="lang-menu" role="menu"><span class="label">语言</span><a href="../en/tech.html" hreflang="en" lang="en" data-lang="en"><svg class="flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#012169"/><path d="M0 0 30 20M30 0 0 20" stroke="#fff" stroke-width="4"/><path d="M0 0 30 20M30 0 0 20" stroke="#C8102E" stroke-width="1.6"/><path d="M15 0v20M0 10h30" stroke="#fff" stroke-width="6"/><path d="M15 0v20M0 10h30" stroke="#C8102E" stroke-width="3.4"/></svg><span>English</span></a><a href="../zh/tech.html" hreflang="zh-Hans" lang="zh-Hans" data-lang="zh" aria-current="true"><svg class="flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#DE2910"/><path fill="#FFDE00" d="m6 3 .9 2.8h2.9L7.5 7.5l.9 2.8L6 8.6l-2.4 1.7.9-2.8-2.3-1.7h2.9z"/><circle cx="11" cy="2.6" r=".8" fill="#FFDE00"/><circle cx="12.6" cy="4.6" r=".8" fill="#FFDE00"/><circle cx="12.6" cy="7.2" r=".8" fill="#FFDE00"/><circle cx="11" cy="9.2" r=".8" fill="#FFDE00"/></svg><span>中文</span></a><a href="../hi/tech.html" hreflang="hi" lang="hi" data-lang="hi"><svg class="flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#fff"/><rect width="30" height="6.67" fill="#FF9933"/><rect y="13.33" width="30" height="6.67" fill="#138808"/><circle cx="15" cy="10" r="2.6" fill="none" stroke="#000080" stroke-width=".7"/><circle cx="15" cy="10" r=".6" fill="#000080"/></svg><span>हिन्दी</span></a><a href="../es/tech.html" hreflang="es" lang="es" data-lang="es"><svg class="flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#AA151B"/><rect y="5" width="30" height="10" fill="#F1BF00"/></svg><span>Español</span></a><a href="../ar/tech.html" hreflang="ar" lang="ar" data-lang="ar"><svg class="flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#006C35"/><path d="M8 12.5h14" stroke="#fff" stroke-width="1.2"/><path d="M9 8.3h12" stroke="#fff" stroke-width="1.6" stroke-dasharray="1.2 .7"/></svg><span>العربية</span></a><a href="../fr/tech.html" hreflang="fr" lang="fr" data-lang="fr"><svg class="flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#fff"/><rect width="10" height="20" fill="#002395"/><rect x="20" width="10" height="20" fill="#ED2939"/></svg><span>Français</span></a><a href="../bn/tech.html" hreflang="bn" lang="bn" data-lang="bn"><svg class="flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#006A4E"/><circle cx="13.3" cy="10" r="5.2" fill="#F42A41"/></svg><span>বাংলা</span></a><a href="../pt/tech.html" hreflang="pt" lang="pt" data-lang="pt"><svg class="flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#009C3B"/><path d="M15 2.5 27 10 15 17.5 3 10z" fill="#FFDF00"/><circle cx="15" cy="10" r="4.2" fill="#002776"/><path d="M11 9.4c2.6-.6 5.4-.2 8 1.2" stroke="#fff" stroke-width=".7" fill="none"/></svg><span>Português</span></a><a href="../ru/tech.html" hreflang="ru" lang="ru" data-lang="ru"><svg class="flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#fff"/><rect y="6.67" width="30" height="6.67" fill="#0039A6"/><rect y="13.33" width="30" height="6.67" fill="#D52B1E"/></svg><span>Русский</span></a><a href="../id/tech.html" hreflang="id" lang="id" data-lang="id"><svg class="flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#fff"/><rect width="30" height="10" fill="#CE1126"/></svg><span>Bahasa Indonesia</span></a></div>
+    </div>
+    <button type="button" class="menu-toggle" aria-label="菜单" aria-expanded="false"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke-linecap="round"/></svg></button>
+  </div>
+</header>
+<main id="main">
+<div class="page-head"><div class="wrap"><h1 class="glow-title">技术指南</h1><div class="rule"></div><p style="margin-top:18px">The complete technical guide: architecture and the .nik format, the compression engine and the media codecs, the encryption design and quantum resistance, hardening, the full benchmarks, and the build, test and roadmap notes.</p></div></div><div class="wrap doc tech-doc"><aside class="toc"><span class="label">本页内容</span><a href="#1-introduction" class="">1 Introduction</a>
+<a href="#1-1-design-goals" class="sub">1.1 Design goals</a>
+<a href="#1-2-results-at-a-glance" class="sub">1.2 Results at a glance</a>
+<a href="#1-3-who-is-it-for" class="sub">1.3 Who is it for?</a>
+<a href="#1-4-how-to-read-this-guide" class="sub">1.4 How to read this guide</a>
+<a href="#1-5-community-and-contact" class="sub">1.5 Community and contact</a>
+<a href="#2-feature-overview" class="">2 Feature overview</a>
+<a href="#2-1-capabilities" class="sub">2.1 Capabilities</a>
+<a href="#2-2-nikpak-and-rar-side-by-side" class="sub">2.2 nikpak and RAR side by side</a>
+<a href="#3-command-line-reference" class="">3 Command-line reference</a>
+<a href="#3-1-commands" class="sub">3.1 Commands</a>
+<a href="#3-2-options" class="sub">3.2 Options</a>
+<a href="#3-3-passwords-in-detail" class="sub">3.3 Passwords in detail</a>
+<a href="#3-4-exit-codes" class="sub">3.4 Exit codes</a>
+<a href="#3-5-examples" class="sub">3.5 Examples</a>
+<a href="#3-6-integration-with-total-commander-and-other-front-ends" class="sub">3.6 Integration with Total Commander and other front-ends</a>
+<a href="#3-7-the-graphical-interface" class="sub">3.7 The graphical interface</a>
+<a href="#3-8-licence-and-registration-shareware" class="sub">3.8 Licence and registration (shareware)</a>
+<a href="#3-9-unnik-the-free-archive-browser" class="sub">3.9 unNik, the free archive browser</a>
+<a href="#3-10-skins" class="sub">3.10 Skins</a>
+<a href="#3-11-the-file-manager-menu" class="sub">3.11 The file-manager menu</a>
+<a href="#4-architecture" class="">4 Architecture</a>
+<a href="#4-1-data-flow-when-creating-an-archive" class="sub">4.1 Data flow when creating an archive</a>
+<a href="#4-2-source-code-map" class="sub">4.2 Source code map</a>
+<a href="#4-3-creating-an-archive-step-by-step" class="sub">4.3 Creating an archive, step by step</a>
+<a href="#4-4-extracting-an-archive-step-by-step" class="sub">4.4 Extracting an archive, step by step</a>
+<a href="#4-5-memory-and-threading" class="sub">4.5 Memory and threading</a>
+<a href="#5-the-nik-container-format" class="">5 The .nik container format</a>
+<a href="#5-1-header" class="sub">5.1 Header</a>
+<a href="#5-2-entry-records" class="sub">5.2 Entry records</a>
+<a href="#5-3-encrypted-body-framing" class="sub">5.3 Encrypted body framing</a>
+<a href="#5-4-why-a-solid-stream" class="sub">5.4 Why a solid stream?</a>
+<a href="#5-5-versioning" class="sub">5.5 Versioning</a>
+<a href="#5-6-multi-engine-body-version-3" class="sub">5.6 Multi-engine body (version 3)</a>
+<a href="#6-the-compression-engine" class="">6 The compression engine</a>
+<a href="#6-1-why-zstandard" class="sub">6.1 Why Zstandard</a>
+<a href="#6-2-level-mapping" class="sub">6.2 Level mapping</a>
+<a href="#6-3-large-window-and-long-distance-matching" class="sub">6.3 Large window and long-distance matching</a>
+<a href="#6-4-multi-threading" class="sub">6.4 Multi-threading</a>
+<a href="#6-5-integrity-inside-the-stream" class="sub">6.5 Integrity inside the stream</a>
+<a href="#6-6-store-mode" class="sub">6.6 Store mode</a>
+<a href="#6-7-the-maximum-level-lzma2-and-ppmd" class="sub">6.7 The maximum level: LZMA2 and PPMd</a>
+<a href="#7-media-intelligence" class="">7 Media intelligence</a>
+<a href="#7-1-detection-by-content" class="sub">7.1 Detection by content</a>
+<a href="#7-2-the-trial-choosing-the-best-filter-per-file" class="sub">7.2 The trial: choosing the best filter per file</a>
+<a href="#7-3-the-nac-audio-codec" class="sub">7.3 The NAC audio codec</a>
+<a href="#7-4-self-verification" class="sub">7.4 Self-verification</a>
+<a href="#7-5-shuffle-and-shuffle-delta" class="sub">7.5 Shuffle and Shuffle+Delta</a>
+<a href="#7-6-protracker-mod-files" class="sub">7.6 ProTracker MOD files</a>
+<a href="#7-7-bmp-images" class="sub">7.7 BMP images</a>
+<a href="#7-8-why-this-beats-rar" class="sub">7.8 Why this beats RAR</a>
+<a href="#7-9-office-documents-pdf-and-gzip-deflate-recompression" class="sub">7.9 Office documents, PDF and gzip: Deflate recompression</a>
+<a href="#8-encryption" class="">8 Encryption</a>
+<a href="#8-1-threat-model" class="sub">8.1 Threat model</a>
+<a href="#8-2-from-password-to-key-argon2id" class="sub">8.2 From password to key: Argon2id</a>
+<a href="#8-3-xchacha20-poly1305-in-the-stream-construction" class="sub">8.3 XChaCha20-Poly1305 in the STREAM construction</a>
+<a href="#8-4-what-an-observer-can-and-cannot-see" class="sub">8.4 What an observer can and cannot see</a>
+<a href="#8-5-password-handling" class="sub">8.5 Password handling</a>
+<a href="#8-6-attack-tests" class="sub">8.6 Attack tests</a>
+<a href="#9-quantum-resistance" class="">9 Quantum resistance</a>
+<a href="#9-1-what-quantum-computers-change" class="sub">9.1 What quantum computers change</a>
+<a href="#9-2-nikpak-s-position" class="sub">9.2 nikpak&#x27;s position</a>
+<a href="#9-3-what-about-the-password" class="sub">9.3 What about the password?</a>
+<a href="#9-4-harvest-now-decrypt-later" class="sub">9.4 &quot;Harvest now, decrypt later&quot;</a>
+<a href="#9-5-honest-limits-and-the-road-ahead" class="sub">9.5 Honest limits and the road ahead</a>
+<a href="#10-hardening-and-robustness" class="">10 Hardening and robustness</a>
+<a href="#10-1-safe-extraction" class="sub">10.1 Safe extraction</a>
+<a href="#10-2-bounded-decoders" class="sub">10.2 Bounded decoders</a>
+<a href="#10-3-safe-creation-and-honest-errors" class="sub">10.3 Safe creation and honest errors</a>
+<a href="#11-benchmarks" class="">11 Benchmarks</a>
+<a href="#11-1-method" class="sub">11.1 Method</a>
+<a href="#11-2-media-files" class="sub">11.2 Media files</a>
+<a href="#11-3-general-data" class="sub">11.3 General data</a>
+<a href="#11-4-speed-on-a-single-large-media-file" class="sub">11.4 Speed on a single large media file</a>
+<a href="#11-5-encryption-overhead" class="sub">11.5 Encryption overhead</a>
+<a href="#11-6-reproducing-the-results" class="sub">11.6 Reproducing the results</a>
+<a href="#11-7-second-run-nikpak-rar-7-7-zip-and-zip" class="sub">11.7 Second run: nikpak, RAR 7, 7-Zip and ZIP</a>
+<a href="#12-nikpak-and-rar-compared" class="">12 nikpak and RAR compared</a>
+<a href="#12-1-where-nikpak-is-ahead" class="sub">12.1 Where nikpak is ahead</a>
+<a href="#12-2-where-rar-is-ahead" class="sub">12.2 Where RAR is ahead</a>
+<a href="#12-3-quantum-resistance-in-perspective" class="sub">12.3 Quantum resistance in perspective</a>
+<a href="#12-4-which-one-to-choose" class="sub">12.4 Which one to choose</a>
+<a href="#12-5-and-7-zip-and-zip" class="sub">12.5 And 7-Zip and ZIP?</a>
+<a href="#13-building-deploying-and-integrating" class="">13 Building, deploying and integrating</a>
+<a href="#13-1-windows-with-powershell" class="sub">13.1 Windows with PowerShell</a>
+<a href="#13-2-building-with-npm" class="sub">13.2 Building with npm</a>
+<a href="#13-3-a-self-contained-executable" class="sub">13.3 A self-contained executable</a>
+<a href="#13-4-macos-and-linux" class="sub">13.4 macOS and Linux</a>
+<a href="#13-5-dependencies" class="sub">13.5 Dependencies</a>
+<a href="#13-6-scripting" class="sub">13.6 Scripting</a>
+<a href="#13-7-total-commander" class="sub">13.7 Total Commander</a>
+<a href="#14-testing-and-verification" class="">14 Testing and verification</a>
+<a href="#14-1-unit-tests" class="sub">14.1 Unit tests</a>
+<a href="#14-2-end-to-end-tests" class="sub">14.2 End-to-end tests</a>
+<a href="#14-3-attack-tests" class="sub">14.3 Attack tests</a>
+<a href="#14-4-defects-found-by-testing" class="sub">14.4 Defects found by testing</a>
+<a href="#15-limitations-and-roadmap" class="">15 Limitations and roadmap</a>
+<a href="#15-1-current-limitations" class="sub">15.1 Current limitations</a>
+<a href="#15-2-roadmap" class="sub">15.2 Roadmap</a>
+<a href="#a-appendix-a-format-constants-and-limits" class="">A Appendix A: format constants and limits</a>
+<a href="#b-appendix-b-glossary" class="">B Appendix B: glossary</a></aside><div class="tech-content"><h2 class="ch" id="1-introduction">1 Introduction</h2>
+<p><b>nikpak</b>
+is a command-line archiver for the <code>.nik</code>
+format. It was designed around four ideas: compress better than the
+established tools, do it faster, protect data with modern
+cryptography, and run unchanged on Windows, macOS and Linux as a
+single small executable.</p>
+<h3 class="se" id="1-1-design-goals">1.1 Design goals</h3>
+<ul><li><b>Small.</b>
+	Beat RAR 7 on the data people actually archive in bulk. Audio,
+	images and tracker music are detected by content and compressed with
+	specialised lossless codecs; everything else uses a tuned,
+	multi-threaded Zstandard stream.</li><li><b>Fast.</b>
+	Compression and extraction should be limited by the disk, not the
+	CPU. At its fast level -m2 nikpak archives about 200 MB of source
+	files in under a second on one core.</li><li><b>Safe.</b>
+	Authenticated encryption with a memory-hard key derivation function,
+	file names always hidden, tampering always detected, and an
+	extractor that cannot be tricked into writing outside its
+	destination folder.</li><li><b>Quantum-resistant.</b>
+	Only 256-bit symmetric cryptography is used. There is no RSA, no
+	elliptic-curve and no Diffie-Hellman code anywhere in nikpak, so
+	there is nothing for Shor&#x27;s algorithm to break.</li><li><b>Portable
+	and scriptable.</b>
+	One statically linked executable, RAR-compatible command line,
+	predictable exit codes, and a <code>-help</code>
+	that documents every option.</li></ul>
+<h3 class="se" id="1-2-results-at-a-glance">1.2 Results at a glance</h3>
+<table class="tech-table"><thead><tr><th>
+				<b>Measure</b></th><th>
+				<b>Result</b></th><th>
+				<b>Compared
+				with</b></th></tr></thead><tbody><tr><td>
+				BMP
+				photographs</td><td>
+				<b>38.8
+				% smaller</b></td><td>
+				RAR
+				7.00 -m5</td></tr><tr><td>
+				Stereo
+				music, 44.1 kHz 16-bit</td><td>
+				<b>14.6
+				% smaller</b>
+				(on par with FLAC -8)</td><td>
+				RAR
+				7.00 -m5</td></tr><tr><td>
+				ProTracker
+				MOD files</td><td>
+				<b>13.3
+				% smaller</b></td><td>
+				RAR
+				7.00 -m5</td></tr><tr><td>
+				Mono
+				audio, 8-bit and 16-bit</td><td>
+				<b>12.2
+				% and 15.3 % smaller</b></td><td>
+				RAR
+				7.00 -m5</td></tr><tr><td>
+				197
+				MB of source files, maximum level</td><td>
+				<b>5.5
+				% smaller</b>
+				(24.4 MB vs 25.9 MB)</td><td>
+				RAR
+				7.00 -m5 -s -md256m</td></tr><tr><td>
+				Same
+				data, fast level -m2</td><td>
+				<b>0.9
+				s</b></td><td>
+				RAR
+				7.00 -m3 solid: 16.7 s</td></tr><tr><td>
+				Encryption</td><td>
+				Argon2id
+				+ XChaCha20-Poly1305</td><td>
+				RAR5:
+				AES-256-CBC + PBKDF2</td></tr><tr><td>
+				All
+				10 test sets, maximum level, vs 7-Zip</td><td>
+				2.4
+				to 31.7 % smaller</td><td>
+				7-Zip
+				23.01 -mx9 (section 11.7)</td></tr><tr><td>
+				Office
+				files (doc, docx, xls, xlsx, csv, pdf)</td><td>
+				31.7
+				% smaller</td><td>
+				7-Zip
+				23.01 -mx9 (section 11.7)</td></tr><tr><td>
+				All
+				10 test sets, maximum level, vs ZIP</td><td>
+				19.9
+				to 60.4 % smaller</td><td>
+				ZIP
+				-9, Info-ZIP 3.0 (section 11.7)</td></tr><tr><td>
+				Executable</td><td>
+				one
+				file, no dependencies; about 9 MB with the window, 2.3 MB
+				command-line only</td><td>
+				Windows,
+				macOS, Linux</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<table class="tech-table"><tbody><tr><td>
+			<b>How
+			the numbers were obtained</b><br>All
+			measurements come from one machine (Linux x86-64 virtual machine,
+			one CPU core) with RAR 7.00 and nikpak 1.1.0. Every archive was
+			extracted again and compared with the original byte for byte. The
+			complete method, the corpora and the cases where RAR is faster are
+			described in chapter 11.</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="1-3-who-is-it-for">1.3 Who is it for?</h3>
+<p>nikpak
+is aimed at people who archive large amounts of media or source code
+and care about size and speed, at developers who want a scriptable
+archiver with sane exit codes and a documented format, and at anyone
+who needs strong encryption without trusting a closed implementation.
+Because the command line follows RAR conventions, front-ends such as
+Total Commander can drive it with little or no reconfiguration.</p>
+<h3 class="se" id="1-4-how-to-read-this-guide">1.4 How to read this guide</h3>
+<p>Chapters
+2 and 3 describe what nikpak does and how to use it. Chapters 4 to 7
+explain the architecture, the file format, the compression engine and
+the media codecs. Chapters 8 to 10 cover encryption, quantum
+resistance and hardening. Chapter 11 presents the benchmarks, chapter
+12 compares nikpak with RAR honestly, and chapters 13 to 15 deal with
+building, testing and the roadmap.</p>
+<h3 class="se" id="1-5-community-and-contact">1.5 Community and contact</h3>
+<p>News,
+questions, ideas and bug reports: nikpak&#x27;s author can be reached on</p>
+<ul><li><b>Telegram
+	  </b>https://t.me/cryptonikko</li><li><b>X
+	  </b>https://x.com/cryptonikkoid</li><li><b>Discord
+	  </b>https://discord.com/users/1537826350759415811</li></ul>
+<p>The
+same three links are shown as round, coloured buttons at the bottom
+of the nikpak window, under the destination folder (section 3.7), and
+at the end of nikpak -help.</p>
+<h2 class="ch" id="2-feature-overview">2 Feature overview</h2>
+<h3 class="se" id="2-1-capabilities">2.1 Capabilities</h3>
+<table class="tech-table"><thead><tr><th>
+				<b>Area</b></th><th>
+				<b>What
+				nikpak provides</b></th></tr></thead><tbody><tr><td>
+				Compression</td><td>
+				Zstandard
+				(multi-threaded, solid) at -m1 to -m4, with a 128 MiB window and
+				long-distance matching at -m4. At -m5 a multi-engine body: LZMA2
+				for binary data and PPMd for text, chosen by trial; files sorted
+				by type as in 7-Zip.</td></tr><tr><td>
+				Media
+				intelligence</td><td>
+				Content-based
+				detection of WAV, AIFF, ProTracker MOD and BMP; per-file trial
+				between four filters (NAC, Shuffle, Shuffle+Delta, MED);
+				automatic fallback to plain compression.</td></tr><tr><td>
+				Office,
+				PDF, gzip</td><td>
+				Deflate
+				recompression (preflate): the Deflate streams inside docx, xlsx,
+				pptx, odt, ods, epub, jar, zip, pdf and gz files are decoded,
+				compressed far better and rebuilt bit for bit on extraction (-m4,
+				-m5).</td></tr><tr><td>
+				Encryption</td><td>
+				Argon2id
+				(64 MiB) key derivation, XChaCha20-Poly1305 in 64 KiB
+				authenticated chunks; names, sizes, dates and permissions are
+				encrypted.</td></tr><tr><td>
+				Passwords</td><td>
+				Interactive
+				prompt with confirmation, environment variable, stdin, command
+				line; automatic generation of a strong random password when none
+				is supplied.</td></tr><tr><td>
+				Integrity</td><td>
+				CRC32
+				of every file&#x27;s original bytes; AEAD authentication for encrypted
+				archives; end marker with entry count; self-verifying audio
+				codec.</td></tr><tr><td>
+				Command
+				line</td><td>
+				RAR-style
+				commands (a x e l v lb t p d), extraction of single files,
+				folders or wildcards, and switches, zip-style aliases, wildcards,
+				@listfiles, exclusions, overwrite policies, quiet mode, explicit
+				exit codes.</td></tr><tr><td>
+				Safety</td><td>
+				Zip-slip
+				protection, symlink refusal, setuid stripping, bounded decoders,
+				atomic archive writes, Rust memory safety.</td></tr><tr><td>
+				Portability</td><td>
+				Windows
+				(PowerShell, cmd), macOS, Linux; single static executable;
+				byte-exact results on every platform.</td></tr><tr><td>
+				Graphical
+				interface</td><td>
+				Started
+				without arguments, nikpak opens a minimalist drop window: drop
+				(or choose) files or folders to compress them with the best
+				compression; progress ring, remembered destination folder
+				(section 3.7).</td></tr><tr><td>
+				Archive
+				browser</td><td>
+				unNik.exe,
+				free for everyone: browse folders, search, view text and binary
+				files, extract a selection and delete files in .nik archives
+				(section 3.9).</td></tr><tr><td>
+				Skins</td><td>
+				55
+				window skins, including 14 painted scene skins; a skins box that
+				stands beside the window with Apply Skin and Cancel; import your
+				own Nikkomander .skin.json files (section 3.10).</td></tr><tr><td>
+				File-manager
+				menu</td><td>
+				A
+				“NikPak” submenu in Explorer, Dolphin, Nemo, Nautilus and
+				Finder: Add to archive, Extract here, Extract to its own folder,
+				Open with unNik; one archive for a selection of several items
+				(section 3.11).</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="2-2-nikpak-and-rar-side-by-side">2.2 nikpak and RAR side by side</h3>
+<p>The
+table below compares nikpak 1.1 with RAR 7 as measured in this
+project, and states plainly where RAR is ahead. Chapter 12 discusses
+the individual points.</p>
+<table class="tech-table"><thead><tr><th>
+				<br>
+
+				</th><th>
+				<b>nikpak
+				1.1</b></th><th>
+				<b>RAR
+				7</b></th></tr></thead><tbody><tr><td>
+				Media
+				compression</td><td>
+				Specialised
+				lossless codecs chosen per file by trial</td><td>
+				General
+				algorithm with built-in filters</td></tr><tr><td>
+				Source
+				code, maximum level</td><td>
+				<b>24.4
+				MB</b>
+				(smaller), 45.6 s</td><td>
+				25.9
+				MB, 26.7 - 36.2 s</td></tr><tr><td>
+				Speed
+				at fast levels</td><td>
+				<b>0.9
+				s</b>
+				for 197 MB (-m2)</td><td>
+				9.7
+				- 16.7 s (-m3)</td></tr><tr><td>
+				Encryption</td><td>
+				Argon2id
+				+ XChaCha20-Poly1305 (authenticated)</td><td>
+				AES-256-CBC
+				+ PBKDF2-HMAC-SHA256</td></tr><tr><td>
+				File
+				names always encrypted</td><td>
+				<b>Yes</b></td><td>
+				Only
+				with -hp</td></tr><tr><td>
+				Memory-hard
+				password hashing</td><td>
+				<b>Yes</b>
+				(64 MiB)</td><td>
+				No</td></tr><tr><td>
+				Random
+				password generator</td><td>
+				<b>Built
+				in</b></td><td>
+				Not
+				built in</td></tr><tr><td>
+				Source
+				code, language</td><td>
+				<b>Full
+				source</b>,
+				Rust (memory safe)</td><td>
+				Proprietary,
+				C++</td></tr><tr><td>
+				Recovery
+				records, volumes, SFX, in-place update</td><td>
+				Not
+				yet</td><td>
+				<b>Yes
+				(WinRAR)</b></td></tr><tr><td>
+				Track
+				record</td><td>
+				New,
+				not yet audited</td><td>
+				<b>Decades</b></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h2 class="ch" id="3-command-line-reference">3 Command-line reference</h2>
+<p>nikpak
+follows the syntax that RAR users know: <code>nikpak <command> [options] <archive> [files...]</code>.
+Options may appear anywhere before the archive name or after it; <code>--</code>
+ends option parsing.</p>
+<h3 class="se" id="3-1-commands">3.1 Commands</h3>
+<table class="tech-table"><thead><tr><th>
+				<b>Command</b></th><th>
+				<b>Meaning</b></th></tr></thead><tbody><tr><td>
+				<code>a</code></td><td>
+				Create
+				a new archive. <code>.nik</code>
+				is appended when the name has no extension. Folders are always
+				recursed.</td></tr><tr><td>
+				<code>x</code></td><td>
+				Extract
+				with full paths: everything, or only the names, folders and
+				wildcards given after the archive name (nikpak x backup.nik
+				Docs/report.pdf extracts one file). A trailing path separator (or
+				<code>-d dir</code>)
+				selects the destination.</td></tr><tr><td>
+				<code>e</code></td><td>
+				Extract
+				without paths: every file goes straight into the destination
+				folder.</td></tr><tr><td>
+				<code>l</code></td><td>
+				List
+				the contents (all, or only the matching names): attributes, size,
+				date (UTC), name, totals.</td></tr><tr><td>
+				<code>v</code></td><td>
+				Verbose
+				list: adds the CRC32 of every file.</td></tr><tr><td>
+				<code>lb</code></td><td>
+				Bare
+				list: one name per line, designed for scripts and GUI front-ends.</td></tr><tr><td>
+				<code>t</code></td><td>
+				Test:
+				decompresses everything, checks every CRC32 and, for encrypted
+				archives, verifies authentication.</td></tr><tr><td>
+				<code>p</code></td><td>
+				Print
+				files to standard output: all of them, or those named (nikpak p
+				notes.nik todo.txt | more).</td></tr><tr><td>
+				<code>d</code></td><td>
+				Delete
+				files or folders (a folder takes its contents) from an archive.
+				The archive is written again without them; encrypted archives
+				keep their password. Names are required.</td></tr><tr><td>
+				<code>mt</code></td><td>
+				Media
+				test: detects WAV/AIFF/MOD/BMP files and shows the size each
+				media filter achieves. Writes nothing.</td></tr><tr><td>
+				<code>(none)</code></td><td>
+				Started
+				without any argument (for example by double-clicking nikpak.exe),
+				nikpak opens its window instead (section 3.7).</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="3-2-options">3.2 Options</h3>
+<table class="tech-table"><thead><tr><th>
+				<b>RAR
+				style</b></th><th>
+				<b>zip
+				style</b></th><th>
+				<b>Meaning</b></th></tr></thead><tbody><tr><td>
+				<code>-p</code></td><td>
+				<code>-e</code></td><td>
+				Encrypt
+				/ decrypt, ask for the password. An empty entry generates a
+				random password and displays it.</td></tr><tr><td>
+				<code>-p<password></code></td><td>
+				<code>-P <password></code></td><td>
+				Password
+				on the command line (visible to other users of the machine).</td></tr><tr><td>
+				<code>-hp[password]</code></td><td>
+				<br>
+
+				</td><td>
+				Same
+				as -p. File names are always encrypted in nikpak.</td></tr><tr><td>
+				<code>-m0</code>
+				.. <code>-m5</code></td><td>
+				<code>-0</code>
+				.. <code>-9</code></td><td>
+				Store,
+				fastest, fast, good, high (adds Deflate recompression), maximum
+				(the default since 1.2.1; LZMA2/PPMd, section 6.7). Use -m2 when
+				speed matters more than size.</td></tr><tr><td>
+				<code>-mt<N></code></td><td>
+				<br>
+
+				</td><td>
+				Number
+				of threads, 1 to 256 (default: all cores).</td></tr><tr><td>
+				<code>-mc-</code>
+				/ <code>-mc+</code></td><td>
+				<br>
+
+				</td><td>
+				All
+				content filters (media codecs and Deflate recompression) off /
+				media filters always on. Default: automatic per-file trial.</td></tr><tr><td>
+				<code>-r</code></td><td>
+				<br>
+
+				</td><td>
+				Recurse
+				into folders (always on, accepted for compatibility).</td></tr><tr><td>
+				<code>-ep</code></td><td>
+				<code>-j</code></td><td>
+				Store
+				only the last path component of every argument.</td></tr><tr><td>
+				<code>-ep1</code></td><td>
+				<br>
+
+				</td><td>
+				Do
+				not store the name of the base folder of a folder argument.</td></tr><tr><td>
+				<code>-o+</code></td><td>
+				<code>-o</code></td><td>
+				Overwrite
+				existing files without asking.</td></tr><tr><td>
+				<code>-o-</code></td><td>
+				<code>-n</code></td><td>
+				Skip
+				existing files without asking.</td></tr><tr><td>
+				<code>-or</code></td><td>
+				<br>
+
+				</td><td>
+				Rename
+				extracted files that already exist: <code>name (1).ext</code>.</td></tr><tr><td>
+				<code>-y</code></td><td>
+				<br>
+
+				</td><td>
+				Assume
+				Yes to every question.</td></tr><tr><td>
+				<code>-x<pattern></code></td><td>
+				<code>-x <pattern></code></td><td>
+				Exclude
+				files; may be repeated.</td></tr><tr><td>
+				<code>-d <dir></code></td><td>
+				<code>-d <dir></code></td><td>
+				Destination
+				folder for <code>x</code>
+				and <code>e</code>.</td></tr><tr><td>
+				<code>-inul</code>
+				<code>-idq</code></td><td>
+				<code>-q</code></td><td>
+				Quiet:
+				only errors are printed.</td></tr><tr><td>
+				<code>@listfile</code></td><td>
+				<br>
+
+				</td><td>
+				Read
+				file names from a text file, one per line.</td></tr><tr><td>
+				<code>-h</code>
+				<code>-help</code>
+				<code>-?</code></td><td>
+				<br>
+
+				</td><td>
+				Full
+				help. <code>-V</code>
+				prints the version.</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p>Options
+that RAR front-ends commonly send but that have no meaning here (<code>-s</code>,
+<code>-ma5</code>,
+<code>-md64m</code>,
+<code>-ibck</code>,
+<code>-idp</code>,
+<code>-rr</code>,
+<code>-ts*</code>,
+<code>-w<path></code>
+and similar) are accepted and ignored, so existing tool
+configurations keep working. Anything else produces a clear error
+message and exit code 7.</p>
+<p>The
+file-manager menu adds a few long options (section 3.11): <code>nikpak --add</code>
+and <code>--add-here</code>
+compress the given items into a new archive, <code>nikpak --install-menu</code>
+and <code>--uninstall-menu</code>
+add or remove the right-click menu (<code>--all-users</code>
+for an all-users install), and <code>unNik --extract</code>,
+<code>--extract-here</code>
+and <code>--extract-to</code>
+drive extraction from the menu.</p>
+<h3 class="se" id="3-3-passwords-in-detail">3.3 Passwords in detail</h3>
+<p>When
+an archive is created with <code>-p</code>,
+nikpak resolves the password in this order, and never fails merely
+because none was given:</p>
+<ul><li><code>-p<password></code>
+	or <code>-P <password></code>
+	on the command line: used as is (minimum 8 characters).</li><li>The
+	environment variable <code>NIKPAK_PASSWORD</code>,
+	which keeps the password out of the process list.</li><li>An
+	interactive prompt, asked twice for confirmation. <b>An
+	empty entry generates a random password.</b></li><li>Without
+	a terminal (for example inside a GUI), a password piped on stdin; if
+	there is none, a random password is generated.</li></ul>
+<p>A
+generated password has 24 characters from an alphabet of 56
+unambiguous symbols (no 0/O, 1/l/I), about 139 bits of entropy. It is
+printed once in a box on the console. <b>There
+is no recovery:</b>
+an archive whose password is lost cannot be opened by anyone.</p>
+<p>When
+opening an encrypted archive nikpak uses the same sources and then
+fails with exit code 11 and an explanatory message; it never
+generates anything, because a generated password could not match.</p>
+<h3 class="se" id="3-4-exit-codes">3.4 Exit codes</h3>
+<table class="tech-table"><thead><tr><th>
+				<b>Code</b></th><th>
+				<b>Meaning</b></th><th>
+				<b>Typical
+				cause</b></th></tr></thead><tbody><tr><td>
+				0</td><td>
+				Success</td><td>
+				<br>
+
+				</td></tr><tr><td>
+				1</td><td>
+				Warning</td><td>
+				Some
+				files were skipped (unreadable, unsafe path, symlink)</td></tr><tr><td>
+				2</td><td>
+				Fatal
+				error</td><td>
+				Cannot
+				create or read a file, internal error</td></tr><tr><td>
+				3</td><td>
+				Corrupt
+				archive or CRC error</td><td>
+				Damaged
+				or truncated archive, failed checksum</td></tr><tr><td>
+				7</td><td>
+				Command-line
+				error</td><td>
+				Unknown
+				option, missing archive name</td></tr><tr><td>
+				10</td><td>
+				Nothing
+				matched</td><td>
+				No
+				file matched the names or wildcards</td></tr><tr><td>
+				11</td><td>
+				Wrong
+				or missing password</td><td>
+				Bad
+				password, or a tampered encrypted archive</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="3-5-examples">3.5 Examples</h3>
+<pre>nikpak a backup.nik C:\Docs\*.txt Photos\ # create an archive</pre>
+<pre>nikpak a -m5 -mt8 big.nik Projects\ # maximum, 8 threads</pre>
+<pre>nikpak a -p secret.nik Taxes2026\ # encrypted, prompts</pre>
+<pre>nikpak a -pMyLongPassw0rd s.nik f.pdf # password given</pre>
+<pre>nikpak x backup.nik C:\Restore\ # extract with paths</pre>
+<pre>nikpak e backup.nik *.jpg C:\Pics\ # only *.jpg, flat</pre>
+<pre>nikpak x backup.nik Docs/report.pdf # extract ONE file</pre>
+<pre>nikpak e backup.nik Docs/report.pdf -d C:\Out # one file, no path</pre>
+<pre>nikpak x backup.nik Photos -d C:\Restore # one folder</pre>
+<pre>nikpak l backup.nik *.pdf # list only PDFs</pre>
+<pre>nikpak p backup.nik notes.txt # show a file</pre>
+<pre>nikpak d backup.nik Temp *.bak # delete entries</pre>
+<pre>nikpak l backup.nik # list</pre>
+<pre>nikpak t secret.nik # test (asks password)</pre>
+<pre>nikpak mt song.wav tracker.mod photo.bmp # which filter wins?</pre>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="3-6-integration-with-total-commander-and-other-front-ends">3.6 Integration with Total Commander and other front-ends</h3>
+<p>Because
+nikpak accepts RAR&#x27;s command syntax (<code>a</code>,
+<code>x</code>,
+<code>e</code>,
+<code>l</code>,
+<code>t</code>,
+<code>@listfile</code>,
+<code>-p<pwd></code>,
+<code>-ep1</code>,
+<code>-o+</code>,
+<code>-y</code>,
+<code>-m<n></code>),
+a program that can drive an external <code>rar.exe</code>
+can drive <code>nikpak.exe</code>.
+In Total Commander, register the extension <code>nik</code>
+under <i>Configuration,
+Packer, Additional packer programs</i>
+and point the packer and unpacker commands to <code>nikpak.exe</code>.
+Use <code>-o+</code>
+or <code>-y</code>
+for unattended extraction, because without a console nikpak cannot
+ask whether to overwrite and will skip existing files instead. Menu
+names differ between Total Commander versions; consult its built-in
+help for the exact fields.</p>
+<table class="tech-table"><tbody><tr><td>
+			<b>Folders
+			with spaces on Windows</b><br>A
+			quoted path that ends in a backslash, such as <code>"C:\My Folder\"</code>,
+			is mis-parsed by Windows (the final quote is treated as escaped).
+			For destinations with spaces use <code>-d "C:\My Folder"</code>
+			instead.</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="3-7-the-graphical-interface">3.7 The graphical interface</h3>
+<p>nikpak
+started <b>without
+arguments</b>,
+for example by double-clicking nikpak.exe, opens a small window
+instead of printing its usage. It does one thing: compress what you
+drop on it.</p>
+<figure><img src="../assets/img/tech/93d28e45.png" alt="The nikpak window: waiting for files (left) and compressing (right)." loading="lazy"><figcaption>The nikpak window: waiting for files (left) and compressing (right).</figcaption></figure>
+<ul><li><b>Drop
+	a file or a folder</b>,
+	or several at once, on the window, or click the circle (or the links
+	choose files / choose a folder) to pick them in a dialog; clicking
+	the circle shows the two buttons Choose files and Choose a folder
+	inside the ring. They are compressed with the <b>best
+	compression (-m5)</b>
+	into one archive named after the file (without its extension), the
+	folder, or, for several items, the folder they came from. An
+	existing archive is never overwritten: report.nik becomes report
+	(2).nik.</li><li><b>Progress</b>
+	is shown as a large percentage inside a circular meter, with the
+	phase (analysing, compressing, finishing), the amount processed and
+	the time. The <b>Cancel</b>
+	button under it (or the Esc key) stops a long compression at once
+	and removes the unfinished archive; the window stays open for the
+	next one. Closing the window during a compression does the same.</li><li><b>Done</b>:
+	the ring turns green and shows the archive name, its size against
+	the original and the time. Show in folder opens it in Explorer,
+	Finder or the file manager; Compress more (or a click on the circle)
+	starts the next one.</li><li><b>Save
+	to</b>:
+	the destination folder at the bottom can be typed in or chosen with
+	Browse. It is remembered for the next time (Windows:
+	%APPDATA%\nikpak\settings.txt; macOS: ~/Library/Application
+	Support/nikpak; Linux: ~/.config/nikpak). The first time it is the
+	Desktop.</li><li><b>Community</b>:
+	the three round buttons at the bottom right open nikpak&#x27;s Telegram,
+	X and Discord pages (section 1.5).</li><li><b>Switch
+	to unNik:</b>
+	the round button with an up arrow, left of the i button, closes
+	NikPak and starts unNik (section 3.9). After a compression, it and
+	the link <b>Open
+	in unNik</b>
+	on the done screen open the new archive at once. The button is
+	disabled while compressing.</li><li><b>Open
+	the destination folder:</b>
+	the folder button between the Save to field and Browse opens that
+	folder in Explorer or Finder; after a compression it opens it with
+	the new archive selected.</li><li><b>Sounds:</b>
+	a soft click for buttons, links and options, and a short sound for
+	each action (work starting, success, error, cancel, switching
+	program, files hovering over the window). They are made by the
+	program itself, no sound files. The speaker button in the title bar
+	switches them off and on; they are on by default, and the choice is
+	shared with unNik.</li><li><b>Language</b>:
+	the button at the bottom left, with a flag and the language&#x27;s own
+	name, opens a menu of the ten most spoken languages in the world
+	(Ethnologue 2025): English, 中文
+	(Mandarin
+	Chinese), हिन्दी
+	(Hindi),
+	Español, العربية
+	(Arabic),
+	Français, বাংলা
+	(Bengali),
+	Português, Русский (Russian) and Bahasa Indonesia. Choosing
+	one saves it and restarts nikpak in that language. The first time,
+	nikpak follows the language of Windows (or of the system), else
+	English. The command line stays in English.</li><li><b>Running
+	as administrator</b>:
+	Windows does not allow dragging files from Explorer onto a program
+	that runs as administrator. When nikpak.exe is started as
+	administrator (for example from an administrator PowerShell), it
+	restarts itself once as a normal user through Explorer so that drag
+	and drop works. If that is not possible, the window shows a notice;
+	choose the files with the buttons instead.</li><li><b>Status
+	and About</b>:
+	the top left shows EVALUATION COPY · REGISTER (a click opens the
+	registration box) or REGISTERED TO and the licence holder. The small
+	<b>i</b>
+	button at the top right, next to minimise and close, opens the <b>About</b>
+	box: version, © 2026 Nicolas Choukroun, distributed by Nikkoid LLC,
+	the licence status, the web site and the licence terms
+	(LICENSE.txt).</li></ul>
+<p>The
+window measures 500 × 560 points (about 9:10), so a screenshot of
+the whole window fits an X (Twitter) picture post without cropping.
+It is frameless: drag it by its top area; the buttons at the top
+right open the About box, minimise and close it. When nikpak.exe is
+started from Explorer, the console window Windows opens for it is
+closed automatically; started from a command prompt, the prompt is
+left alone. Without a graphical display (for example over SSH),
+nikpak prints its usage as before. The interface uses egui/eframe and
+embeds subsets of the Inter, Noto Sans SC, Noto Sans Devanagari, Noto
+Sans Bengali and Noto Sans Arabic typefaces (SIL Open Font License,
+see assets/fonts/OFL.txt). A command-line-only executable is built
+with <code>cargo build --release --no-default-features</code>.</p>
+<figure><img src="../assets/img/tech/2a2cecb.png" alt="The window in Chinese, Hindi and Arabic, and the language menu." loading="lazy"><figcaption>The window in Chinese and Arabic, the reminder in Hindi, and the language menu.</figcaption></figure>
+<p><b>Hindi,
+Bengali and Arabic</b>
+need shaping: letters change form and join, vowel signs move around
+their consonant, and Arabic runs right to left. egui draws one glyph
+per character, which would print these languages wrongly, so nikpak
+orders such texts with the Unicode bidirectional algorithm
+(unicode-bidi), shapes them with rustybuzz (a Rust port of HarfBuzz),
+rasterises them with ab_glyph and paints the result as an image
+(textshape.rs). Latin words and numbers inside them keep the Inter
+font. Long translations are reduced to fit their buttons, and boxes
+grow with their text. The translations (i18n.rs) were written with
+machine assistance; a review by native speakers is welcome.</p>
+<h3 class="se" id="3-8-licence-and-registration-shareware">3.8 Licence and registration (shareware)</h3>
+<p>NikPak
+is <b>shareware</b>,
+© 2026 Nicolas Choukroun, distributed by <b>Nikkoid
+LLC</b>,
+and licensed like WinRAR: the same package is the free evaluation
+copy and, once a licence key is entered, the registered version.
+Nothing is disabled in the evaluation copy.</p>
+<table class="tech-table"><thead><tr><th>
+				<b>Who</b></th><th>
+				<b>Terms</b></th></tr></thead><tbody><tr><td>
+				Individuals</td><td>
+				Free
+				for personal, non-commercial use, without time limit. A personal
+				licence ($19) removes the reminder; it covers all the computers
+				the holder uses.</td></tr><tr><td>
+				Companies
+				and organisations</td><td>
+				One
+				company licence per seat, after a free 40-day evaluation; seats
+				are computers or users, whichever is higher. Volume prices per
+				seat, modelled on WinRAR: 1–9 seats $19, 10–24 $15, 25–49
+				$12, 50–99 $9, 100–199 $7, 200–499 $6, 500 and more $5.</td></tr><tr><td>
+				Distribution</td><td>
+				The
+				unmodified package (with LICENSE.txt and THIRD-PARTY-NOTICES.txt)
+				may be put on any shareware or download site; adding keys, key
+				files or cracks is forbidden. .nik archives are royalty-free.</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<figure><img src="../assets/img/tech/a48982f5.png" alt="The reminder of the evaluation copy, the registration box and the file chooser." loading="lazy"><figcaption>The reminder of the evaluation copy (left), the registration box (centre) and the file chooser (right).</figcaption></figure>
+<figure><img src="../assets/img/tech/cd6fee8b.png" alt="The main window with the i button, and the About box." loading="lazy"><figcaption>The main window with the small i button at the top right (left) and the About box (right).</figcaption></figure>
+<ul><li><b>The
+	reminder</b>
+	appears when an unregistered copy opens its window. It has two
+	buttons, <b>Register</b>
+	and <b>Test
+	for free</b>,
+	whose left/right order changes at random at every start. Test for
+	free (or Esc) closes it; nikpak then works with no restriction.</li><li><b>The
+	registration box</b>
+	asks for the name, the e-mail address and the licence key. All three
+	must match: the key is a signature of the name and e-mail. Case,
+	extra spaces and the look-alike characters O/0 and I/L/1 do not
+	matter. <b>Buy
+	a licence</b>
+	opens https://nikpak.nikkoid.com/buy.php.</li><li><b>Once
+	registered</b>
+	nikpak never asks again on that computer for that user. The licence
+	is stored in %APPDATA%\nikpak\license.txt (macOS:
+	~/Library/Application Support/nikpak; Linux: ~/.config/nikpak). A
+	company can instead put a file <code>nikpak.key</code>
+	next to nikpak.exe, which registers every user of that PC.</li><li><b>Command
+	line</b>:
+	<code>nikpak register "Jane Doe" jane@example.com NPK1-…</code>
+	registers; <code>nikpak license</code>
+	shows the status; <code>nikpak unregister</code>
+	removes the licence. <code>nikpak -V</code>
+	and <code>nikpak -help</code>
+	show the status too. Unregistered copies print a one-line evaluation
+	notice on the error output (stderr), never on standard output; -q
+	suppresses it.</li></ul>
+<h4 class="su" id="how-the-keys-work">How the keys work</h4>
+<p>A
+licence key reads <code>NPK1-</code>
+followed by 108 characters in groups of five (Crockford base32). It
+contains the licence type (personal or company), the number of seats
+and an <b>Ed25519
+signature</b>
+of <code>NIKPAK-LICENSE-1</code>,
+the type, the seats, the name and the e-mail address, each normalised
+(spaces collapsed, lower case). nikpak contains only the 32-byte
+public key, in <code>src/license_pubkey.rs</code>,
+so studying the program does not allow anyone to make keys.</p>
+<p>Keys
+are made with the private key, which never leaves Nikkoid LLC: either
+with the private tool <code>nikpak-keygen</code>
+(<code>cargo run --release --features keygen --bin nikpak-keygen -- make --name "Jane Doe" --email jane@example.com</code>;
+<code>--company --seats 25</code>
+for companies; <code>newkeys</code>
+creates a new key pair) or on the web server with the PHP kit in
+<code>server/</code>
+(PHP 7.2+, MySQL 5.7), which issues one key per payment and produces
+exactly the same keys. server/README.md describes the setup and the
+payment flow.</p>
+<h3 class="se" id="3-9-unnik-the-free-archive-browser">3.9 unNik, the free archive browser</h3>
+<p><b>unNik</b>
+(unNik.exe) is the second program of the package. It opens .nik
+archives, shows what is inside and extracts what you choose. It is
+<b>free
+for everyone</b>,
+companies included, with no registration and no reminder
+(LICENSE.txt, section 2a). The setup installs it next to nikpak.exe,
+adds it to the Start menu and makes it the program for .nik files, so
+a double-click on an archive opens it in unNik; unNik archive.nik
+does the same from a command prompt.</p>
+<figure><img src="../assets/img/tech/2a153152.png" alt="unNik waiting for an archive and its built-in viewer" loading="lazy"><figcaption>unNik waiting for an archive (left) and its built-in viewer, searching a source file (right).</figcaption></figure>
+<p>The
+empty window looks exactly like NikPak&#x27;s, with an arrow going up in
+the ring. Drop a .nik archive on it, click the ring, or choose one of
+the recent archives: the window grows into the browser (1120 × 720,
+resizable from its edges, and it can be maximised). Encrypted
+archives ask for their password first.</p>
+<figure><img src="../assets/img/tech/399578f.png" alt="The unNik archive browser" loading="lazy"><figcaption>The browser: folder tree and compression summary (left), the files (centre) and the details of the selected file (right).</figcaption></figure>
+<ul><li><b>Navigate</b>
+	with the folder tree, the breadcrumbs, Back, Forward and Up
+	(Alt+Left, Alt+Right, Backspace) and double-clicks. <b>Search</b>
+	(Ctrl+F) finds files by name in the whole archive; each result shows
+	its folder.</li><li><b>Select</b>
+	with a click, Ctrl+click, Shift+click, the check boxes, Ctrl+A or
+	the arrow keys. Click a column title to sort by name, size, type or
+	date. A right-click opens a menu with every action.</li><li><b>Extract
+	all</b>,
+	or the selection (Ctrl+E): choose the destination (by default a
+	folder named after the archive, next to it), keep the folders or
+	not, and what to do when a file already exists: replace it, keep
+	both (name (1).ext) or skip it. Files taken from inside a folder are
+	created without that folder&#x27;s path, as in WinRAR. Reading stops
+	right after the last chosen file.</li><li><b>View</b>
+	(F3, or a double-click on a text file): text with line numbers,
+	search with highlighting, line wrapping and copy; binary files in
+	hexadecimal. The first 16 MB are shown; <b>Open
+	in Notepad</b>
+	opens the whole file. <b>Open</b>
+	starts a file with its own program (it is extracted to a temporary
+	folder first).</li><li><b>Delete</b>
+	(Del) removes files and folders from the archive after a
+	confirmation. The archive is solid, so it is written again without
+	them, into a temporary file that replaces the original only when
+	everything succeeded. Encrypted archives keep their password; the
+	other entries keep their media or Deflate filter and their -m5
+	engine.</li><li><b>Test</b>
+	decompresses the whole archive and checks every file. The <b>details</b>
+	pane shows the size, date, folder, CRC32, how the file is stored and
+	its attributes; for the archive itself its size, method and
+	encryption. The summary under the tree shows the space saved.</li><li>The
+	same ten languages, language button, About box (i) and community
+	buttons as NikPak. File names in any script are drawn with the
+	system&#x27;s fonts as a fallback.</li><li><b>Switch
+	to NikPak:</b>
+	the round button with a down arrow, left of the i button, closes
+	unNik and starts NikPak. Both programs are found in the same folder.
+	They share one settings file, so the language chosen in one is used
+	by the other, and a window that is already open follows the change
+	within two seconds.</li><li><b>Open
+	the destination folder:</b>
+	the button left of the eject button opens the folder of the last
+	extraction in Explorer or Finder (before any extraction, the
+	archive&#x27;s folder). unNik plays the same sounds as NikPak, with
+	sounds for opening an archive, extracting, deleting and testing; its
+	speaker button and NikPak&#x27;s share one setting.</li></ul>
+<figure><img src="../assets/img/tech/7b4e9aa1.png" alt="Extracting a selection and deleting a file in unNik" loading="lazy"><figcaption>Extracting a selection (left) and deleting a file (right).</figcaption></figure>
+<h3 class="se" id="3-10-skins">3.10 Skins</h3>
+<p>NikPak
+and unNik share the same 55 window skins: the 41 skins of Nikkomander
+— from Nikkoid Blue (the default) and Nikkoid Bright to Dracula,
+Nord, Solarized, Classic Blue, Matrix, Pizza, Christmas and 8-Bit
+Game — plus 14 painted skins whose backgrounds are drawn by the
+program itself: Moon, America, Pattaya Neons, Burgers Tokyo, Sushi,
+Amiga, MSX, Colecovision, ZX Spectrum, Cat Life, Dog Life, Mario
+Bros, Counter Strike and Chess.</p>
+<ul><li><b>Skins
+	button</b>
+	(a palette, in the title bar of both programs): opens the skins
+	menu, where every skin is drawn in its own colours. Pointing at a
+	skin shows it on the whole window; a click keeps it; Esc or a click
+	outside returns to the skin you had.</li><li><b>Sun
+	/ moon button</b>
+	next to it switches between Nikkoid Blue (dark) and Nikkoid Bright
+	in one click.</li><li><b>The
+	skins box stands outside the program.</b>
+	While the box is open the window widens by the width of the box, on
+	the right: the program keeps its 500 × 560 panel and the box sits
+	in the extra transparent space beside it, so the whole interface
+	stays visible behind the skin being tried. The box can be dragged by
+	its title bar back over the program or anywhere else in the window,
+	and it has <b>Apply
+	Skin</b>
+	and <b>Cancel</b>
+	buttons. A click on a skin tries it on the whole window; Apply keeps
+	it and saves it for both programs; Cancel (or Esc or the ×) goes
+	back to the skin you had. A click on the program no longer closes
+	the box. unNik&#x27;s window is not widened.</li><li><b>The
+	chosen skin is saved</b>
+	(<code>skin=</code>
+	in the settings file) and shared: a skin chosen in one program is
+	taken by the other within two seconds.</li><li><b>Your
+	own skins:</b>
+	“Import a skin…” at the bottom of the menu reads a Nikkomander
+	<code>.skin.json</code>
+	file (a name and a list of colours) and copies it to the <code>skins</code>
+	folder next to the settings file; the × on an imported skin&#x27;s tile
+	removes it.</li><li><b>Painted
+	skins step behind the interface.</b>
+	The painted backgrounds are drawn by <code>src/skin_scenes.rs</code>,
+	not by CSS gradients, so they scale to any window size. Since 1.6.2
+	each one passes through a <code>discreet()</code>
+	pass in <code>src/skin.rs</code>:
+	the art is pulled toward its own local mean, lightly blurred and
+	faded toward the skin&#x27;s background colour — most behind the drop
+	ring and the text column, a little more over the logo — so the
+	title, the ring and the status text stay crisp on all fourteen.</li></ul>
+<h3 class="se" id="3-11-the-file-manager-menu">3.11 The file-manager menu</h3>
+<p>A
+“NikPak” submenu in the file manager&#x27;s right-click menu, like
+WinRAR&#x27;s, is installed by the setup (Windows: a checked-by-default
+option; Linux: <code>nikpak --install-menu</code>;
+macOS: Finder Quick Actions).</p>
+<ul><li><b>On
+	files and folders:</b>
+	<b>Add
+	to archive…</b>
+	(asks for the name and the folder, then compresses in the NikPak
+	window) and <b>Add
+	to archive here</b>
+	(the archive goes next to the items, named like a drop on the
+	window).</li><li><b>On
+	.nik archives:</b>
+	<b>Open
+	with unNik</b>,
+	<b>Extract
+	files…</b>,
+	<b>Extract
+	here</b>
+	and <b>Extract
+	to its own folder</b>.</li><li><b>Several
+	items</b>
+	go into one archive; several selected archives are extracted one
+	after the other in one window.</li><li><b>The
+	commands run through unNik.exe,</b>
+	so no console window flashes; the labels follow the language of
+	NikPak. Windows 10 shows the submenu directly, Windows 11 under <b>Show
+	more options</b>
+	(Shift+F10); Linux adds KDE Dolphin service menus, Nemo actions and
+	Nautilus scripts, and macOS adds Finder Quick Actions.</li><li><b>New
+	command-line options used by the menu:</b>
+	<code>nikpak --add</code>
+	and <code>--add-here</code>
+	(compress the given items), <code>nikpak --install-menu</code>,
+	<code>--uninstall-menu</code>
+	and <code>--all-users</code>;
+	<code>unNik --extract</code>,
+	<code>--extract-here</code>
+	and <code>--extract-to</code>.
+	Extract here / to its own folder show unNik&#x27;s small window with the
+	progress ring (the password box for encrypted archives) and close it
+	when everything is extracted; warnings and errors stay on screen.</li><li><b>A
+	second setup,</b>
+	<code>unnik-<version>-setup.exe</code>,
+	installs unNik alone (the free browser) for people who only receive
+	.nik archives; when NikPak is already installed it only installs the
+	program, so the menus never double.</li></ul>
+<h2 class="ch" id="4-architecture">4 Architecture</h2>
+<p>nikpak
+is a single Rust program of about 9,600 lines (including its unit
+tests) in sixteen source files, plus the private licence tool
+nikpak-keygen. Its central design rule is <b>streaming</b>:
+files are read in 256 KiB pieces, pushed through a chain of writers,
+and never held in memory as a whole (the only exceptions are BMP
+pixel data, which is limited to 256 MiB, and the 64 KiB working
+buffers of the codecs).</p>
+<h3 class="se" id="4-1-data-flow-when-creating-an-archive">4.1 Data flow when creating an archive</h3>
+<figure><img src="../assets/img/tech/c917ced3.png" alt="Figure 1: the creation pipeline. The two lower boxes are inputs to the stage above them." loading="lazy"><figcaption>Figure 1: the creation pipeline. The two lower boxes are inputs to the stage above them.</figcaption></figure>
+<p>Every
+stage is an implementation of the standard <code>Write</code>
+trait wrapped around the next one, so the same code path serves a
+plain archive, an encrypted archive, and the media trial.</p>
+<h3 class="se" id="4-2-source-code-map">4.2 Source code map</h3>
+<table class="tech-table"><thead><tr><th>
+				<b>File</b></th><th>
+				<b>Responsibility</b></th></tr></thead><tbody><tr><td>
+				<code>main.rs</code></td><td>
+				Entry
+				point. Parses arguments, dispatches the command, converts errors
+				to exit codes. Handles a closed pipe quietly (<code>nikpak lb x | head</code>).</td></tr><tr><td>
+				<code>cli.rs</code></td><td>
+				Hand-written
+				RAR/zip-style argument parser, the option tables and the full
+				<code>-help</code>
+				text. Clap-style libraries cannot express switches such as
+				<code>-pSECRET</code>
+				or <code>-m5</code>
+				cleanly.</td></tr><tr><td>
+				<code>archive.rs</code></td><td>
+				Create,
+				list, test, extract (by filters or by an exact choice), delete,
+				print and the media test; also the index and single-file reading
+				used by unNik. Contains the entry-stream writer and reader,
+				overwrite policy and the atomic temp-file logic.</td></tr><tr><td>
+				<code>media.rs</code></td><td>
+				Content
+				detection for WAV, AIFF, MOD and BMP; the Shuffle, Delta and MED
+				filters; trial selection; CRC and chunk-framing helpers.</td></tr><tr><td>
+				<code>nac.rs</code></td><td>
+				The
+				NAC lossless audio codec: stereo decorrelation, predictors,
+				residual coding.</td></tr><tr><td>
+				<code>bits.rs</code></td><td>
+				MSB-first
+				bit writer and reader used by NAC.</td></tr><tr><td>
+				<code>crypto.rs</code></td><td>
+				Argon2id
+				key derivation and the XChaCha20-Poly1305 chunk writer and
+				reader.</td></tr><tr><td>
+				<code>format.rs</code></td><td>
+				Constants
+				of the on-disk format: magic, versions, record types, KDF limits.</td></tr><tr><td>
+				<code>util.rs</code></td><td>
+				Password
+				prompting and generation, path sanitising, wildcard matching,
+				date and size formatting.</td></tr><tr><td>
+				<code>error.rs</code></td><td>
+				The
+				error type, its exit codes, and the classification of I/O errors
+				(corruption versus system failure).</td></tr><tr><td>
+				<code>engine.rs</code></td><td>
+				Multi-engine
+				body of -m5: block writer and reader, LZMA2 and PPMd engines, the
+				engine trial (sections 5.6, 6.7).</td></tr><tr><td>
+				<code>recomp.rs</code></td><td>
+				Deflate
+				recompression of ZIP containers, PDF and gzip with preflate
+				(section 7.9).</td></tr><tr><td>
+				<code>gui.rs</code></td><td>
+				The
+				graphical interface: drop window, progress ring, destination
+				setting, community links (section 3.7).</td></tr><tr><td>
+				<code>unnik.rs</code></td><td>
+				unNik,
+				the archive browser: tree, list, search, viewer, extract and
+				delete boxes (section 3.9).</td></tr><tr><td>
+				<code>lib.rs, bin/unnik.rs</code></td><td>
+				The
+				library shared by nikpak and unNik, and the entry point of
+				unNik.exe (a window program, no console).</td></tr><tr><td>
+				<code>license.rs</code></td><td>
+				Shareware
+				licence: key format, Ed25519 verification, licence storage,
+				registration (section 3.8).</td></tr><tr><td>
+				<code>i18n.rs</code></td><td>
+				Translations
+				of the window into the ten most spoken languages; language
+				setting (section 3.7).</td></tr><tr><td>
+				<code>textshape.rs</code></td><td>
+				Shaped
+				text for Hindi, Bengali and Arabic: bidi ordering, shaping,
+				rasterising (section 3.7).</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="4-3-creating-an-archive-step-by-step">4.3 Creating an archive, step by step</h3>
+<ul><li><b>Validate</b>
+	the output location. An existing archive is only replaced with <code>-o+</code>
+	(or an interactive yes); otherwise nikpak explains that appending is
+	unsupported.</li><li><b>Collect</b>
+	the input: wildcards are expanded (PowerShell does not do it),
+	<code>@listfiles</code>
+	are read, exclusions applied, symlinks and special files skipped
+	with a warning, and the archive itself is never added to itself.</li><li><b>Resolve
+	the password</b>
+	if encryption was requested (section 3.3) and derive the key with
+	Argon2id.</li><li><b>Write
+	the header</b>,
+	then build the writer chain: file, buffered writer, optional chunk
+	encryptor, Zstandard encoder.</li><li><b>Write
+	each entry.</b>
+	Media files go through detection and trial (chapter 7); everything
+	else is copied in 256 KiB pieces while a CRC32 is computed.</li><li><b>Write
+	the end marker</b>
+	with the entry count, finish the Zstandard frame, seal the final
+	encrypted chunk and flush to disk.</li><li><b>Rename</b>
+	<code>name.nik.tmp</code>
+	to <code>name.nik</code>.
+	If anything fails earlier, a guard object deletes the temporary
+	file, so a half-written archive never replaces a good one.</li></ul>
+<h3 class="se" id="4-4-extracting-an-archive-step-by-step">4.4 Extracting an archive, step by step</h3>
+<ul><li><b>Read
+	and validate the header</b>:
+	magic, version, flags, method and, for encrypted archives, the
+	Argon2id parameters, which are range-checked before any memory is
+	allocated.</li><li><b>Obtain
+	the password</b>
+	and derive the key. The first authenticated chunk then proves or
+	disproves the password.</li><li><b>Walk
+	the entry stream.</b>
+	Each entry name is sanitised (section 10.1) before any file system
+	access.</li><li><b>Write
+	files</b>
+	with <code>create_new</code>,
+	set timestamps and permissions, and verify the CRC32 of the
+	reconstructed bytes. A file that fails its CRC is deleted rather
+	than kept.</li><li><b>Verify
+	the end</b>
+	of the archive: after the end marker the stream must really end and,
+	if encrypted, the final authenticated chunk must have been
+	processed. This catches truncation and appended data.</li></ul>
+<h3 class="se" id="4-5-memory-and-threading">4.5 Memory and threading</h3>
+<p>Zstandard
+uses worker threads for compression (all cores by default, <code>-mt<N></code>
+to limit). Decompression, the audio codec and encryption run on the
+calling thread. Argon2id needs 64 MiB for key derivation, and the
+highest two levels use a 128 MiB match window, so decompressing such
+archives needs up to that much memory.</p>
+<h2 class="ch" id="5-the-nik-container-format">5 The .nik container format</h2>
+<p>A
+<code>.nik</code>
+file is a small fixed header followed by a body. The body is one
+<b>solid</b>
+stream: all entries are concatenated, compressed together, and
+optionally encrypted. Version 2 of the format adds media records;
+version 1 archives remain readable.</p>
+<h3 class="se" id="5-1-header">5.1 Header</h3>
+<table class="tech-table"><thead><tr><th>
+				<b>Offset</b></th><th>
+				<b>Size</b></th><th>
+				<b>Field</b></th><th>
+				<b>Notes</b></th></tr></thead><tbody><tr><td>
+				0</td><td>
+				8</td><td>
+				Magic</td><td>
+				<code>89 4E 49 4B 0D 0A 1A 0A</code>
+				(the PNG idea: detects text-mode transfer damage)</td></tr><tr><td>
+				8</td><td>
+				1</td><td>
+				Version</td><td>
+				3
+				(1 and 2 are still readable)</td></tr><tr><td>
+				9</td><td>
+				1</td><td>
+				Flags</td><td>
+				bit
+				0 = encrypted; other bits must be 0</td></tr><tr><td>
+				10</td><td>
+				1</td><td>
+				Method</td><td>
+				0
+				= store, 1 = Zstandard, 2 = multi-engine blocks (5.6)</td></tr><tr><td>
+				11</td><td>
+				1</td><td>
+				Reserved</td><td>
+				0</td></tr><tr><td>
+				12</td><td>
+				4</td><td>
+				Argon2id
+				memory (KiB)</td><td>
+				encrypted
+				archives only, little endian</td></tr><tr><td>
+				16</td><td>
+				4</td><td>
+				Argon2id
+				passes</td><td>
+				encrypted
+				only</td></tr><tr><td>
+				20</td><td>
+				4</td><td>
+				Argon2id
+				lanes</td><td>
+				encrypted
+				only</td></tr><tr><td>
+				24</td><td>
+				16</td><td>
+				Salt</td><td>
+				random
+				per archive, encrypted only</td></tr><tr><td>
+				40</td><td>
+				19</td><td>
+				Stream
+				nonce prefix</td><td>
+				random
+				per archive, encrypted only</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p>The
+complete header (12 bytes, or 59 bytes when encrypted) is later
+authenticated as associated data of every encrypted chunk, so it
+cannot be altered without detection.</p>
+<h3 class="se" id="5-2-entry-records">5.2 Entry records</h3>
+<p>Inside
+the (decrypted, decompressed) stream every entry is a record. All
+integers are little endian.</p>
+<table class="tech-table"><thead><tr><th>
+				<b>Type</b></th><th>
+				<b>Layout</b></th></tr></thead><tbody><tr><td>
+				<code>0</code>
+				END</td><td>
+				<code>count:u64</code>.
+				Marks the end and states how many entries precede it.</td></tr><tr><td>
+				<code>1</code>
+				FILE</td><td>
+				<code>name_len:u16 name mtime:i64 mode:u32 size:u64 data[size] crc32:u32</code></td></tr><tr><td>
+				<code>2</code>
+				DIR</td><td>
+				<code>name_len:u16 name mtime:i64 mode:u32</code></td></tr><tr><td>
+				<code>3</code>
+				MEDIA</td><td>
+				<code>name_len:u16 name mtime:i64 mode:u32 size:u64 filter:u8 method:u8 params_len:u8 params framed_stream crc32:u32</code></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<ul><li>Names
+	are UTF-8 with <code>/</code>
+	separators, at most 4096 bytes.</li><li><code>mtime</code>
+	is Unix seconds; <code>mode</code>
+	is the Unix permission word (Windows files get 0644 or 0755, 0444
+	when read-only).</li><li>The
+	CRC32 always covers the <b>original</b>
+	bytes, which is what makes the media filters verifiable.</li><li>In
+	a MEDIA record <code>size</code>
+	is the original size. The <code>framed_stream</code>
+	is a series of <code>[u32 length][bytes]</code>
+	chunks ended by a zero length, so a reader can always skip a media
+	entry without understanding its filter.</li></ul>
+<h4 class="su" id="media-parameters">Media parameters</h4>
+<table class="tech-table"><thead><tr><th>
+				<b>Filter</b></th><th>
+				<b>Params</b></th><th>
+				<b>Content</b></th></tr></thead><tbody><tr><td>
+				1
+				Audio</td><td>
+				19
+				bytes</td><td>
+				<code>offset:u64 frames:u64 channels:u8 bits:u8 flags:u8</code>
+				(flag bit 0 = big endian, bit 1 = signed)</td></tr><tr><td>
+				2
+				Image</td><td>
+				21
+				bytes</td><td>
+				<code>offset:u64 width:u32 rows:u32 bpp:u8 stride:u32</code></td></tr><tr><td>
+				3
+				Deflate</td><td>
+				0
+				bytes</td><td>
+				<code>none: the framed stream holds raw segments and recompressed Deflate streams (section 7.9)</code></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p>Everything
+before <code>offset</code>
+(headers, tags, palettes, MOD patterns) and everything after the
+sample or pixel region (trailing chunks) is stored unchanged around
+the filtered data.</p>
+<h3 class="se" id="5-3-encrypted-body-framing">5.3 Encrypted body framing</h3>
+<p>When
+the encrypted flag is set, the zstd output is cut into chunks of 64
+KiB of plaintext. Each chunk is stored as a 32-bit big-endian length
+followed by the ciphertext, which is 16 bytes longer because of the
+Poly1305 tag. A chunk is only sealed when at least one more byte
+follows, so the last chunk is never empty and can be marked as final
+(section 8.3).</p>
+<h3 class="se" id="5-4-why-a-solid-stream">5.4 Why a solid stream?</h3>
+<p>Compressing
+all files as one stream lets the compressor find repetitions between
+files, which matters enormously for source trees and document
+collections (the benchmark in chapter 11 shows RAR&#x27;s non-solid output
+being almost twice as large as its solid output on 10,949 files). The
+price is sequential access: extracting a single file requires
+decompressing what precedes it. nikpak reduces the cost of this for
+media entries by skipping over them without decoding.</p>
+<h3 class="se" id="5-5-versioning">5.5 Versioning</h3>
+<p>The
+version byte is checked against the highest version the program
+understands. A newer archive produces the message <i>Unsupported
+archive version N; please update nikpak</i>
+rather than a misleading corruption error. Unknown flags, methods or
+media filters are rejected the same way.</p>
+<h3 class="se" id="5-6-multi-engine-body-version-3">5.6 Multi-engine body (version 3)</h3>
+<p>Archives
+made with -m5 use method 2. The inner record stream described in 5.2
+is unchanged, but it is cut, only between entries, into <b>blocks</b>,
+and every block is compressed with its own engine. Concatenated, the
+decompressed blocks are exactly the record stream of a single-engine
+archive, so listing, testing and extraction work the same way.</p>
+<table class="tech-table"><thead><tr><th>
+				<b>Element</b></th><th>
+				<b>Layout</b></th></tr></thead><tbody><tr><td>
+				body</td><td>
+				block*
+				followed by a single 0 byte</td></tr><tr><td>
+				block</td><td>
+				engine:u8
+				parameters, then frames [u32 length 1 .. 1 MiB][compressed
+				bytes], ended by a zero length</td></tr><tr><td>
+				engine
+				1</td><td>
+				Zstandard
+				(no parameters)</td></tr><tr><td>
+				engine
+				2</td><td>
+				LZMA2
+				raw stream: dictionary size u32, lc u8, lp u8, pb u8</td></tr><tr><td>
+				engine
+				3</td><td>
+				PPMd
+				variant I (PPMd8): order u8, model size u32, restore method u8 (0
+				= restart)</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p>The
+framing lets a reader find the end of every block without trusting
+the decoder, and every parameter is range-checked before memory is
+allocated (LZMA2 dictionary at most 1.5 GiB, PPMd model at most 1
+GiB, order 2 to 16). When encrypted, the body is protected by the
+same authenticated chunks as any other archive (chapter 8).</p>
+<h2 class="ch" id="6-the-compression-engine">6 The compression engine</h2>
+<h3 class="se" id="6-1-why-zstandard">6.1 Why Zstandard</h3>
+<p>Zstandard
+combines LZ77 matching with an entropy stage built from Huffman
+coding and finite-state entropy (FSE). Compared with the Deflate
+algorithm of ZIP it finds matches over a far larger window, models
+literals and match lengths with tighter entropy codes, and decodes at
+gigabytes per second. It is also an open, widely audited format,
+which keeps nikpak&#x27;s data recoverable by independent tools.</p>
+<h3 class="se" id="6-2-level-mapping">6.2 Level mapping</h3>
+<p>nikpak
+accepts both RAR-style levels (<code>-m0</code>
+.. <code>-m5</code>)
+and zip-style levels (<code>-0</code>
+.. <code>-9</code>)
+and maps them to Zstandard levels:</p>
+<table class="tech-table"><thead><tr><th>
+				<b>Option</b></th><th>
+				<b>Zstandard
+				level</b></th><th>
+				<b>Character</b></th></tr></thead><tbody><tr><td>
+				<code>-m0</code></td><td>
+				none
+				(stored)</td><td>
+				No
+				compression, no media filters</td></tr><tr><td>
+				<code>-m1</code></td><td>
+				1</td><td>
+				Fastest</td></tr><tr><td>
+				<code>-m2</code></td><td>
+				3</td><td>
+				Fast;
+				about 0.9 s for 197 MB on one core (the default until 1.2.0)</td></tr><tr><td>
+				<code>-m3</code></td><td>
+				9</td><td>
+				Good
+				balance</td></tr><tr><td>
+				<code>-m4</code></td><td>
+				15</td><td>
+				High;
+				128 MiB window and long-distance matching; Deflate recompression
+				(7.9)</td></tr><tr><td>
+				<code>-m5 (default)</code></td><td>
+				LZMA2
+				/ PPMd</td><td>
+				Maximum,
+				and the default since 1.2.1: multi-engine body (6.7) and Deflate
+				recompression</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p>The
+zip-style levels map as follows: <code>-0</code>
+stores, <code>-1</code>
+to <code>-6</code>
+use Zstandard 1 to 6, <code>-7</code>
+uses 9, <code>-8</code>
+uses 12 and <code>-9</code>
+is the same as -m5.</p>
+<h3 class="se" id="6-3-large-window-and-long-distance-matching">6.3 Large window and long-distance matching</h3>
+<p>At
+Zstandard level 15 and above nikpak enables a 2^27 byte (128 MiB)
+match window and long-distance matching. Source trees, document sets
+and backups contain many near-duplicate files that lie far apart in
+the stream; a normal 8 MiB window cannot see across them. On the 197
+MB test set this reduced the output at <code>-m5</code>
+from 26.3 MB to <b>24.4
+MB</b>
+and at <code>-m4</code>
+from 29.5 MB to 26.8 MB, at no cost in speed for <code>-m4</code>
+and a small one for <code>-m5</code>.
+A window of 2^27 is within Zstandard&#x27;s default decoder limit, so any
+standard decoder can read the data.</p>
+<h3 class="se" id="6-4-multi-threading">6.4 Multi-threading</h3>
+<p>The
+encoder splits the input into jobs that run on worker threads (all
+cores by default). Compression speed therefore scales with the number
+of cores, while the format stays a single stream. All numbers in this
+guide were measured on <b>one</b>
+core; on a typical multi-core machine nikpak is considerably faster
+than shown.</p>
+<h3 class="se" id="6-5-integrity-inside-the-stream">6.5 Integrity inside the stream</h3>
+<p>The
+Zstandard frame carries its own content checksum, nikpak adds a CRC32
+per file and an end marker with the entry count. A damaged plain
+archive is therefore detected at three levels: the frame checksum,
+the per-file CRC and the end marker.</p>
+<h3 class="se" id="6-6-store-mode">6.6 Store mode</h3>
+<pre>-m0</code>
+writes the entries uncompressed. It is useful for data that is
+already compressed, and it is also the only mode in which media
+filters are bypassed on purpose: a user who asks for <i>store</i>
+does not expect the data to be transformed.</p>
+<h3 class="se" id="6-7-the-maximum-level-lzma2-and-ppmd">6.7 The maximum level: LZMA2 and PPMd</h3>
+<p>Zstandard
+is the right engine for speed, but at its strongest settings it is
+still a few per cent behind LZMA2 on source code and documents, and
+well behind PPMd on prose. Since version 1.2, -m5 therefore builds
+the archive from two blocks (format in 5.6):</p>
+<ul><li><b>Binary
+	block.</b>
+	Folders, binary files, media entries and Deflate-recompressed
+	entries are compressed with <b>LZMA2</b>:
+	preset 9, nice length 273, match-finder depth 32, and a dictionary
+	sized to the data (1 to 128 MiB).</li><li><b>Text
+	block.</b>
+	Files whose first 64 KiB contain no zero byte and almost no control
+	characters (source code, text, CSV, HTML, XML ...) go to a second
+	block. Four contiguous 1 MiB runs of these files are
+	trial-compressed with <b>PPMd
+	variant I</b>
+	(order 8, 192 MiB model) and with LZMA2 tuned for text (lc 4, pb 0),
+	and the smaller result wins. Prose favours PPMd; large source trees
+	with many near-identical files favour LZMA2, because it can copy
+	long repeats across files.</li><li><b>Order.</b>
+	Within each block, files are sorted by extension, then by file name,
+	as 7-Zip does, so that identical or similar files are neighbours.
+	Together with the contiguous trial sample, this made the general
+	data set 7.5 % smaller.</li></ul>
+<p>&quot;Extreme&quot;
+LZMA2 settings were measured and rejected: on spreadsheet XML they
+were up to ten times slower and not smaller. -m5 runs on one thread,
+regardless of -mt.</p>
+<h2 class="ch" id="7-media-intelligence">7 Media intelligence</h2>
+<p>A
+general-purpose compressor sees bytes. It does not know that a WAV
+file is a waveform whose next sample is predictable from the previous
+ones, or that neighbouring pixels of a photograph are nearly equal.
+nikpak&#x27;s media layer supplies that knowledge: it recognises such
+files, applies a lossless transform that exposes the redundancy, and
+lets the compressor (or a dedicated codec) exploit it. This is where
+nikpak gains most against RAR.</p>
+<h3 class="se" id="7-1-detection-by-content">7.1 Detection by content</h3>
+<p>Detection
+looks at the first bytes of each file of at least 8 KiB and never
+trusts the extension, so a WAV renamed to <code>.dat</code>
+is still found and a text file called <code>.wav</code>
+is not.</p>
+<table class="tech-table"><thead><tr><th>
+				<b>Type</b></th><th>
+				<b>How
+				it is recognised</b></th><th>
+				<b>What
+				is filtered</b></th></tr></thead><tbody><tr><td>
+				WAV</td><td>
+				<code>RIFF</code>..<code>WAVE</code>,
+				a <code>fmt</code>
+				chunk with integer PCM (format 1, or WAVE_FORMAT_EXTENSIBLE with
+				the PCM sub-format), 8/16/24/32 bits, 1 to 8 channels, consistent
+				block alignment; then the <code>data</code>
+				chunk</td><td>
+				The
+				sample region. A zero, oversized or bogus data length is clamped
+				to the file; leftover bytes and trailing chunks are kept as they
+				are.</td></tr><tr><td>
+				AIFF
+				/ AIFC</td><td>
+				<code>FORM</code>..<code>AIFF</code>
+				or <code>AIFC</code>
+				(compression <code>NONE</code>
+				or <code>twos</code>),
+				<code>COMM</code>
+				and <code>SSND</code>
+				chunks, big-endian signed samples</td><td>
+				The
+				sound data region.</td></tr><tr><td>
+				ProTracker
+				MOD</td><td>
+				Signature
+				at offset 1080: M.K., M!K!, FLT4, 4CHN, 6CHN, 8CHN, FLT8, OCTA or
+				CD81</td><td>
+				The
+				8-bit sample area after the pattern data (section 7.6).</td></tr><tr><td>
+				BMP</td><td>
+				<code>BM</code>,
+				a DIB header of 40 bytes or more, no compression, 8, 24 or 32
+				bits per pixel, pixel rows that fit the file, region between 4
+				KiB and 256 MiB</td><td>
+				The
+				pixel rows (section 7.7).</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p>Not
+handled, and therefore stored with normal compression: floating-point
+WAV, ADPCM and other compressed audio, RLE or bit-field BMP, and
+tracker formats other than ProTracker MOD. Already compressed media
+such as MP3, JPEG, FLAC, PNG and MP4 are not recognised at all and
+are left alone, since transforming them would not help.</p>
+<h3 class="se" id="7-2-the-trial-choosing-the-best-filter-per-file">7.2 The trial: choosing the best filter per file</h3>
+<p>No
+single transform is best for every file. Predictive coding wins on
+recorded music; byte-plane separation wins on audio that came from an
+8-bit companded source (where only about a thousand distinct 16-bit
+values occur); plain compression wins on silence and on highly
+repetitive tracker samples. nikpak therefore <b>measures</b>
+instead of guessing.</p>
+<ul><li>Take
+	a sample: the whole sample region when it is up to 3 MiB, otherwise
+	three windows of 768 KiB at 5 %, 45 % and 85 % of the audio. For
+	images, the first rows up to about 4 MiB.</li><li>Compress
+	the sample with plain Zstandard level 3 (the baseline) and with
+	every filter that applies: NAC, Shuffle and Shuffle+Delta for
+	16/24/32-bit audio; NAC and Shuffle+Delta for 8-bit audio; MED for
+	images.</li><li>Keep
+	the filter with the smallest estimate, but only if it beats the
+	baseline by at least 2 %. Otherwise the file is stored with normal
+	compression.</li><li>Write
+	the file with the winner. All of this happens per file, so one
+	archive can contain WAVs coded with different methods next to
+	ordinary files.</li></ul>
+<p><code>nikpak mt <files></code>
+runs the same measurement on the <b>whole</b>
+file and prints a table, which is how the benchmark in chapter 11 was
+explored. In the options, <code>-mc-</code>
+disables the filters and <code>-mc+</code>
+forces the default filter without a trial.</p>
+<table class="tech-table"><tbody><tr><td>
+			<b>Lossless,
+			verified, and bypassable</b><br>Every
+			filter is exactly reversible. The CRC32 stored with each entry is
+			computed over the original bytes and checked on extraction, the
+			NAC encoder verifies each block while writing (section 7.4), and
+			<code>-mc-</code>
+			turns the whole layer off.</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="7-3-the-nac-audio-codec">7.3 The NAC audio codec</h3>
+<p>NAC
+(nikpak audio codec) is a block-based lossless codec for integer PCM.
+It belongs to the same family as FLAC: linear prediction followed by
+Rice coding. It has its own bit-stream, designed for this archive,
+and is used for WAV, AIFF and the sample data of MOD files.</p>
+<figure><img src="../assets/img/tech/fc2a013c.png" alt="Figure 2: encoding one block of 4096 sample frames." loading="lazy"><figcaption>Figure 2: encoding one block of 4096 sample frames.</figcaption></figure>
+<h4 class="su" id="blocks-and-stereo-decorrelation">Blocks and stereo decorrelation</h4>
+<p>Audio
+is cut into blocks of 4096 sample frames, each coded independently,
+which makes the codec robust (an error cannot spread) and lets the
+encoder adapt to changing material. For stereo, the encoder chooses
+one of four representations per block:</p>
+<table class="tech-table"><thead><tr><th>
+				<b>Mode</b></th><th>
+				<b>Channels
+				coded</b></th><th>
+				<b>Reconstruction</b></th></tr></thead><tbody><tr><td>
+				0</td><td>
+				Left,
+				Right</td><td>
+				direct</td></tr><tr><td>
+				1</td><td>
+				Left,
+				Side</td><td>
+				R
+				= L - S</td></tr><tr><td>
+				2</td><td>
+				Side,
+				Right</td><td>
+				L
+				= R + S</td></tr><tr><td>
+				3</td><td>
+				Mid,
+				Side</td><td>
+				<code>sum = (M << 1) | (S & 1)</code>,
+				<code>L = (sum + S) >> 1</code>,
+				<code>R = (sum - S) >> 1</code></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p>with
+<code>Side = L - R</code>
+and <code>Mid = (L + R) >> 1</code>.
+The side channel needs one more bit than a normal channel and is
+coded with <code>bits + 1</code>.
+The mode is chosen cheaply: the encoder sums the absolute values of
+the order-2 fixed-predictor residual of L, R, M and S and takes the
+pair with the smallest total. For recordings whose channels are
+strongly correlated, Mid/Side typically saves several percent.</p>
+<h4 class="su" id="sub-frame-types">Sub-frame types</h4>
+<p>Each
+coded channel of a block is stored as one of four sub-frames,
+whichever is smallest:</p>
+<table class="tech-table"><thead><tr><th>
+				<b>Type</b></th><th>
+				<b>Use</b></th><th>
+				<b>Cost</b></th></tr></thead><tbody><tr><td>
+				Constant</td><td>
+				All
+				samples equal (digital silence)</td><td>
+				2
+				+ sample-width bits for a whole block</td></tr><tr><td>
+				Verbatim</td><td>
+				Noise-like
+				material, or the safety fallback</td><td>
+				n
+				x width bits</td></tr><tr><td>
+				Fixed</td><td>
+				Polynomial
+				predictor of order 0 to 4</td><td>
+				warm-up
+				samples + residuals</td></tr><tr><td>
+				LPC</td><td>
+				Linear
+				predictor of order 1 to 32 with transmitted coefficients</td><td>
+				coefficients
+				+ warm-up + residuals</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p><b>Wasted
+bits.</b>
+If the low bits of every sample in a block are always zero (an 8-bit
+recording stored in 16-bit containers, or a quantised signal), they
+are removed and their count is stored in 5 bits.</p>
+<h4 class="su" id="fixed-predictors">Fixed predictors</h4>
+<p>
+<code>order 0: e[i] = x[i]</pre>
+<pre>order 1: e[i] = x[i] - x[i-1]</pre>
+<pre>order 2: e[i] = x[i] - 2*x[i-1] + x[i-2]</pre>
+<pre>order 3: e[i] = x[i] - 3*x[i-1] + 3*x[i-2] - x[i-3]</pre>
+<pre>order 4: e[i] = x[i] - 4*x[i-1] + 6*x[i-2] - 4*x[i-3] + x[i-4]</pre>
+<p><br>
+<br>
+
+</p>
+<p>The
+first <code>order</code>
+samples of a block are stored verbatim as warm-up values.</p>
+<h4 class="su" id="linear-predictive-coding-lpc">Linear predictive coding (LPC)</h4>
+<p>For
+tonal and harmonic music a predictor whose coefficients are fitted to
+the block is far better than a fixed polynomial. The encoder computes
+them as follows:</p>
+<ul><li>Apply
+	a <b>Tukey
+	window</b>
+	(taper over the first and last quarter) to the block, so that its
+	edges do not distort the statistics.</li><li>Compute
+	the <b>autocorrelation</b>
+	<code>r[0..32]</code>
+	of the windowed signal.</li><li>Run
+	the <b>Levinson-Durbin
+	recursion</b>,
+	which yields the optimal coefficient set for every order from 1 to
+	32 in one pass: <code>k = (r[i] - sum a[j] r[i-j]) / err</code>,
+	<code>a[i] = k</code>,
+	<code>a[j] = a[j] - k a[i-j]</code>,
+	<code>err = err (1 - k^2)</code>.</li><li><b>Quantise</b>
+	the real coefficients to integers with a precision of 12, 14 or 15
+	bits (depending on the sample width), choosing a power-of-two scale
+	(<code>shift</code>,
+	0 to 20) so that the largest coefficient just fits. Rounding uses
+	error feedback, so quantisation errors do not accumulate across
+	coefficients.</li><li>Evaluate
+	several orders (the set depends on the effort level, below), compute
+	the residual of each, and keep the one with the smallest estimated
+	total size, including the cost of sending its coefficients.</li></ul>
+<p>The
+predictor itself is pure integer arithmetic, which is what the
+decoder runs:</p>
+<pre>pred[i] = (q[0]*x[i-1] + q[1]*x[i-2] + ... + q[n-1]*x[i-n]) >> shift</pre>
+<pre>e[i] = x[i] - pred[i] (n = order; the sum uses 64 bits)</pre>
+<p><br>
+<br>
+
+</p>
+<p>Floating
+point is used <b>only
+by the encoder</b>
+to decide which integer coefficients to send. The decoder never
+touches floating point, so decoding is bit-exact on every processor
+and every compiler.</p>
+<h4 class="su" id="residual-coding">Residual coding</h4>
+<p>The
+prediction errors are mapped to unsigned numbers with the zig-zag
+transform (<code>u = (e << 1) XOR (e >> 63)</code>,
+so that small positive and negative values become small numbers) and
+coded with <b>partitioned
+Rice codes</b>.
+The residual of a block is split into 2^p partitions (p from 0 to 8,
+chosen by the encoder); each partition gets its own Rice parameter <code>k</code>
+(5 bits). A value is written as <code>u >> k</code>
+in unary (that many zeros and a one) followed by the low <code>k</code>
+bits. The best <code>k</code>
+of a partition is derived from the sum of its values, so the cost of
+every candidate predictor can be estimated cheaply from running sums
+instead of by encoding it.</p>
+<h4 class="su" id="effort-levels">Effort levels</h4>
+<p>The
+level of the archive (<code>-m</code>
+option) selects how many LPC orders are tried per block. More orders
+mean a slightly smaller result and a slower encoder; the decoder
+speed is the same.</p>
+<table class="tech-table"><thead><tr><th>
+				<b>Archive
+				level</b></th><th>
+				<b>NAC
+				effort</b></th><th>
+				<b>LPC
+				orders tried</b></th></tr></thead><tbody><tr><td>
+				-m1</td><td>
+				0</td><td>
+				8,
+				16</td></tr><tr><td>
+				-m2,
+				-m3</td><td>
+				1</td><td>
+				4,
+				8, 12, 16, 24, 32</td></tr><tr><td>
+				-m4,
+				-m5</td><td>
+				2</td><td>
+				2,
+				4, 6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p>Fixed
+predictors of order 0 to 4 are always tried. In the benchmark the
+effort level changed the stereo music result by less than 0.05 %: the
+large gain comes from using prediction at all.</p>
+<h4 class="su" id="bit-layout-of-a-block">Bit layout of a block</h4>
+<pre>block := [stereo mode: 2 bits] sub-frame [sub-frame] (byte-padded)</pre>
+<pre>sub-frame := type:2 ...</pre>
+<pre>CONSTANT : value:width</pre>
+<pre>VERBATIM : wasted:5 samples:(n x (width - wasted))</pre>
+<pre>FIXED : wasted:5 order:3 warm-up residual</pre>
+<pre>LPC : wasted:5 order-1:5 precision-1:4 shift:5</pre>
+<pre>coefficients warm-up residual</pre>
+<pre>residual := partition-order:4 per partition: k:5 Rice-coded values</pre>
+<p><br>
+<br>
+
+</p>
+<p>Each
+block is stored in the archive with a 32-bit length in front, so the
+decoder always knows where the next block starts.</p>
+<h3 class="se" id="7-4-self-verification">7.4 Self-verification</h3>
+<p>Writing
+an archive is the only chance to detect an encoder bug, so the NAC
+encoder does not trust itself. After encoding each block it <b>decodes
+the block again</b>
+and compares the result with the original samples. On any difference
+it re-encodes the block as verbatim (which cannot fail) and checks
+again; if even that fails, archiving stops with an explicit error and
+the suggestion to use <code>-mc-</code>.
+The fallback path is exercised by the unit tests, which force
+verbatim coding for every combination of bit depth and channel count,
+and the mechanism turns a possible silent data-loss bug into a
+detected, recoverable condition.</p>
+<p>On
+top of that, the decoder is fuzzed: thousands of blocks of random
+bytes and blocks with flipped bits are fed to it in the unit tests,
+and it must return an error without panicking or allocating
+unreasonable amounts of memory. During development this found a real
+bug (for 32-bit material the Rice-parameter search could come out
+empty and fall back to a parameter that would have produced a
+multi-gigabyte code); it is fixed and covered by a test.</p>
+<h3 class="se" id="7-5-shuffle-and-shuffle-delta">7.5 Shuffle and Shuffle+Delta</h3>
+<p>Some
+audio does not respond to prediction. The gallery WAV files used in
+the benchmark are 16-bit, yet contain only about a thousand distinct
+sample values, because they were produced from a companded 8-bit
+source. A predictor cannot exploit that, and FLAC compresses them to
+84 % of the original while plain Zstandard needs 63 %. What helps is
+arranging the bytes so that the compressor sees homogeneous data:</p>
+<ul><li><b>Shuffle</b>
+	separates the bytes of the samples into planes: all
+	least-significant bytes of channel 0, then all most-significant
+	bytes of channel 0, then channel 1, and so on, in blocks of 32768
+	frames. The high-byte plane is smooth and the low-byte plane has a
+	very restricted alphabet; Zstandard&#x27;s entropy coder models each far
+	better than the interleaved mixture.</li><li><b>Shuffle+Delta</b>
+	first replaces every sample by its difference to the previous sample
+	of the same channel (modulo the sample width, so it is exactly
+	reversible, with state carried across blocks) and then shuffles.
+	This helps when the signal is smooth but not predictable enough for
+	NAC to win.</li></ul>
+<p>On
+the 35 gallery files the archive with the best filter per file
+(chosen by the trial) is 51 % of the original size at <code>-m2</code>
+and 47 % at <code>-m5</code>,
+against 63 % for plain Zstandard.</p>
+<h3 class="se" id="7-6-protracker-mod-files">7.6 ProTracker MOD files</h3>
+<p>A
+MOD module is a 1084-byte header (title, 31 sample descriptors, a
+pattern order table of 128 entries and a 4-byte signature at offset
+1080), then the pattern data, then the raw 8-bit signed samples of
+all instruments. nikpak computes where the samples start and how long
+they are:</p>
+<pre>patterns = max(order table) + 1</pre>
+<pre>sample_start = 1084 + patterns * 256 * channels (4 ch: 1024 B per pattern)</pre>
+<pre>sample_bytes = sum of (length in words * 2) over the 31 descriptors,</pre>
+<pre>clamped to the end of the file</pre>
+<p><br>
+<br>
+
+</p>
+<p>The
+header and patterns are stored as they are (the compressor handles
+those repetitive note events well) and the sample area is treated as
+a single mono, signed, 8-bit stream for the trial. Per file, NAC,
+Shuffle+Delta or plain compression wins: sampled instruments mostly
+favour NAC, while on some modules (for example those with very short
+or highly repetitive samples) plain compression wins. Truncated
+modules are handled by clamping the region to the data that is
+actually present.</p>
+<h3 class="se" id="7-7-bmp-images">7.7 BMP images</h3>
+<p>An
+uncompressed BMP stores rows of pixels padded to a multiple of four
+bytes. The filter works in four steps:</p>
+<ul><li><b>Split</b>
+	the pixel region into one plane per channel (B, G, R, and A for
+	32-bit), remembering the per-row padding bytes separately.</li><li><b>Decorrelate
+	colour.</b>
+	Subtract the green plane from the blue and red planes (modulo 256).
+	In photographs the three channels are strongly correlated, so the
+	differences are small.</li><li><b>Predict
+	each pixel</b>
+	from its neighbours with the <b>MED</b>
+	(median edge detector) predictor, the one used by the LOCO-I image
+	coder: for left <code>a</code>,
+	above <code>b</code>
+	and above-left <code>c</code>,
+	the prediction is <code>min(a,b)</code>
+	if <code>c >= max(a,b)</code>,
+	<code>max(a,b)</code>
+	if <code>c <= min(a,b)</code>,
+	and <code>a + b - c</code>
+	otherwise. The prediction error replaces the pixel (modulo 256). On
+	edges the predictor follows the edge; on smooth gradients it
+	extrapolates the gradient.</li><li><b>Concatenate</b>
+	the residual planes and the padding bytes and let Zstandard compress
+	them. Smooth regions become runs of near-zero bytes.</li></ul>
+<p>The
+decoder reverses the steps exactly. 8-bit BMPs skip the colour step;
+the trial then decides whether prediction helps for that palette,
+since predicting palette indices only makes sense for grayscale or
+smoothly ordered palettes. BMP files above 256 MiB are not filtered,
+to bound memory use.</p>
+<h3 class="se" id="7-8-why-this-beats-rar">7.8 Why this beats RAR</h3>
+<p>RAR
+compresses media with its general match-and-Huffman engine plus a
+small set of byte filters. nikpak instead gives audio a true
+predictive codec with per-block stereo decorrelation and adaptive
+Rice coding, gives images a proper 2-D predictor with colour
+decorrelation, and chooses per file by measurement. The consequence
+is visible in the benchmark: 12 to 15 % smaller on audio of every
+kind, 13 % on tracker music and 39 % on photographs, and the NAC
+result for the stereo track is within 0.2 % of the dedicated FLAC
+encoder.</p>
+<h3 class="se" id="7-9-office-documents-pdf-and-gzip-deflate-recompression">7.9 Office documents, PDF and gzip: Deflate recompression</h3>
+<p>Modern
+office files are ZIP archives of XML (docx, xlsx, pptx, odt, ods),
+and PDF files store their pages in Deflate (FlateDecode) streams.
+Their content is therefore already compressed, and no archiver can
+shrink it much: in the 1.1 benchmark, 6.6 MB of .xlsx files only went
+down to 5.6 MB with 7-Zip. nikpak 1.2 removes that obstacle.</p>
+<ul><li><b>Detection
+	by content.</b>
+	A ZIP local header (PK\x03\x04) at the start of the file, %PDF- or a
+	gzip header; the extension is never used.</li><li><b>Decoding.</b>
+	Every Deflate stream is found (ZIP entries with method 8, PDF
+	streams with a zlib header, every gzip member) and analysed with
+	<b>preflate</b>
+	(Microsoft&#x27;s preflate-rs). preflate returns the plain data plus a
+	small corrections record that describes exactly how the original
+	encoder made its choices, whichever encoder it was.</li><li><b>Storage.</b>
+	The file is stored as a sequence of raw segments and (plain,
+	corrections) pairs. The plain XML or page description then goes into
+	the solid stream, where LZMA2 compresses it to a fraction of its
+	Deflate size.</li><li><b>Verification.</b>
+	Before the result is used, nikpak rebuilds every Deflate stream and
+	compares the length and CRC32 of the whole file with the original.
+	If anything differs, or preflate fails or panics on a malformed
+	file, the file is simply stored normally.</li><li><b>Extraction.</b>
+	The Deflate streams are re-created bit for bit, so the extracted
+	.docx or .pdf is byte-identical, and its CRC32 is checked as for
+	every entry.</li></ul>
+<p>On
+the office set of section 11.7 this is what makes nikpak smaller than
+every other archiver. The 6.6 MB of .xlsx files contain 71 MB of XML
+once decoded, and that XML compresses far better than Deflate did.
+The cost is time: preflate analyses roughly 15 MB of plain data per
+second. For that reason recompression is used at -m4 and -m5 only,
+where it pays off (measured: -m3 gained 0.5 % for six times the
+time). Limits: files up to 512 MiB, and per stream up to 512 MiB of
+plain data and 64 MiB of corrections. -mc- turns it off.</p>
+<h2 class="ch" id="8-encryption">8 Encryption</h2>
+<p>nikpak&#x27;s
+encryption is built entirely from standard, well-studied components
+(the RustCrypto implementations of Argon2id and XChaCha20-Poly1305).
+No primitive was invented for this project; the work lies in
+combining them correctly.</p>
+<h3 class="se" id="8-1-threat-model">8.1 Threat model</h3>
+<p>The
+design assumes an attacker who obtains the archive file and can study
+and modify it at leisure, and who can try unlimited password guesses
+offline. nikpak aims to guarantee:</p>
+<ul><li><b>Confidentiality</b>
+	of file contents <i>and</i>
+	of everything about them: names, sizes, timestamps, permissions and
+	the number of files.</li><li><b>Integrity
+	and authenticity</b>:
+	any change to the archive, whether to the data, the header, the
+	order of the data or its length, is detected before wrong data is
+	accepted.</li><li><b>Guess-resistance</b>:
+	every password guess is made as expensive as practical.</li></ul>
+<p>It
+does not hide that an archive exists, nor its approximate size, and
+it cannot protect against malware on the machine that creates or
+opens the archive, or against a weak password.</p>
+<h3 class="se" id="8-2-from-password-to-key-argon2id">8.2 From password to key: Argon2id</h3>
+<p>A
+password is a poor key: short, predictable and typed by a human. It
+is turned into a 256-bit key with <b>Argon2id</b>,
+the winner of the Password Hashing Competition and the algorithm
+standardised in RFC 9106. Argon2id is deliberately <b>memory-hard</b>:
+computing one key needs a large block of memory that is filled and
+then repeatedly read in a data-dependent pattern. nikpak uses the
+RFC&#x27;s low-memory profile:</p>
+<table class="tech-table"><thead><tr><th>
+				<b>Parameter</b></th><th>
+				<b>Value</b></th><th>
+				<b>Meaning</b></th></tr></thead><tbody><tr><td>
+				Memory</td><td>
+				64
+				MiB</td><td>
+				Every
+				guess needs 64 MiB of fast memory</td></tr><tr><td>
+				Passes</td><td>
+				3</td><td>
+				The
+				memory is processed three times</td></tr><tr><td>
+				Lanes</td><td>
+				4</td><td>
+				Degree
+				of parallelism inside one derivation</td></tr><tr><td>
+				Salt</td><td>
+				16
+				random bytes</td><td>
+				New
+				for every archive: identical passwords give different keys, and
+				pre-computed tables are useless</td></tr><tr><td>
+				Output</td><td>
+				32
+				bytes</td><td>
+				The
+				XChaCha20-Poly1305 key</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p>Memory-hardness
+is what separates Argon2id from the older PBKDF2 (used by RAR5 and by
+ZIP&#x27;s AES mode): PBKDF2 needs almost no memory, so a graphics card or
+a custom chip can test enormous numbers of guesses in parallel. With
+Argon2id the attacker&#x27;s hardware must supply 64 MiB per parallel
+guess, which removes most of that advantage. The cost to the
+legitimate user is a fraction of a second, paid once per archive.</p>
+<p>The
+parameters are stored in the header, so future versions can raise
+them without breaking old archives. When reading, they are
+range-checked first (memory 8 x lanes up to 1 GiB, passes 1 to 64,
+lanes 1 to 64) so that a malicious archive cannot make nikpak
+allocate absurd amounts of memory before the password has been
+checked.</p>
+<h3 class="se" id="8-3-xchacha20-poly1305-in-the-stream-construction">8.3 XChaCha20-Poly1305 in the STREAM construction</h3>
+<p>The
+bulk data is protected with <b>XChaCha20-Poly1305</b>,
+an authenticated-encryption-with-associated-data (AEAD) cipher:
+ChaCha20 provides a 256-bit-key stream cipher, the X variant extends
+its nonce to 192 bits (large enough to choose at random without ever
+repeating), and Poly1305 adds a 128-bit authentication tag to every
+sealed message. ChaCha20 is fast on every CPU without special
+instructions and, unlike table-based AES, naturally free of
+cache-timing leaks.</p>
+<p>An
+archive is far larger than one message, so nikpak uses the <b>STREAM</b>
+construction (the same one used by modern file-encryption tools): the
+data is cut into 64 KiB chunks and chunk number <i>i</i>
+is sealed under the nonce</p>
+<pre>nonce (24 bytes) = random prefix (19 bytes)</pre>
+<pre>| chunk counter (4 bytes, big endian)</pre>
+<pre>| last-chunk flag (1 byte)</pre>
+<p><br>
+<br>
+
+</p>
+<p>This
+gives three guarantees at once. Each chunk has a unique nonce, which
+is essential for stream ciphers. Because the counter is part of the
+nonce, <b>reordering
+or duplicating chunks fails authentication</b>.
+Because the final chunk carries a different flag, <b>cutting
+the archive short, even exactly at a chunk boundary, fails
+authentication</b>:
+the new last chunk was sealed as a non-final one. The 19-byte prefix
+is random per archive.</p>
+<p>In
+addition, the complete archive header (version, flags, method,
+Argon2id parameters, salt and nonce prefix) is passed as <b>associated
+data</b>
+to every chunk. It is authenticated but not encrypted; flipping any
+bit of it makes every chunk fail. This also blocks downgrade attacks
+that would try to weaken the stored parameters.</p>
+<table class="tech-table"><thead><tr><th>
+				<b>Item</b></th><th>
+				<b>Value</b></th></tr></thead><tbody><tr><td>
+				Cipher</td><td>
+				XChaCha20-Poly1305:
+				256-bit key, 192-bit nonce, 128-bit tag</td></tr><tr><td>
+				Chunk</td><td>
+				up
+				to 64 KiB of plaintext; stored as <code>u32 length</code>
+				+ ciphertext + 16-byte tag</td></tr><tr><td>
+				Size
+				overhead</td><td>
+				about
+				0.03 % (20 bytes per 64 KiB), measured 0.03 % on a 222 MB data
+				set</td></tr><tr><td>
+				Speed
+				overhead</td><td>
+				measured:
+				+0.3 s in total on a 222 MB data set (0.92 s instead of 0.64 s),
+				key derivation included</td></tr><tr><td>
+				Wrong
+				password</td><td>
+				Detected
+				on the first chunk; no plaintext is produced</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="8-4-what-an-observer-can-and-cannot-see">8.4 What an observer can and cannot see</h3>
+<table class="tech-table"><thead><tr><th>
+				<b>Visible
+				without the password</b></th><th>
+				<b>Protected</b></th></tr></thead><tbody><tr><td>
+				The
+				magic number, version, flags and compression method</td><td>
+				File
+				names and folder structure</td></tr><tr><td>
+				The
+				Argon2id parameters, salt and nonce prefix</td><td>
+				File
+				sizes, timestamps and permissions</td></tr><tr><td>
+				The
+				total archive size and the number of chunks</td><td>
+				The
+				number of files</td></tr><tr><td>
+				The
+				fact that it is a nikpak archive</td><td>
+				All
+				content, including whether it contains media</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p>One
+consequence of compressing before encrypting is that the archive size
+reflects how compressible the data is. This is inherent to every
+archiver that compresses and encrypts; it matters only if an attacker
+can control part of the data and observe the size, which does not
+apply to archiving files.</p>
+<h3 class="se" id="8-5-password-handling">8.5 Password handling</h3>
+<ul><li><b>Minimum
+	length.</b>
+	8 characters when creating an archive; shorter passwords are refused
+	with an explanation.</li><li><b>Confirmation.</b>
+	The interactive prompt asks twice, does not echo the typed
+	characters, and rejects a mismatch.</li><li><b>Generation.</b>
+	With no password, nikpak draws 24 characters from a 56-symbol
+	alphabet that omits look-alikes (0/O, 1/l/I), using <b>rejection
+	sampling</b>
+	on the operating system&#x27;s cryptographically secure random generator
+	so that no symbol is more likely than another. That is 24 x
+	log2(56), about <b>139
+	bits</b>
+	of entropy, and it is displayed once, in a clearly marked box.</li><li><b>Memory
+	hygiene.</b>
+	The derived key and the password strings are wiped from memory when
+	no longer needed (the <code>zeroize</code>
+	crate).</li><li><b>Channels.</b>
+	Command line (<code>-p<pwd></code>),
+	environment variable <code>NIKPAK_PASSWORD</code>,
+	interactive prompt, or stdin when there is no terminal. The
+	command-line form is convenient but visible in the process list; the
+	other forms are preferable.</li></ul>
+<h3 class="se" id="8-6-attack-tests">8.6 Attack tests</h3>
+<p>The
+following manipulations of encrypted archives were carried out
+against the finished program. All were detected before any wrong data
+was accepted:</p>
+<table class="tech-table"><thead><tr><th>
+				<b>Manipulation</b></th><th>
+				<b>Result</b></th></tr></thead><tbody><tr><td>
+				Flip
+				a single byte in the middle of the ciphertext</td><td>
+				Rejected:
+				authentication failure (exit 11)</td></tr><tr><td>
+				Flip
+				a byte of the salt in the header</td><td>
+				Rejected
+				(the header is associated data and the key changes)</td></tr><tr><td>
+				Change
+				the method byte in the header</td><td>
+				Rejected</td></tr><tr><td>
+				Truncate
+				the file by 100 bytes</td><td>
+				Rejected
+				as damaged (exit 3)</td></tr><tr><td>
+				Delete
+				the final chunk exactly at a chunk boundary</td><td>
+				Rejected:
+				the new last chunk lacks the final flag</td></tr><tr><td>
+				Swap
+				two chunks</td><td>
+				Rejected:
+				counter mismatch</td></tr><tr><td>
+				Supply
+				the wrong password</td><td>
+				Rejected
+				on the first chunk (exit 11)</td></tr><tr><td>
+				Feed
+				a random file as an archive</td><td>
+				Rejected:
+				bad signature (exit 3)</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<table class="tech-table"><tbody><tr><td>
+			<b>Residual
+			risks, stated plainly</b><br>A
+			weak password can always be guessed; Argon2id makes it expensive
+			but cannot rescue <code>password123</code>.
+			nikpak has not been independently audited. It cannot defend
+			against keyloggers, malware or someone reading the memory of the
+			running process. For data whose exposure would be seriously
+			harmful, have the implementation reviewed by a cryptographer
+			first.</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h2 class="ch" id="9-quantum-resistance">9 Quantum resistance</h2>
+<p>Quantum
+computers threaten some cryptography badly and other cryptography
+hardly at all. nikpak was designed on the side that is hardly
+affected.</p>
+<h3 class="se" id="9-1-what-quantum-computers-change">9.1 What quantum computers change</h3>
+<table class="tech-table"><thead><tr><th>
+				<b>Algorithm</b></th><th>
+				<b>Effect</b></th><th>
+				<b>Who
+				is affected</b></th></tr></thead><tbody><tr><td>
+				<b>Shor</b>
+				(1994)</td><td>
+				Factors
+				integers and computes discrete logarithms in polynomial time</td><td>
+				RSA,
+				Diffie-Hellman, DSA, elliptic-curve cryptography: <b>broken</b>
+				by a large quantum computer</td></tr><tr><td>
+				<b>Grover</b>
+				(1996)</td><td>
+				Searches
+				an unstructured space of N items in about the square root of N
+				steps</td><td>
+				Symmetric
+				keys and hash functions: the <i>effective</i>
+				key length is <b>halved</b></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p>Shor&#x27;s
+algorithm is the dramatic one: it would break every system that
+relies on public-key mathematics, which is why governments and
+standards bodies are migrating to post-quantum public-key algorithms
+such as ML-KEM (FIPS 203). Grover&#x27;s algorithm is the mild one: a
+256-bit key offers about 128 bits of security against it, and
+Grover&#x27;s iterations are inherently sequential, so spreading the work
+over many quantum machines yields only the square root of their
+number as speed-up.</p>
+<h3 class="se" id="9-2-nikpak-s-position">9.2 nikpak&#x27;s position</h3>
+<table class="tech-table"><thead><tr><th>
+				<b>Component</b></th><th>
+				<b>Primitive</b></th><th>
+				<b>Quantum
+				impact</b></th></tr></thead><tbody><tr><td>
+				Encryption</td><td>
+				XChaCha20,
+				256-bit key</td><td>
+				Best
+				known attack: Grover, about 2^128 operations. Beyond reach.</td></tr><tr><td>
+				Authentication</td><td>
+				Poly1305,
+				128-bit tag, keyed from the 256-bit secret</td><td>
+				No
+				public-key mathematics involved</td></tr><tr><td>
+				Password
+				to key</td><td>
+				Argon2id,
+				64 MiB, 3 passes</td><td>
+				Grover
+				could at most halve the password&#x27;s entropy, and every iteration
+				would require evaluating a memory-hard function</td></tr><tr><td>
+				Randomness</td><td>
+				Operating-system
+				CSPRNG</td><td>
+				Unaffected</td></tr><tr><td>
+				Public-key
+				cryptography</td><td>
+				<b>None</b></td><td>
+				Nothing
+				for Shor&#x27;s algorithm to attack</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p>A
+256-bit symmetric key is the reference for the <b>highest
+security category (category 5)</b>
+of NIST&#x27;s post-quantum standardisation: the public-key algorithms
+standardised by NIST are rated by how closely they match the
+difficulty of an exhaustive search of a 256-bit AES key. In other
+words, nikpak&#x27;s data encryption already sits at the strength the
+post-quantum standards aim for.</p>
+<h3 class="se" id="9-3-what-about-the-password">9.3 What about the password?</h3>
+<p>The
+cipher&#x27;s key space is 256 bits, but the key is derived from a
+password, so the real strength is the smaller of the password&#x27;s
+entropy and 256 bits. Against a quantum adversary the password&#x27;s
+entropy is, at best for the attacker, halved:</p>
+<table class="tech-table"><thead><tr><th>
+				<b>Password</b></th><th>
+				<b>Entropy</b></th><th>
+				<b>Classical
+				search</b></th><th>
+				<b>Grover
+				search (at best)</b></th></tr></thead><tbody><tr><td>
+				nikpak-generated
+				(24 symbols)</td><td>
+				about
+				139 bits</td><td>
+				about
+				2^139 guesses</td><td>
+				about
+				2^70 iterations, each needing a coherent 64 MiB Argon2id
+				evaluation</td></tr><tr><td>
+				Six
+				random Diceware words</td><td>
+				about
+				77 bits</td><td>
+				about
+				2^77 guesses</td><td>
+				about
+				2^39 iterations of the same expensive circuit</td></tr><tr><td>
+				A
+				human-chosen 10-character password</td><td>
+				typically
+				30 - 45 bits</td><td>
+				feasible</td><td>
+				feasible</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p>The
+conclusion is the familiar one, stated more sharply: <b>the
+password is the weak point, not the cipher.</b>
+Use the generated password or a long random passphrase and the
+archive resists both classical and quantum attackers for any
+foreseeable future. Argon2id helps in both worlds, because the cost
+of each guess is dominated by memory, which Grover&#x27;s algorithm does
+not make cheaper.</p>
+<h3 class="se" id="9-4-harvest-now-decrypt-later">9.4 &quot;Harvest now, decrypt later&quot;</h3>
+<p>A
+frequently cited quantum threat is that an adversary records
+encrypted data today and decrypts it when a quantum computer exists.
+For systems that exchange keys with RSA or elliptic curves, such as
+TLS connections or e-mail encryption, this is real. A nikpak archive
+has no key exchange: its key comes from a secret that never leaves
+the user&#x27;s head or password manager. A stored copy can only be opened
+later by guessing that secret, and quantum computers do not make that
+fundamentally easier.</p>
+<h3 class="se" id="9-5-honest-limits-and-the-road-ahead">9.5 Honest limits and the road ahead</h3>
+<ul><li>&quot;Quantum-resistant&quot;
+	means that no known quantum algorithm beats generic search against
+	these primitives. It is not a proof; cryptanalysis of ChaCha20 and
+	Argon2 continues, and the format is versioned so that parameters or
+	algorithms can be changed.</li><li>If
+	public-key sharing is ever added (encrypting an archive <i>to</i>
+	a recipient&#x27;s key), it will use a <b>hybrid</b>
+	scheme, X25519 combined with ML-KEM, so that it is safe if either
+	component holds.</li><li>Quantum
+	resistance does not protect against implementation errors. See
+	sections 8.6 and 10.</li></ul>
+<h2 class="ch" id="10-hardening-and-robustness">10 Hardening and robustness</h2>
+<p>An
+archiver reads files written by strangers and writes files on its
+user&#x27;s disk, which makes it a classic target. nikpak treats every
+archive as untrusted input.</p>
+<h3 class="se" id="10-1-safe-extraction">10.1 Safe extraction</h3>
+<ul><li><b>Path
+	traversal (&quot;zip slip&quot;).</b>
+	Every entry name is normalised: backslashes become slashes, empty
+	and <code>.</code>
+	components are dropped, and any <code>..</code>
+	component causes the entry to be skipped with a warning. Absolute
+	names lose their root, so <code>/etc/passwd</code>
+	is extracted <i>inside</i>
+	the destination folder.</li><li><b>Windows
+	names.</b>
+	When running on Windows, components containing <code>< > : " | ? *</code>
+	or control characters, ending in a space or dot, or equal to a
+	reserved device name (CON, PRN, AUX, NUL, COM1-9, LPT1-9) are
+	rejected.</li><li><b>Symbolic
+	links.</b>
+	Before writing, every existing component of the target path below
+	the destination is checked; a link is never followed. An existing
+	file is deleted first and the new one is created with <code>create_new</code>,
+	which refuses to open an existing path, so a link cannot be used to
+	redirect the write.</li><li><b>Privileged
+	bits.</b>
+	Setuid, setgid and sticky bits are never restored; permissions are
+	masked to the ordinary rwx bits.</li><li><b>Failed
+	files.</b>
+	A file whose CRC32 does not match is deleted, not left behind.</li></ul>
+<p>A
+hand-built archive containing <code>../../evil.txt</code>,
+<code>/tmp/evil.txt</code>,
+<code>..\..\evil.txt</code>
+and <code>ok/../../evil.txt</code>
+was extracted in the tests: nothing escaped the destination, the
+unsafe entries were reported and skipped, and a planted symlink in
+the destination was refused.</p>
+<h3 class="se" id="10-2-bounded-decoders">10.2 Bounded decoders</h3>
+<ul><li>Argon2id
+	parameters are range-checked before any allocation (section 8.2).</li><li>Encrypted
+	chunks must have a length between 16 bytes and 64 KiB + 16; names at
+	most 4096 bytes; audio blocks must declare a plausible length; BMP
+	regions are limited to 256 MiB; unary Rice codes are capped.</li><li>The
+	audio and media decoders were fed thousands of random and
+	bit-flipped inputs in the unit tests and must return an error, never
+	panic or abort.</li><li>nikpak&#x27;s
+	own code contains no <code>unsafe</code>
+	blocks, and Rust&#x27;s bounds checking turns any logic error that would
+	be a memory-corruption bug in C into a clean failure.</li></ul>
+<p>nikpak
+does not limit the expansion ratio of an archive, so, like every
+archiver, a deliberately crafted &quot;compression bomb&quot; can
+fill a disk when extracted. Test unknown archives with <code>t</code>
+first if that matters.</p>
+<h3 class="se" id="10-3-safe-creation-and-honest-errors">10.3 Safe creation and honest errors</h3>
+<ul><li>The
+	archive is written to <code>name.nik.tmp</code>
+	and renamed only when complete; a guard deletes the temporary file
+	on any failure, so an interrupted run never leaves a half-written or
+	replaced archive.</li><li>If
+	a file becomes shorter while it is being archived, nikpak aborts
+	with an explicit message instead of writing an inconsistent entry.
+	Unreadable files, symbolic links and special files are skipped with
+	a warning (exit code 1) and the archive is never added to itself.</li><li>Errors
+	are classified so that scripts can react: a checksum or frame error
+	inside an archive is <i>corruption</i>
+	(exit 3), an authentication failure is <i>wrong
+	password or tampering</i>
+	(exit 11), a refused write is a <i>fatal
+	error</i>
+	(exit 2).</li></ul>
+<h2 class="ch" id="11-benchmarks">11 Benchmarks</h2>
+<p>This
+chapter reports measurements, not claims. It describes exactly what
+was measured, includes the results that do not favour nikpak, and
+gives the commands needed to repeat everything.</p>
+<p>Sections
+11.1 to 11.6 were measured with nikpak 1.1.0, whose -m5 still used
+Zstandard. Section 11.7 compares nikpak 1.2.0 with RAR, 7-Zip and ZIP
+on one machine.</p>
+<h3 class="se" id="11-1-method">11.1 Method</h3>
+<table class="tech-table"><thead><tr><th>
+				<b>Item</b></th><th>
+				<b>Detail</b></th></tr></thead><tbody><tr><td>
+				Machine</td><td>
+				Linux
+				x86-64 virtual machine, <b>one</b>
+				CPU core. All times are wall-clock seconds on that single core;
+				multi-core machines are faster for both tools.</td></tr><tr><td>
+				Software</td><td>
+				<b>RAR
+				7.00</b>
+				(26 Feb 2024, Linux trial build, <code>-ma5</code>
+				format); <b>nikpak
+				1.1.0</b>
+				built in release mode with LTO; FLAC 1.x <code>-8</code>
+				as an audio reference.</td></tr><tr><td>
+				RAR
+				settings</td><td>
+				<code>-m3</code>
+				(RAR&#x27;s default) and <code>-m5</code>
+				(best). For the general-data test also <code>-s</code>
+				(solid) and <code>-md256m</code>
+				(256 MB dictionary), because nikpak archives are always solid and
+				a fair comparison needs RAR to be allowed the same.</td></tr><tr><td>
+				Verification</td><td>
+				Every
+				nikpak archive was extracted and compared with the original (<code>cmp</code>
+				for media files, SHA-256 of all 10,949 files for the general
+				set).</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h4 class="su" id="the-test-material">The test material</h4>
+<table class="tech-table"><thead><tr><th>
+				<b>Set</b></th><th>
+				<b>Content</b></th></tr></thead><tbody><tr><td>
+				Gallery
+				WAVs</td><td>
+				35
+				sound files from LibreOffice&#x27;s gallery: mono 16-bit, 23 at 11,025
+				Hz and 12 at 22,050 Hz. They contain only about a thousand
+				distinct sample values (companded sources) and are a deliberately
+				awkward case for predictive coding.</td></tr><tr><td>
+				Music</td><td>
+				A
+				100-second multi-instrument piece (piano, strings, bass, flute,
+				drums) rendered with TiMidity++ and the Freepats sound set to
+				44.1 kHz stereo 16-bit (17.4 MB). SoX derived a 22.05 kHz mono
+				16-bit, a 22.05 kHz mono 8-bit and a 48 kHz stereo 24-bit
+				version.</td></tr><tr><td>
+				MOD</td><td>
+				16
+				ProTracker modules from the libxmp test collection.</td></tr><tr><td>
+				BMP</td><td>
+				6
+				images: five photographs from the scikit-image sample set
+				(24-bit, plus an 8-bit grayscale conversion of one) and a texture
+				from TeX Live.</td></tr><tr><td>
+				General
+				data</td><td>
+				197.6
+				MB in 10,949 files: the Python standard library and packages,
+				documentation and C headers from the test machine, symbolic links
+				removed.</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<table class="tech-table"><tbody><tr><td>
+			<b>Limits
+			of this test material</b><br>The
+			music is synthetic: it was rendered from MIDI and contains
+			repeated passages, which helps every LZ-based tool, including the
+			Zstandard stage after NAC. Real recordings contain fewer exact
+			repeats, so absolute sizes will differ. The comparison treats all
+			tools alike, and FLAC&#x27;s result on the same file confirms that the
+			audio codec itself is competitive, but readers with specific
+			material should measure it: <code>nikpak mt <files></code>
+			does exactly that.</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="11-2-media-files">11.2 Media files</h3>
+<table class="tech-table"><thead><tr><th>
+				<b>Set</b></th><th>
+				<b>Original</b></th><th>
+				<b>RAR
+				7 -m5</b></th><th>
+				<b>nikpak
+				-m2</b></th><th>
+				<b>nikpak
+				-m5</b></th><th>
+				<b>m5
+				vs RAR</b></th></tr></thead><tbody><tr><td>
+				6
+				BMP photographs</td><td>
+				9,183,956</td><td>
+				2,862,744</td><td>
+				2,035,223</td><td>
+				<b>1,750,706</b></td><td>
+				<b>38.8
+				% smaller</b></td></tr><tr><td>
+				16
+				ProTracker MOD files</td><td>
+				2,507,557</td><td>
+				1,070,290</td><td>
+				966,622</td><td>
+				<b>927,973</b></td><td>
+				<b>13.3
+				% smaller</b></td></tr><tr><td>
+				35
+				gallery WAVs (mono 16-bit)</td><td>
+				2,991,820</td><td>
+				1,605,879</td><td>
+				1,529,219</td><td>
+				<b>1,418,532</b></td><td>
+				<b>11.7
+				% smaller</b></td></tr><tr><td>
+				Music
+				44.1 kHz stereo 16-bit</td><td>
+				17,371,848</td><td>
+				11,024,411</td><td>
+				9,415,519</td><td>
+				<b>9,411,898</b></td><td>
+				<b>14.6
+				% smaller</b></td></tr><tr><td>
+				Music
+				22.05 kHz mono 16-bit</td><td>
+				4,342,996</td><td>
+				3,112,135</td><td>
+				2,635,819</td><td>
+				<b>2,634,669</b></td><td>
+				<b>15.3
+				% smaller</b></td></tr><tr><td>
+				Music
+				22.05 kHz mono 8-bit</td><td>
+				2,171,520</td><td>
+				844,160</td><td>
+				742,462</td><td>
+				<b>740,751</b></td><td>
+				<b>12.2
+				% smaller</b></td></tr><tr><td>
+				Music
+				48 kHz stereo 24-bit</td><td>
+				28,362,206</td><td>
+				21,467,283
+				(-m3)</td><td>
+				18,689,529</td><td>
+				<b>18,688,030</b></td><td>
+				<b>12.9
+				% smaller</b></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p>All
+sizes are in bytes. For the 24-bit file RAR was only measured at <code>-m3</code>,
+so that row is a weaker comparison than the others.</p>
+<figure><img src="../assets/img/tech/58cb4866.png" alt="Figure 3: archive size as a percentage of the original data (lower is better)." loading="lazy"><figcaption>Figure 3: archive size as a percentage of the original data (lower is better).</figcaption></figure>
+<figure><img src="../assets/img/tech/f09f585d.png" alt="Figure 4: size reduction of nikpak compared with RAR 7.00 -m5." loading="lazy"><figcaption>Figure 4: size reduction of nikpak compared with RAR 7.00 -m5.</figcaption></figure>
+<h4 class="su" id="what-the-media-filters-add">What the media filters add</h4>
+<p>The
+same nikpak without media filters (version 1.0, plain Zstandard at
+the default level) is the right yardstick for the value of the media
+layer:</p>
+<table class="tech-table"><thead><tr><th>
+				<b>Set</b></th><th>
+				<b>nikpak
+				1.0 (no filters)</b></th><th>
+				<b>nikpak
+				1.1 -m2</b></th><th>
+				<b>Reduction</b></th></tr></thead><tbody><tr><td>
+				6
+				BMP photographs</td><td>
+				3,580,971</td><td>
+				2,035,223</td><td>
+				<b>43.2
+				%</b></td></tr><tr><td>
+				16
+				ProTracker MOD files</td><td>
+				1,260,607</td><td>
+				966,622</td><td>
+				<b>23.3
+				%</b></td></tr><tr><td>
+				35
+				gallery WAVs (mono 16-bit)</td><td>
+				1,876,722</td><td>
+				1,529,219</td><td>
+				<b>18.5
+				%</b></td></tr><tr><td>
+				Music
+				44.1 kHz stereo 16-bit</td><td>
+				15,585,422</td><td>
+				9,415,519</td><td>
+				<b>39.6
+				%</b></td></tr><tr><td>
+				Music
+				22.05 kHz mono 16-bit</td><td>
+				3,887,183</td><td>
+				2,635,819</td><td>
+				<b>32.2
+				%</b></td></tr><tr><td>
+				Music
+				22.05 kHz mono 8-bit</td><td>
+				1,078,493</td><td>
+				742,462</td><td>
+				<b>31.2
+				%</b></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h4 class="su" id="comparison-with-flac">Comparison with FLAC</h4>
+<p>For
+the 44.1 kHz stereo music FLAC <code>-8</code>,
+the dedicated reference encoder, produces 9,407,019 bytes. The NAC
+stream for the same audio is 9,425,305 bytes, within 0.2 %, and the
+finished nikpak archive 9,415,519 bytes. For the 22 kHz mono and
+8-bit versions NAC is smaller than FLAC (2,635,446 against 2,638,954,
+and 785,890 against 798,810 for the audio region alone), and for
+24-bit the archive (18.69 MB) is smaller than FLAC&#x27;s 19.12 MB. FLAC
+is much weaker on the gallery files (2.50 MB against RAR&#x27;s 1.61 MB),
+for the reason explained in section 7.5; this is the case in which
+the other filters earn their place.</p>
+<h3 class="se" id="11-3-general-data">11.3 General data</h3>
+<p>Source
+code and documents are not media, so this test checks whether
+nikpak&#x27;s gains elsewhere cost it anything on ordinary files.</p>
+<table class="tech-table"><thead><tr><th>
+				<b>Tool
+				and level</b></th><th>
+				<b>Size
+				(bytes)</b></th><th>
+				<b>Time</b></th><th>
+				<b>Extraction</b></th></tr></thead><tbody><tr><td>
+				<b>nikpak
+				-m5</b></td><td>
+				<b>24,443,483</b></td><td>
+				45.6
+				s</td><td>
+				1.8
+				s</td></tr><tr><td>
+				RAR
+				7 -m5 -s -md256m</td><td>
+				25,862,475</td><td>
+				36.2
+				s</td><td>
+				<br>
+
+				</td></tr><tr><td>
+				RAR
+				7 -m5 -s</td><td>
+				26,002,812</td><td>
+				26.7
+				s</td><td>
+				<br>
+
+				</td></tr><tr><td>
+				RAR
+				7 -m3 -s</td><td>
+				26,536,863</td><td>
+				16.7
+				s</td><td>
+				1.5
+				s</td></tr><tr><td>
+				nikpak
+				-m4</td><td>
+				26,814,023</td><td>
+				13.5
+				s</td><td>
+				<br>
+
+				</td></tr><tr><td>
+				nikpak
+				-m3</td><td>
+				30,329,965</td><td>
+				2.0
+				s</td><td>
+				<br>
+
+				</td></tr><tr><td>
+				<b>nikpak
+				-m2 (1.1 default)</b></td><td>
+				36,266,743</td><td>
+				<b>0.9
+				s</b></td><td>
+				0.8
+				s</td></tr><tr><td>
+				RAR
+				7 -m5 (default, not solid)</td><td>
+				50,851,230</td><td>
+				14.8
+				s</td><td>
+				<br>
+
+				</td></tr><tr><td>
+				RAR
+				7 -m3 (default, not solid)</td><td>
+				50,974,773</td><td>
+				9.7
+				s</td><td>
+				2.3
+				s</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<figure><img src="../assets/img/tech/4e82b598.png" alt="Figure 5: general data, size and creation time on one core." loading="lazy"><figcaption>Figure 5: general data, size and creation time on one core.</figcaption></figure>
+<p>Reading
+the table honestly:</p>
+<ul><li><b>Maximum
+	level:</b>
+	nikpak produces an archive 5.5 % smaller than RAR&#x27;s best (24.4
+	against 25.9 MB). RAR is <b>faster</b>
+	at this level (26.7 to 36.2 s against 45.6 s).</li><li><b>Equal
+	size:</b>
+	<code>nikpak -m4</code>
+	is within about 1 % of RAR&#x27;s default solid level in 81 % of the time
+	(13.5 s against 16.7 s).</li><li><b>Fast
+	levels:</b>
+	<code>-m2</code>
+	trades ratio for speed: 18 times faster than RAR solid <code>-m3</code>,
+	and 37 % larger. This is the level for backups and pipelines where
+	time matters more than the last few megabytes.</li><li><b>Not
+	solid:</b>
+	RAR&#x27;s default (non-solid) archives are almost twice the size of its
+	solid ones on this many-small-files data. Anyone comparing nikpak
+	with RAR should add <code>-s</code>
+	to RAR.</li></ul>
+<h3 class="se" id="11-4-speed-on-a-single-large-media-file">11.4 Speed on a single large media file</h3>
+<figure><img src="../assets/img/tech/d26c8b2.png" alt="Figure 6: creating an archive from the 17 MB stereo WAV." loading="lazy"><figcaption>Figure 6: creating an archive from the 17 MB stereo WAV.</figcaption></figure>
+<table class="tech-table"><thead><tr><th>
+				<b>Operation</b></th><th>
+				<b>nikpak</b></th><th>
+				<b>RAR
+				7</b></th><th>
+				<b>Size</b></th></tr></thead><tbody><tr><td>
+				Create,
+				fast / RAR default</td><td>
+				<b>1.45
+				s</b>
+				(-m2)</td><td>
+				2.54
+				s (-m3)</td><td>
+				9,415,519
+				vs 11,128,595</td></tr><tr><td>
+				Create,
+				maximum level</td><td>
+				<b>3.14
+				s</b>
+				(-m5)</td><td>
+				5.87
+				s (-m5)</td><td>
+				9,411,898
+				vs 11,024,411</td></tr><tr><td>
+				Extract</td><td>
+				0.28
+				s</td><td>
+				<b>0.23
+				s</b></td><td>
+				same
+				output</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p>On
+media nikpak is both smaller and faster to create. RAR extracts a
+little faster; a likely reason is that NAC decoding performs integer
+prediction for every sample, which costs somewhat more than the match
+copying that dominates general decoding.</p>
+<h3 class="se" id="11-5-encryption-overhead">11.5 Encryption overhead</h3>
+<p>On
+the 222 MB data set, an encrypted archive took 0.92 s against 0.64 s
+unencrypted, and was 11,087 bytes (0.03 %) larger. The difference
+includes the Argon2id derivation, so the cost is dominated by a fixed
+fraction of a second.</p>
+<h3 class="se" id="11-6-reproducing-the-results">11.6 Reproducing the results</h3>
+<pre># media: which filter wins, per file</pre>
+<pre>nikpak mt song.wav tracker.mod photo.bmp</pre>
+<pre></code><br>
+
+</p>
+<p>
+<code># archive with nikpak and RAR, then compare</pre>
+<pre>nikpak a -q -ep -m2 test.nik *.wav</pre>
+<pre>rar a -ep -m5 -ma5 test.rar *.wav</pre>
+<pre></code><br>
+
+</p>
+<p>
+<code># fair comparison on many files: give RAR solid mode</pre>
+<pre>rar a -r -s -m5 -ma5 -md256m data.rar data</pre>
+<pre>nikpak a -m5 data.nik data</pre>
+<pre></code><br>
+
+</p>
+<p>
+<code># verify</pre>
+<pre>nikpak x -o+ test.nik restore\</pre>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="11-7-second-run-nikpak-rar-7-7-zip-and-zip">11.7 Second run: nikpak, RAR 7, 7-Zip and ZIP</h3>
+<p><b>Updated
+for nikpak 1.2.0.</b>
+In the first version of this run, with nikpak 1.1.0, 7-Zip -mx9 was
+ahead on text (by 1.4 %), office files (3.3 %) and source code (8.5
+%). nikpak 1.2.0 adds Deflate recompression (7.9) and a new maximum
+level built on LZMA2 and PPMd (6.7), and was measured again on the
+same machine with the same files. The figures for RAR, 7-Zip and ZIP
+come from the first run.</p>
+<p>Sections
+11.2 to 11.5 compare nikpak with RAR only. This second run adds the
+two archivers most people already have, <b>7-Zip</b>
+and the classic <b>ZIP</b>
+format, and two kinds of files that are archived every day: <b>plain
+text</b>
+and <b>office
+documents</b>
+(.doc, .docx, .xls, .xlsx, .csv, .pdf). All four tools were run one
+after another on the same machine and the same files, and RAR was
+measured again. The corpora were rebuilt from the same public
+sources, so absolute sizes and times differ from those in 11.2 to
+11.4. Compare numbers within this section, not across sections.</p>
+<h4 class="su" id="method">Method</h4>
+<table class="tech-table"><thead><tr><th>
+				<b>Item</b></th><th>
+				<b>Detail</b></th></tr></thead><tbody><tr><td>
+				Machine</td><td>
+				Linux
+				x86-64 virtual machine (Intel Xeon, 2.8 GHz). Every command was
+				pinned to one CPU core with taskset and run single-threaded
+				(nikpak -mt1, RAR -mt1, 7-Zip -mmt=1; ZIP is single-threaded by
+				design).</td></tr><tr><td>
+				Software</td><td>
+				nikpak
+				1.2.0 (release build); RAR 7.00 (-ma5, solid); 7-Zip 23.01 (.7z
+				format, LZMA2, solid by default); Info-ZIP Zip 3.0 and UnZip 6.0
+				(Deflate).</td></tr><tr><td>
+				Levels</td><td>
+				nikpak:
+				the fast level -m2 and the maximum -m5, which is the default
+				since 1.2.1 (and -m4). Others: default and maximum, RAR -m3 -s /
+				-m5 -s, 7-Zip -mx5 / -mx9, ZIP -6 / -9. RAR was given solid mode
+				(-s), because the other three are solid or, in ZIP&#x27;s case, cannot
+				be.</td></tr><tr><td>
+				Timing</td><td>
+				Wall-clock
+				seconds. Sets under 50 MB: best of three runs. The general set:
+				one run.</td></tr><tr><td>
+				Verification</td><td>
+				All
+				92 archives were extracted and compared with the original using
+				diff -r. All were identical.</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h4 class="su" id="the-test-material">The test material</h4>
+<table class="tech-table"><thead><tr><th>
+				<b>Set</b></th><th>
+				<b>Files</b></th><th>
+				<b>Size
+				(bytes)</b></th><th>
+				<b>Content</b></th></tr></thead><tbody><tr><td>
+				BMP
+				images</td><td>
+				8</td><td>
+				6,987,840</td><td>
+				Six
+				photographs from the scikit-image sample set as 24-bit BMP, plus
+				an 8-bit grayscale photograph and an 8-bit gravel texture.</td></tr><tr><td>
+				ProTracker
+				MOD</td><td>
+				16</td><td>
+				2,252,604</td><td>
+				The
+				16 largest ProTracker modules in the libxmp test collection.</td></tr><tr><td>
+				Gallery
+				WAVs</td><td>
+				35</td><td>
+				2,991,820</td><td>
+				The
+				same 35 LibreOffice gallery sounds as in 11.1.</td></tr><tr><td>
+				Music,
+				four formats</td><td>
+				4
+				× 1</td><td>
+				53,417,226</td><td>
+				A
+				new 100-second piece (piano, strings, bass, flute, drums)
+				rendered with TiMidity++ and Freepats at 44.1 kHz stereo 16-bit,
+				then converted by SoX to 22.05 kHz mono 16-bit and 8-bit and 48
+				kHz stereo 24-bit.</td></tr><tr><td>
+				Plain
+				text</td><td>
+				18</td><td>
+				11,793,318</td><td>
+				Eighteen
+				Project Gutenberg books as .txt (Austen, Melville, Shakespeare,
+				the King James Bible and others).</td></tr><tr><td>
+				Office
+				files</td><td>
+				60</td><td>
+				39,100,915</td><td>
+				12
+				reports as .docx, .doc and .pdf (text, headings, tables and some
+				photos) and 8 sales workbooks of 500 to 30,000 rows as .xlsx,
+				.xls and .csv (with formulas), saved by LibreOffice.</td></tr><tr><td>
+				General
+				data</td><td>
+				11,473</td><td>
+				190,454,632</td><td>
+				Python
+				3.12 and 3.13 standard libraries, Debian Python packages, C
+				headers (/usr/include) and /usr/share/doc. Symbolic links
+				removed.</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h4 class="su" id="maximum-levels-archive-size">Maximum levels: archive size</h4>
+<table class="tech-table"><thead><tr><th>
+				<b>Set</b></th><th>
+				<b>Original</b></th><th>
+				<b>nikpak
+				-m5</b></th><th>
+				<b>RAR
+				7 -m5</b></th><th>
+				<b>7-Zip
+				-mx9</b></th><th>
+				<b>ZIP
+				-9</b></th></tr></thead><tbody><tr><td>
+				8
+				BMP images</td><td>
+				6,987,840</td><td>
+				<b>3,557,350</b></td><td>
+				4,394,310</td><td>
+				4,195,043</td><td>
+				4,974,680</td></tr><tr><td>
+				16
+				ProTracker MOD files</td><td>
+				2,252,604</td><td>
+				<b>1,127,607</b></td><td>
+				1,264,245</td><td>
+				1,166,855</td><td>
+				1,408,085</td></tr><tr><td>
+				35
+				gallery WAVs (mono 16-bit)</td><td>
+				2,991,820</td><td>
+				<b>1,346,484</b></td><td>
+				1,596,971</td><td>
+				1,484,879</td><td>
+				1,852,279</td></tr><tr><td>
+				Music
+				44.1 kHz stereo 16-bit</td><td>
+				17,760,408</td><td>
+				<b>8,731,989</b></td><td>
+				10,460,042</td><td>
+				10,666,922</td><td>
+				15,225,764</td></tr><tr><td>
+				Music
+				22.05 kHz mono 16-bit</td><td>
+				4,440,136</td><td>
+				<b>2,458,867</b></td><td>
+				2,797,026</td><td>
+				2,784,080</td><td>
+				3,736,722</td></tr><tr><td>
+				Music
+				22.05 kHz mono 8-bit</td><td>
+				2,220,090</td><td>
+				<b>606,840</b></td><td>
+				725,416</td><td>
+				642,341</td><td>
+				836,989</td></tr><tr><td>
+				Music
+				48 kHz stereo 24-bit</td><td>
+				28,996,592</td><td>
+				<b>18,198,056</b></td><td>
+				21,229,465</td><td>
+				25,542,036</td><td>
+				26,980,770</td></tr><tr><td>
+				18
+				plain-text books (.txt)</td><td>
+				11,793,318</td><td>
+				<b>2,741,898</b></td><td>
+				3,519,622</td><td>
+				3,259,868</td><td>
+				4,223,579</td></tr><tr><td>
+				60
+				office files</td><td>
+				39,100,915</td><td>
+				<b>6,887,729</b></td><td>
+				11,186,217</td><td>
+				10,085,779</td><td>
+				17,399,998</td></tr><tr><td>
+				General
+				data (11,473 files)</td><td>
+				190,454,632</td><td>
+				<b>28,175,618</b></td><td>
+				33,606,893</td><td>
+				28,879,398</td><td>
+				62,198,510</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p>All
+sizes are in bytes. The smallest archive in each row is shown in
+bold.</p>
+<figure><img src="../assets/img/tech/ddb7a26b.png" alt="Figure 7: archive size at the maximum level of each tool, as a percentage of the original (lower is better)." loading="lazy"><figcaption>Figure 7: archive size at the maximum level of each tool, as a percentage of the original (lower is better).</figcaption></figure>
+<h4 class="su" id="fast-levels-size-and-creation-time">Fast levels: size and creation time</h4>
+<table class="tech-table"><thead><tr><th>
+				<b>Set</b></th><th>
+				<b>nikpak
+				-m2</b></th><th>
+				<b>RAR
+				7 -m3</b></th><th>
+				<b>7-Zip
+				-mx5</b></th><th>
+				<b>ZIP
+				-6</b></th></tr></thead><tbody><tr><td>
+				8
+				BMP images</td><td>
+				<b>54.0
+				%  ·  0.39 s</b></td><td>
+				63.0
+				%  ·  2.09 s</td><td>
+				60.1
+				%  ·  3.51 s</td><td>
+				71.2
+				%  ·  0.35 s</td></tr><tr><td>
+				16
+				ProTracker MOD files</td><td>
+				52.4
+				%  ·  0.61 s</td><td>
+				56.2
+				%  ·  0.43 s</td><td>
+				<b>51.9
+				%  ·  0.69 s</b></td><td>
+				62.7
+				%  ·  0.10 s</td></tr><tr><td>
+				35
+				gallery WAVs (mono 16-bit)</td><td>
+				51.1
+				%  ·  0.41 s</td><td>
+				53.6
+				%  ·  0.71 s</td><td>
+				<b>49.6
+				%  ·  1.96 s</b></td><td>
+				61.9
+				%  ·  0.24 s</td></tr><tr><td>
+				Music
+				44.1 kHz stereo 16-bit</td><td>
+				<b>49.2
+				%  ·  1.72 s</b></td><td>
+				59.9
+				%  ·  3.60 s</td><td>
+				60.1
+				%  ·  14.03 s</td><td>
+				85.7
+				%  ·  0.82 s</td></tr><tr><td>
+				Music
+				22.05 kHz mono 16-bit</td><td>
+				<b>55.4
+				%  ·  0.58 s</b></td><td>
+				64.1
+				%  ·  0.95 s</td><td>
+				62.7
+				%  ·  2.14 s</td><td>
+				84.2
+				%  ·  0.22 s</td></tr><tr><td>
+				Music
+				22.05 kHz mono 8-bit</td><td>
+				<b>27.4
+				%  ·  0.77 s</b></td><td>
+				33.3
+				%  ·  0.52 s</td><td>
+				28.9
+				%  ·  2.13 s</td><td>
+				38.2
+				%  ·  0.32 s</td></tr><tr><td>
+				Music
+				48 kHz stereo 24-bit</td><td>
+				<b>62.8
+				%  ·  2.06 s</b></td><td>
+				73.6
+				%  ·  7.54 s</td><td>
+				88.1
+				%  ·  13.54 s</td><td>
+				93.0
+				%  ·  1.19 s</td></tr><tr><td>
+				18
+				plain-text books (.txt)</td><td>
+				35.2
+				%  ·  0.11 s</td><td>
+				30.4
+				%  ·  5.53 s</td><td>
+				<b>27.7
+				%  ·  11.76 s</b></td><td>
+				36.0
+				%  ·  0.89 s</td></tr><tr><td>
+				60
+				office files</td><td>
+				38.0
+				%  ·  0.22 s</td><td>
+				29.5
+				%  ·  8.25 s</td><td>
+				<b>26.2
+				%  ·  21.85 s</b></td><td>
+				44.7
+				%  ·  1.83 s</td></tr><tr><td>
+				General
+				data (11,473 files)</td><td>
+				25.3
+				%  ·  1.67 s</td><td>
+				18.0
+				%  ·  48.19 s</td><td>
+				<b>17.0
+				%  ·  93.71 s</b></td><td>
+				32.9
+				%  ·  7.32 s</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p>nikpak
+-m2 against the default level of the other tools. Each cell shows the
+archive size as a percentage of the original and the creation time on
+one core. The smallest archive in each row is in bold.</p>
+<h4 class="su" id="general-data-in-detail">General data in detail</h4>
+<table class="tech-table"><thead><tr><th>
+				<b>Tool
+				and level</b></th><th>
+				<b>Size
+				(bytes)</b></th><th>
+				<b>%
+				of original</b></th><th>
+				<b>Creation</b></th><th>
+				<b>Extraction</b></th></tr></thead><tbody><tr><td>
+				<b>nikpak
+				-m5</b></td><td>
+				<b>28,175,618</b></td><td>
+				<b>14.8
+				%</b></td><td>
+				<b>154.3
+				s</b></td><td>
+				<b>5.6
+				s</b></td></tr><tr><td>
+				7-Zip
+				-mx9</td><td>
+				28,879,398</td><td>
+				15.2
+				%</td><td>
+				120.9
+				s</td><td>
+				6.0
+				s</td></tr><tr><td>
+				RAR
+				7 -m5 -s -md256m</td><td>
+				32,350,575</td><td>
+				17.0
+				%</td><td>
+				73.6
+				s</td><td>
+				7.0
+				s</td></tr><tr><td>
+				7-Zip
+				-mx5</td><td>
+				32,375,802</td><td>
+				17.0
+				%</td><td>
+				93.7
+				s</td><td>
+				4.5
+				s</td></tr><tr><td>
+				<b>nikpak
+				-m4</b></td><td>
+				<b>33,295,133</b></td><td>
+				<b>17.5
+				%</b></td><td>
+				<b>37.8
+				s</b></td><td>
+				<b>3.3
+				s</b></td></tr><tr><td>
+				RAR
+				7 -m5 -s</td><td>
+				33,606,893</td><td>
+				17.6
+				%</td><td>
+				72.4
+				s</td><td>
+				6.7
+				s</td></tr><tr><td>
+				RAR
+				7 -m3 -s</td><td>
+				34,236,198</td><td>
+				18.0
+				%</td><td>
+				48.2
+				s</td><td>
+				5.9
+				s</td></tr><tr><td>
+				<b>nikpak
+				-m2</b></td><td>
+				<b>48,229,284</b></td><td>
+				<b>25.3
+				%</b></td><td>
+				<b>1.7
+				s</b></td><td>
+				<b>0.9
+				s</b></td></tr><tr><td>
+				RAR
+				7 -m3 (not solid)</td><td>
+				56,038,351</td><td>
+				29.4
+				%</td><td>
+				20.2
+				s</td><td>
+				6.9
+				s</td></tr><tr><td>
+				ZIP
+				-9</td><td>
+				62,198,510</td><td>
+				32.7
+				%</td><td>
+				28.2
+				s</td><td>
+				6.9
+				s</td></tr><tr><td>
+				ZIP
+				-6</td><td>
+				62,672,415</td><td>
+				32.9
+				%</td><td>
+				7.3
+				s</td><td>
+				5.4
+				s</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<figure><img src="../assets/img/tech/9f20cd82.png" alt="Figure 8: general data, size and creation time of all four tools on one core." loading="lazy"><figcaption>Figure 8: general data, size and creation time of all four tools on one core.</figcaption></figure>
+<h4 class="su" id="from-1-1-0-to-1-2-0">From 1.1.0 to 1.2.0</h4>
+<table class="tech-table"><thead><tr><th>
+				<b>Set</b></th><th>
+				<b>nikpak
+				1.1.0 -m5</b></th><th>
+				<b>nikpak
+				1.2.0 -m5</b></th><th>
+				<b>7-Zip
+				-mx9</b></th><th>
+				<b>1.2.0
+				vs 7-Zip</b></th></tr></thead><tbody><tr><td>
+				18
+				plain-text books</td><td>
+				3,306,819</td><td>
+				<b>2,741,898</b></td><td>
+				3,259,868</td><td>
+				<b>15.9
+				% smaller</b></td></tr><tr><td>
+				60
+				office files</td><td>
+				10,417,750</td><td>
+				<b>6,887,729</b></td><td>
+				10,085,779</td><td>
+				<b>31.7
+				% smaller</b></td></tr><tr><td>
+				General
+				data</td><td>
+				31,322,041</td><td>
+				<b>28,175,618</b></td><td>
+				28,879,398</td><td>
+				<b>2.4
+				% smaller</b></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h4 class="su" id="reading-the-results-honestly">Reading the results honestly</h4>
+<ul><li><b>nikpak
+	-m5 is smallest on every set.</b>
+	Against 7-Zip -mx9 it is 2.4 to 31.7 % smaller, against RAR 7 -m5
+	10.8 to 38.4 % and against ZIP -9 19.9 to 60.4 %. On recorded audio
+	NAC predicts what LZ-based compressors can only match: on the 24-bit
+	music 7-Zip saves 12 % and nikpak 37 %.</li><li><b>Office
+	files: 31.7 % smaller than 7-Zip.</b>
+	Deflate recompression turns 6.6 MB of .xlsx and 1.9 MB of .docx into
+	plain XML that LZMA2 compresses far better than Deflate did (6.89 MB
+	against 10.09 MB). Even -m4 is 1.3 % smaller than 7-Zip -mx9 and
+	faster (16 s against 26 s). The price at -m5 is time: 81 s against
+	26 s.</li><li><b>Text:
+	15.9 % smaller, in half the time.</b>
+	PPMd wins on prose (6.4 s against 12.9 s to create). Because PPMd
+	decodes as slowly as it encodes, extraction takes 2.7 s instead of
+	0.2 s.</li><li><b>Source
+	code: 2.4 % smaller, a narrow lead.</b>
+	28.2 MB against 28.9 MB, in 154 s against 121 s. Sorting by file
+	type and choosing the engine on contiguous samples (6.7) made the
+	difference.</li><li><b>Fast
+	level -m2: fastest, not smallest.</b>
+	nikpak -m2 needs 1.7 s for the general set, against 93.7 s for 7-Zip
+	-mx5 (56 times longer), 48.2 s for RAR and 7.3 s for ZIP. It is
+	smaller than 7-Zip -mx5 on images and on most audio (MOD files and
+	the gallery WAVs are 1 to 3 % larger), but larger on text, office
+	files and source code (49.0 % on the general set). For this reason,
+	since version 1.2.1 nikpak uses -m5 by default; -m2 has to be asked
+	for.</li><li><b>ZIP
+	is fast but largest everywhere.</b>
+	Even nikpak -m2 beats ZIP -9 on every set. ZIP creates small media
+	archives faster than nikpak -m2, because Deflate does far less work
+	than the NAC codec, but it is slower on text, office files and
+	source code.</li><li><b>Extraction.</b>
+	The general set extracts in 0.9 s (nikpak -m2) or 5.6 s (-m5),
+	against 6.0 s for 7-Zip, 6.7 s for RAR and 6.9 s for ZIP. Archives
+	with recompressed Deflate streams extract more slowly, because every
+	stream is rebuilt (2.1 s against 0.7 s for the office set).</li><li><b>RAR
+	on this machine.</b>
+	RAR was slower here than in 11.3 (72 s instead of 27 s for -m5 -s on
+	a similar amount of source code). Machine and data differ, so the
+	two sections should not be mixed. Within this run every tool met the
+	same conditions.</li></ul>
+<h4 class="su" id="what-this-means-for-nikpak">What this means for nikpak</h4>
+<p>At
+the maximum level nikpak 1.2.0 makes the smallest archive of all four
+tools on every set measured, 2.4 to 31.7 % smaller than 7-Zip -mx9.
+The cost is speed: -m5 is single-threaded and slower than 7-Zip on
+office files and source code. Making it faster is on the roadmap
+(section 15.2).</p>
+<h2 class="ch" id="12-nikpak-and-rar-compared">12 nikpak and RAR compared</h2>
+<p>RAR
+is an excellent and widely used archiver, and this chapter does not
+pretend otherwise. It sets out where the measurements and the design
+favour nikpak, where RAR is ahead, and who should choose what.</p>
+<h3 class="se" id="12-1-where-nikpak-is-ahead">12.1 Where nikpak is ahead</h3>
+<table class="tech-table"><thead><tr><th>
+				<b>Area</b></th><th>
+				<b>nikpak</b></th><th>
+				<b>Evidence</b></th></tr></thead><tbody><tr><td>
+				Audio,
+				images, tracker music</td><td>
+				12
+				- 39 % smaller than RAR 7 -m5 on every media set measured</td><td>
+				Section
+				11.2</td></tr><tr><td>
+				Source
+				code, maximum level</td><td>
+				5.5
+				% smaller than RAR&#x27;s best solid setting</td><td>
+				Section
+				11.3</td></tr><tr><td>
+				Speed
+				at the fast level -m2</td><td>
+				0.9
+				s against 9.7 - 16.7 s for 197 MB; 1.45 s against 2.54 s for a
+				WAV</td><td>
+				Sections
+				11.3, 11.4</td></tr><tr><td>
+				Cipher
+				and mode</td><td>
+				XChaCha20-Poly1305,
+				authenticated; RAR5 uses AES-256 in CBC mode, which is not
+				authenticated and relies on separate checksums</td><td>
+				Chapter
+				8</td></tr><tr><td>
+				Password
+				hashing</td><td>
+				Argon2id,
+				memory-hard (64 MiB); RAR5 uses PBKDF2-HMAC-SHA256, which is
+				CPU-bound and parallelises cheaply on GPUs</td><td>
+				Section
+				8.2</td></tr><tr><td>
+				File-name
+				privacy</td><td>
+				Always
+				encrypted; RAR needs the <code>-hp</code>
+				switch</td><td>
+				Section
+				8.4</td></tr><tr><td>
+				Password
+				generation</td><td>
+				Built
+				in: strong random password when none is given</td><td>
+				Section
+				3.3</td></tr><tr><td>
+				Tamper
+				evidence</td><td>
+				Reordering,
+				truncation and header changes are detected cryptographically</td><td>
+				Section
+				8.6</td></tr><tr><td>
+				Transparency</td><td>
+				Complete
+				source and documented format; implementation in memory-safe Rust</td><td>
+				Chapters
+				5, 10</td></tr><tr><td>
+				Distribution</td><td>
+				One
+				static executable (drop window and command line; about 2.3 MB
+				without the window), or a small Windows installer; shareware,
+				free for personal use (3.8)</td><td>
+				Chapter
+				13</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="12-2-where-rar-is-ahead">12.2 Where RAR is ahead</h3>
+<table class="tech-table"><thead><tr><th>
+				<b>Area</b></th><th>
+				<b>RAR
+				7</b></th><th>
+				<b>nikpak
+				today</b></th></tr></thead><tbody><tr><td>
+				Recovery
+				records</td><td>
+				Can
+				repair damaged archives</td><td>
+				Detects
+				damage, cannot repair it</td></tr><tr><td>
+				Multi-volume
+				archives</td><td>
+				Yes</td><td>
+				No</td></tr><tr><td>
+				Self-extracting
+				archives</td><td>
+				Yes</td><td>
+				No</td></tr><tr><td>
+				Updating
+				an archive</td><td>
+				Add,
+				replace and delete files in place</td><td>
+				Create
+				or overwrite only</td></tr><tr><td>
+				Graphical
+				interface</td><td>
+				WinRAR,
+				with shell integration</td><td>
+				Drop
+				window for compressing (3.7); no shell integration, extraction
+				from the command line</td></tr><tr><td>
+				Maximum-level
+				speed</td><td>
+				26.7
+				- 36.2 s on the general set</td><td>
+				45.6
+				s</td></tr><tr><td>
+				Extraction
+				speed on media</td><td>
+				0.23
+				s for the 17 MB WAV</td><td>
+				0.28
+				s</td></tr><tr><td>
+				Maturity
+				and reach</td><td>
+				Decades
+				of field testing; millions of existing .rar files</td><td>
+				New;
+				no independent audit; reads only .nik</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="12-3-quantum-resistance-in-perspective">12.3 Quantum resistance in perspective</h3>
+<p>Both
+nikpak and RAR5 encrypt with a 256-bit symmetric key, so both are
+untouched by Shor&#x27;s algorithm and both keep about 128 bits of
+security against Grover&#x27;s. Neither claim distinguishes them. What
+nikpak adds on top is a memory-hard password step (which makes the
+dominant real-world attack, password guessing, far more expensive)
+and authenticated encryption (which makes tampering detectable). It
+has also been designed from the start on the assumption that no
+public-key primitive will ever be part of the archive format, and its
+roadmap commits to a hybrid post-quantum scheme if public-key sharing
+is added.</p>
+<h3 class="se" id="12-4-which-one-to-choose">12.4 Which one to choose</h3>
+<ul><li><b>Choose
+	nikpak</b>
+	for archives of audio, images, tracker music and source code where
+	size and speed matter, for scripted backups, for strong default
+	encryption, and when an open, documented format is valuable.</li><li><b>Choose
+	RAR</b>
+	when you need recovery records, multi-volume or self-extracting
+	archives, in-place updates, or must exchange archives with people
+	who only have RAR tools.</li><li><b>Use
+	both</b>:
+	nothing stops a workflow from using nikpak for bulk media and
+	encrypted backups while keeping RAR for distribution.</li></ul>
+<h3 class="se" id="12-5-and-7-zip-and-zip">12.5 And 7-Zip and ZIP?</h3>
+<p>Section
+11.7 measures nikpak 1.2 against 7-Zip 23.01 and Info-ZIP 3.0 as
+well. In short:</p>
+<ul><li><b>Choose
+	nikpak -m5 for the smallest archive.</b>
+	It is 2.4 to 31.7 % smaller than 7-Zip -mx9 on every set measured:
+	31.7 % on office files, 15.9 % on text and 2.4 % on source code.
+	Choose nikpak -m2 for fast backups (56 times faster than 7-Zip&#x27;s
+	default on source code). nikpak also has stronger encryption: 7-Zip
+	uses AES-256 with a SHA-256 key derivation that is not memory-hard,
+	and it only hides file names with -mhe.</li><li><b>Choose
+	7-Zip</b>
+	when time matters more at the maximum level (it is faster on large
+	office and source-code sets), when you need its default level to be
+	small on documents, or when you need to open the many formats 7-Zip
+	reads.</li><li><b>Choose
+	ZIP</b>
+	only for compatibility. Every operating system opens it without
+	extra software, but nikpak -m5 is 19.9 to 60.4 % smaller, and ZIP&#x27;s
+	traditional encryption is weak.</li></ul>
+<h2 class="ch" id="13-building-deploying-and-integrating">13 Building, deploying and integrating</h2>
+<h3 class="se" id="13-1-windows-with-powershell">13.1 Windows with PowerShell</h3>
+<p>nikpak
+is written in Rust and built with Cargo. On Windows, Rust needs a
+C/C++ linker, which comes from the Visual Studio Build Tools. In an
+administrator PowerShell, install both once and then reopen
+PowerShell:</p>
+<pre>winget install Rustlang.Rustup</pre>
+<pre>$o = '--wait --passive --add Microsoft.VisualStudio.Workload.VCTools'</pre>
+<pre>$o += ' --includeRecommended'</pre>
+<pre>winget install Microsoft.VisualStudio.2022.BuildTools --override $o</pre>
+<p><br>
+<br>
+
+</p>
+<p>If
+<code>winget</code>
+is not available, install Rust from rustup.rs and the <i>Build
+Tools for Visual Studio</i>
+with the <i>Desktop
+development with C++</i>
+workload. Then, in the folder that contains the sources:</p>
+<pre>.\build.ps1 # builds dist\nikpak.exe and dist\unNik.exe</pre>
+<pre>.\build.ps1 -Test # runs the unit tests first</pre>
+<pre></code><br>
+
+</p>
+<p>
+<code># if PowerShell refuses to run scripts:</pre>
+<pre>powershell -ExecutionPolicy Bypass -File .\build.ps1</pre>
+<p><br>
+<br>
+
+</p>
+<pre>build.ps1</code>
+checks that Cargo is installed (and says how to install it if not),
+runs the build, explains the usual cause if it fails, and copies the
+executable to <code>dist\nikpak.exe</code>.</p>
+<h4 class="su" id="the-windows-installer">The Windows installer</h4>
+<p><code>.\build.ps1 -Installer</code>
+(or <code>npm run installer</code>)
+also builds the setup program <code>dist\nikpak-<version>-setup.exe</code>
+with <b>Inno
+Setup 6.3 or newer</b>
+(install it once with <code>winget install JRSoftware.InnoSetup</code>).
+The script is <code>installer\nikpak.iss</code>;
+the version is taken from Cargo.toml. This setup file is what is
+uploaded to shareware and download sites.</p>
+<ul><li>By
+	default it installs <b>for
+	the current user only</b>,
+	without administrator rights or a UAC prompt, into
+	%LOCALAPPDATA%\Programs\NikPak. Its first page offers &quot;install
+	for all users&quot; (Program Files, needs administrator rights).</li><li>It
+	shows LICENSE.txt for acceptance and installs nikpak.exe, unNik.exe,
+	the icons, LICENSE.txt, THIRD-PARTY-NOTICES.txt and CHANGELOG.md. It
+	adds a <b>Start
+	menu</b>
+	entry, an optional desktop icon and, on request, the folder to the
+	<b>PATH</b>
+	for the command line. It registers an uninstaller in Settings &gt;
+	Apps.</li><li><b>Shortcuts:</b>
+	NikPak, unNik and the licence in the Start menu; <b>NikPak
+	on the desktop</b>
+	(always) and unNik on the desktop as an option.</li><li><b>.nik
+	files are always registered</b>
+	(since 1.5.2): they get their own icon (nikfile.ico, a page with a
+	zipper, like .zip files), the type name &quot;NikPak archive&quot;,
+	and a double-click opens them in <b>unNik</b>
+	(&quot;Open with unNik&quot; in the right-click menu). unNik is also
+	listed in &quot;Open with&quot; and in Default apps. The uninstaller
+	removes the registration. If .nik files were already set to open
+	with another program, Windows keeps that choice until unNik is
+	picked once in &quot;Open with&quot;.</li><li>The
+	final &quot;Launch NikPak&quot; starts NikPak as the normal user,
+	never as administrator, so drag and drop works. Updates install over
+	the previous version (fixed AppId). The licence in %APPDATA%\nikpak
+	is kept on update and uninstall. The setup never contains keys or
+	key files.</li><li>The
+	installer runs in English or French, following Windows. Before
+	publishing, sign nikpak.exe and the setup with a code-signing
+	certificate, so that Windows SmartScreen does not warn about an
+	unknown publisher.</li></ul>
+<p><b>buildall.ps1</b>
+builds everything that is published in one run — <code>nikpak.exe</code>,
+<code>unNik.exe</code>,
+the two setups and <code>SHA256SUMS.txt</code>
+— copies them into <code>binaries\</code>,
+rebuilds the web site and uploads it by FTP (<code>-NoUpload</code>
+skips the upload). The second setup, <code>unnik-<version>-setup.exe</code>
+(<code>installer\unnik.iss</code>),
+installs unNik alone, the free archive browser; when NikPak is
+already installed it only installs the program, so the menus never
+double.</p>
+<h3 class="se" id="13-2-building-with-npm">13.2 Building with npm</h3>
+<p>Rust
+projects do not use npm, so npm is never required. For convenience,
+the project contains a small <code>package.json</code>
+whose scripts simply call Cargo, so that a developer who lives in a
+Node.js workflow can type familiar commands:</p>
+<p>
+<code>npm run build # cargo build --release</pre>
+<pre>npm run dist # build.ps1 -> dist\nikpak.exe</pre>
+<pre>npm test # cargo test --release</pre>
+<pre>npm run clean # cargo clean</pre>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="13-3-a-self-contained-executable">13.3 A self-contained executable</h3>
+<p>The
+file <code>.cargo/config.toml</code>
+links the C runtime statically for the Windows MSVC targets. The
+resulting <code>nikpak.exe</code>
+(several MB with the graphical interface, about 2.3 MB without it)
+therefore has no DLL dependencies and does not need the <i>Visual
+C++ Redistributable</i>
+on the machines where it runs. Copy it to a folder on the <code>PATH</code>
+to use it anywhere. The release profile enables full optimisation,
+link-time optimisation, a single code-generation unit, symbol
+stripping and <code>panic = abort</code>
+for a small, fast binary.</p>
+<h3 class="se" id="13-4-macos-and-linux">13.4 macOS and Linux</h3>
+<pre>./build.sh # builds and copies the result to dist/nikpak</pre>
+<pre># or: cargo build --release</pre>
+<pre>sudo cp dist/nikpak /usr/local/bin/</pre>
+<p><br>
+<br>
+
+</p>
+<p>On
+macOS install the command-line tools first (<code>xcode-select --install</code>);
+on Debian or Ubuntu install a C compiler (<code>sudo apt install build-essential</code>).
+Rust itself comes from <code>curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh</code>.
+The compression library is compiled from its C sources by Cargo, so
+no system library is needed.</p>
+<p>The
+site&#x27;s macOS and Linux downloads are made by <code>./package-unix.sh</code>,
+which builds nikpak and unNik and packs them with an <code>install.sh</code>
+into <code>binaries\nikpak-<version>-macos.zip</code>
+(a universal binary: Intel + Apple silicon) or
+<code>binaries\nikpak-<version>-linux-<arch>.tar.gz</code>.
+Set <code>ZIG=1</code>
+on Linux to build with cargo-zigbuild against glibc 2.28, so the
+programs also run on older distributions.</p>
+<h3 class="se" id="13-5-dependencies">13.5 Dependencies</h3>
+<p>Since
+version 1.2 nikpak needs <b>Rust
+1.89 or newer</b>.
+build.ps1 and build.sh check the installed version and run rustup
+update stable when it is older. With npm, run rustup update once
+before npm run build.</p>
+<p>nikpak
+depends on a small set of mature crates. Their exact versions are
+fixed in <code>Cargo.lock</code>,
+which is part of the source package, so every build uses the same
+code.</p>
+<table class="tech-table"><thead><tr><th>
+				<b>Crate</b></th><th>
+				<b>Purpose</b></th></tr></thead><tbody><tr><td>
+				<code>zstd</code></td><td>
+				Zstandard
+				compression, with multi-threading</td></tr><tr><td>
+				<code>chacha20poly1305</code></td><td>
+				XChaCha20-Poly1305
+				and the STREAM construction (RustCrypto)</td></tr><tr><td>
+				<code>argon2</code></td><td>
+				Argon2id
+				key derivation (RustCrypto)</td></tr><tr><td>
+				<code>rand</code></td><td>
+				Access
+				to the operating system&#x27;s secure random generator</td></tr><tr><td>
+				<code>zeroize</code></td><td>
+				Wiping
+				keys and passwords from memory</td></tr><tr><td>
+				<code>rpassword</code></td><td>
+				Reading
+				a password without echo, on every platform</td></tr><tr><td>
+				<code>crc32fast</code></td><td>
+				Fast
+				CRC32</td></tr><tr><td>
+				<code>glob</code></td><td>
+				Wildcard
+				expansion (PowerShell does not expand wildcards for native
+				programs)</td></tr><tr><td>
+				<code>liblzma</code></td><td>
+				LZMA2
+				engine for -m5 (liblzma, compiled statically from C sources)</td></tr><tr><td>
+				<code>ppmd-rust</code></td><td>
+				PPMd
+				variant I engine for text at -m5</td></tr><tr><td>
+				<code>preflate-rs</code></td><td>
+				Bit-exact
+				Deflate recompression (Microsoft, Apache-2.0); a vendored copy in
+				vendor/preflate-rs whose LGPL entropy coder (cabac) is replaced
+				by nikpak&#x27;s own range coder, so nikpak contains no LGPL code.
+				Requires Rust 1.89 or newer</td></tr><tr><td>
+				<code>eframe / egui</code></td><td>
+				The
+				graphical interface (optional cargo feature gui, on by default)</td></tr><tr><td>
+				<code>rfd</code></td><td>
+				Native
+				folder dialog for Browse</td></tr><tr><td>
+				<code>ed25519-dalek</code></td><td>
+				Verification
+				of licence key signatures (section 3.8)</td></tr><tr><td>
+				<code>rustybuzz, unicode-bidi</code></td><td>
+				Shaping
+				and right-to-left ordering of Hindi, Bengali and Arabic in the
+				window (optional cargo feature gui)</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="13-6-scripting">13.6 Scripting</h3>
+<p>Predictable
+exit codes and the environment-variable password make nikpak easy to
+script. A PowerShell backup that treats warnings as acceptable and
+anything worse as a failure:</p>
+<pre>$archive = "D:\Backups\docs-$(Get-Date -Format yyyy-MM-dd).nik"</pre>
+<pre># the password comes from a file or secret store, not from the script</pre>
+<pre>$env:NIKPAK_PASSWORD = Get-Content "$env:USERPROFILE\.nikpak-secret"</pre>
+<pre></code><br>
+
+</p>
+<p>
+<code>nikpak a -p -m3 -inul $archive "$env:USERPROFILE\Documents"</pre>
+<pre>if ($LASTEXITCODE -gt 1) { throw "nikpak failed: $LASTEXITCODE" }</pre>
+<pre></code><br>
+
+</p>
+<p>
+<code>nikpak t -inul $archive # verify what was written</pre>
+<pre>if ($LASTEXITCODE -ne 0) { throw "archive verification failed" }</pre>
+<p><br>
+<br>
+
+</p>
+<p>The
+same in a shell script, using the bare list command to feed other
+tools:</p>
+<pre>export NIKPAK_PASSWORD="$(cat ~/.nikpak-secret)"</pre>
+<pre>nikpak a -p -m3 -inul "backup-$(date +%F).nik" ~/Documents || [ $? -eq 1 ]</pre>
+<pre>nikpak lb backup-2026-10-16.nik | grep -i '\.wav$'</pre>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="13-7-total-commander">13.7 Total Commander</h3>
+<p>The
+integration described in section 3.6 relies on nikpak following RAR&#x27;s
+syntax. A short checklist: register the extension <code>nik</code>;
+use <code>a</code>
+for packing and <code>x</code>
+for unpacking; let the front-end pass <code>@listfile</code>
+for long file lists; give <code>-o+</code>
+or <code>-y</code>
+for unattended extraction; and pass the password with <code>-p<password></code>
+or the <code>NIKPAK_PASSWORD</code>
+variable, since a graphical front-end has no console on which to
+prompt.</p>
+<h2 class="ch" id="14-testing-and-verification">14 Testing and verification</h2>
+<p>Because
+an archiver holds people&#x27;s data, nikpak is tested at four levels.</p>
+<h3 class="se" id="14-1-unit-tests">14.1 Unit tests</h3>
+<p>Thirty-four
+automated tests run with <code>cargo test --release</code>:</p>
+<table class="tech-table"><thead><tr><th>
+				<b>Area</b></th><th>
+				<b>What
+				is checked</b></th></tr></thead><tbody><tr><td>
+				Encryption
+				stream</td><td>
+				Round
+				trips at 0, 1, 100, 65,535, 65,536, 65,537, 131,072, 131,077 and
+				327,803 bytes (around the 64 KiB chunk boundaries); a wrong
+				header (associated data), a wrong key and truncation must all
+				fail.</td></tr><tr><td>
+				Key-derivation
+				limits</td><td>
+				Hostile
+				Argon2id parameters (huge memory, zero passes, zero lanes,
+				excessive passes) are refused.</td></tr><tr><td>
+				NAC
+				audio codec</td><td>
+				Lossless
+				round trip for 8/16/24/32-bit audio, 1, 2, 3 and 6 channels, nine
+				signal types (silence, noisy sine, white noise, full-scale square
+				wave, ramp, single impulse, constant maximum, wasted low bits,
+				constant minimum), eight block lengths from 1 to 5000 samples,
+				three effort levels and forced verbatim coding.</td></tr><tr><td>
+				Audio
+				methods</td><td>
+				NAC,
+				Shuffle and Shuffle+Delta across all bit depths, channel counts,
+				byte orders and signedness, including blocks that do not divide
+				evenly.</td></tr><tr><td>
+				Detection
+				and files</td><td>
+				WAV
+				(mono, stereo, 8/16/24/32-bit, extensible, six channels, trailing
+				chunks, odd leftover bytes, zero and oversized data length),
+				AIFF, MOD (also truncated) and BMP (8/24/32-bit, row padding,
+				trailing data); floating-point WAV, tiny files and text must not
+				be detected; every file round-trips through every applicable
+				filter.</td></tr><tr><td>
+				Robustness</td><td>
+				Thousands
+				of random and bit-flipped blocks fed to the audio decoder and the
+				media decoder: they must return errors, never panic or exhaust
+				memory.</td></tr><tr><td>
+				Framing
+				and helpers</td><td>
+				Chunk
+				framing with trailing data, path sanitising, wildcard and filter
+				matching, date formatting, password generation.</td></tr><tr><td>
+				Deflate
+				recompression</td><td>
+				ZIP
+				containers at Deflate levels 1, 3, 6 and 9, PDF with two zlib
+				streams, three-member gzip, non-containers; 400 damaged or
+				truncated recompressed streams must fail cleanly (preflate panics
+				are caught).</td></tr><tr><td>
+				Multi-engine
+				blocks</td><td>
+				Round
+				trips through zstd, LZMA2 and PPMd blocks around the 256 KiB
+				frame boundary; 300 damaged or truncated bodies; hostile engine
+				parameters; the PPMd/LZMA2 trial.</td></tr><tr><td>
+				Graphical
+				interface</td><td>
+				Run
+				on a virtual display (Xvfb): idle, hover, progress and done
+				screens checked visually; a dropped folder archived and extracted
+				byte for byte; Cancel and closing during compression leave no
+				file behind; no display falls back to the usage text.</td></tr><tr><td>
+				Licence</td><td>
+				Keys
+				made by nikpak-keygen and by the PHP kit are identical and
+				accepted; a changed name, e-mail, type or key, and keys signed by
+				another key, are rejected. On a virtual display: reminder in both
+				button orders, wrong key error, successful registration, restart
+				without reminder; text stays inside the boxes.</td></tr><tr><td>
+				Languages</td><td>
+				Every
+				language translates every text with the same placeholders;
+				Devanagari vowel signs and Arabic joining are shaped; on a
+				virtual display all ten languages were checked screen by screen
+				(reminder, idle, progress, done, About, registration, language
+				menu); choosing a language saves it and restarts nikpak in it.</td></tr><tr><td>
+				Archive
+				API</td><td>
+				Reading
+				the index, extracting one file from inside a folder (it lands
+				without the folder&#x27;s path), deleting a folder with its contents
+				and deleting everything, for -m5, zstd + encryption and stored
+				archives; a wrong password is reported as such.</td></tr><tr><td>
+				Archive
+				browser</td><td>
+				Tree
+				building with implied folders, text detection and decoding
+				(UTF-8, UTF-16, Windows-1252), line wrapping and search in the
+				viewer. On a virtual display: opening, password, navigation,
+				selection, search, viewer, extract, delete and test, in several
+				languages.</td></tr><tr><td>
+				Skins
+				and file-manager menu</td><td>
+				The
+				Linux menu files are generated and checked; one archive for a
+				selection started as three programs; --add-here with three items
+				and --extract-here / --extract-to under a virtual display;
+				encrypted archives ask for their password and extract identical
+				files; every new interface text is translated in the ten
+				languages (the every-language-translates-every-text assertion).</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="14-2-end-to-end-tests">14.2 End-to-end tests</h3>
+<ul><li>Every
+	benchmark archive was extracted and compared with its source, byte
+	for byte (SHA-256 for the 10,949-file set), at several levels.</li><li>A
+	mixed archive (WAV, MODs, BMP, text, random data, subfolders) was
+	created, listed, tested, extracted completely, and a single file was
+	extracted from its middle.</li><li>The
+	same archive was created with encryption, tested with the right and
+	wrong password, and extracted.</li><li>Archives
+	written by the previous format version (1.0) were opened by 1.1.</li><li>Interactive
+	password entry was exercised through a pseudo-terminal: matching
+	passwords, a mismatch, an empty entry (generation), correct and
+	wrong passwords on opening.</li></ul>
+<h3 class="se" id="14-3-attack-tests">14.3 Attack tests</h3>
+<p>Tampering,
+truncation, chunk reordering, header manipulation, garbage files and
+the path-traversal archives of section 10.1 were run against every
+release candidate. The results are tabulated in sections 8.6 and
+10.1; the expected outcome in every case is a refusal, a clear
+message and a non-zero exit code, never a panic and never a write
+outside the destination.</p>
+<h3 class="se" id="14-4-defects-found-by-testing">14.4 Defects found by testing</h3>
+<p>The
+test campaign is the reason several defects do not exist in the
+released program. Two examples: a Rice-parameter search that failed
+for 32-bit audio and would have written a multi-gigabyte code (found
+by the unit test matrix and fixed), and a zstd checksum failure that
+was reported with the generic exit code 2 instead of 3 (found in the
+tamper tests and fixed). A third example is the benchmark methodology
+itself: the first comparison with RAR used its non-solid default,
+which flattered nikpak on source code; it was redone in solid mode,
+and the results in chapter 11 are the corrected ones.</p>
+<h2 class="ch" id="15-limitations-and-roadmap">15 Limitations and roadmap</h2>
+<h3 class="se" id="15-1-current-limitations">15.1 Current limitations</h3>
+<table class="tech-table"><thead><tr><th>
+				<b>Limitation</b></th><th>
+				<b>Detail
+				and workaround</b></th></tr></thead><tbody><tr><td>
+				No
+				recovery records, volumes or SFX</td><td>
+				Damage
+				is detected, not repaired (keep a second copy of important
+				archives); split large archives with a general tool if required.</td></tr><tr><td>
+				No
+				in-place update</td><td>
+				The
+				format is one solid stream. Deleting (nikpak d, or Delete in
+				unNik) writes the archive again; adding files to an existing
+				archive is not supported: create a new archive, or overwrite with
+				<code>-o+</code>.</td></tr><tr><td>
+				Sequential
+				access</td><td>
+				Extracting
+				one file from a very large archive reads what precedes it (media
+				entries are skipped without decoding); unNik stops reading after
+				the last chosen file.</td></tr><tr><td>
+				Media
+				coverage</td><td>
+				Integer
+				PCM WAV and AIFF, ProTracker MOD, uncompressed BMP. Float WAV,
+				ADPCM, XM/S3M/IT and compressed images are stored with normal
+				compression.</td></tr><tr><td>
+				Memory
+				at high levels</td><td>
+				<code>-m4</code>
+				and <code>-m5</code>
+				archives use a 128 MiB window; decompressing them needs that much
+				memory.</td></tr><tr><td>
+				Maximum
+				level -m5</td><td>
+				<code>Single-threaded and the slowest level. Creating needs up to about 1.1 GB of memory, extracting up to about 350 MB.</code></td></tr><tr><td>
+				Symbolic
+				links and dates</td><td>
+				Links
+				are skipped when archiving and refused when extracting; dates are
+				listed in UTC.</td></tr><tr><td>
+				Security
+				review</td><td>
+				Not
+				independently audited.</td></tr><tr><td>
+				Windows
+				and macOS builds</td><td>
+				Developed,
+				tested and benchmarked on Linux. The Windows- and macOS-specific
+				code paths were reviewed by hand but have not yet been exercised
+				on those systems: run <code>cargo test --release</code>
+				there before relying on a build.</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="15-2-roadmap">15.2 Roadmap</h3>
+<table class="tech-table"><thead><tr><th>
+				<b>Item</b></th><th>
+				<b>Purpose</b></th></tr></thead><tbody><tr><td>
+				Recovery
+				records</td><td>
+				Reed-Solomon
+				parity so that damaged archives can be repaired, the main feature
+				RAR users miss.</td></tr><tr><td>
+				Multi-volume
+				archives and update support</td><td>
+				Splitting
+				large archives, adding and replacing files.</td></tr><tr><td>
+				Public-key
+				sharing with a hybrid scheme</td><td>
+				Encrypt
+				an archive to a recipient&#x27;s key with X25519 combined with ML-KEM,
+				safe if either component holds.</td></tr><tr><td>
+				More
+				media filters</td><td>
+				Floating-point
+				audio, XM/S3M/IT trackers, recompression of PNG, a 2-D filter for
+				TGA and uncompressed TIFF.</td></tr><tr><td>
+				Reading
+				ZIP and RAR, shell integration</td><td>
+				Unpack
+				the common formats in unNik and drag files out of unNik, so that
+				nikpak can be the only tool installed. (The Explorer and Finder
+				context menus landed in 1.5.5, section 3.11.)</td></tr><tr><td>
+				Faster
+				maximum level</td><td>
+				-m5
+				is single-threaded and up to three times slower than 7-Zip -mx9
+				on office files: multi-threaded LZMA2 and PPMd blocks,
+				deduplication of identical files, and a BCJ filter for
+				executables.</td></tr><tr><td>
+				External
+				security review</td><td>
+				An
+				independent audit of the cryptographic code and the extractor.</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p><b>Licence</b>:
+NikPak is closed-source shareware, © 2026 Nicolas Choukroun,
+distributed by Nikkoid LLC (LICENSE.txt, section 3.8); unNik is
+freeware (section 3.9). The open-source components it contains are
+listed with their licences in THIRD-PARTY-NOTICES.txt, which must be
+shipped with every copy. Keep the private licence key
+(keys/nikpak-private.key) out of every published package and out of
+the web root. Keep <code>Cargo.lock</code>
+in the repository so that builds are reproducible, and run <code>cargo test --release</code>
+in the continuous-integration job of each platform you support.</p>
+<h2 class="ch" id="a-appendix-a-format-constants-and-limits">A Appendix A: format constants and limits</h2>
+<table class="tech-table"><thead><tr><th>
+				<b>Item</b></th><th>
+				<b>Value</b></th></tr></thead><tbody><tr><td>
+				Magic</td><td>
+				<code>89 4E 49 4B 0D 0A 1A 0A</code></td></tr><tr><td>
+				Format
+				version</td><td>
+				3
+				(readers accept 1, 2 and 3)</td></tr><tr><td>
+				Header
+				size</td><td>
+				12
+				bytes; 59 bytes when encrypted</td></tr><tr><td>
+				Record
+				types</td><td>
+				0
+				END, 1 FILE, 2 DIR, 3 MEDIA</td></tr><tr><td>
+				Archive
+				methods</td><td>
+				0
+				store, 1 Zstandard, 2 multi-engine blocks</td></tr><tr><td>
+				Block
+				engines</td><td>
+				1
+				Zstandard; 2 LZMA2 (dictionary up to 128 MiB written, 1.5 GiB
+				accepted); 3 PPMd8 (order 8, 192 MiB written; order 2-16, 1 GiB
+				accepted)</td></tr><tr><td>
+				Deflate
+				recompression</td><td>
+				ZIP,
+				PDF, gzip; file up to 512 MiB; per stream up to 512 MiB plain
+				data and 64 MiB corrections</td></tr><tr><td>
+				Maximum
+				name length</td><td>
+				4096
+				bytes</td></tr><tr><td>
+				Encrypted
+				chunk</td><td>
+				64
+				KiB of plaintext + 16-byte tag, <code>u32</code>
+				big-endian length in front</td></tr><tr><td>
+				Argon2id
+				(written)</td><td>
+				64
+				MiB, 3 passes, 4 lanes, 16-byte salt, 32-byte key</td></tr><tr><td>
+				Argon2id
+				(accepted)</td><td>
+				memory
+				8 x lanes .. 1 GiB, passes 1 .. 64, lanes 1 .. 64</td></tr><tr><td>
+				Stream
+				nonce</td><td>
+				19-byte
+				random prefix + 32-bit counter + 1-byte last flag = 24 bytes</td></tr><tr><td>
+				Minimum
+				password length</td><td>
+				8
+				characters</td></tr><tr><td>
+				Generated
+				password</td><td>
+				24
+				characters, 56-symbol alphabet, about 139 bits</td></tr><tr><td>
+				Media
+				minimum file size</td><td>
+				8
+				KiB (region at least 4 KiB)</td></tr><tr><td>
+				NAC
+				block</td><td>
+				4096
+				sample frames; Shuffle block 32768 frames</td></tr><tr><td>
+				Trial</td><td>
+				up
+				to three 768 KiB windows (5 %, 45 %, 85 %); whole region if up to
+				3 MiB; 2 % margin</td></tr><tr><td>
+				BMP
+				region limit</td><td>
+				256
+				MiB</td></tr><tr><td>
+				Zstandard
+				window</td><td>
+				default;
+				2^27 with long-distance matching at -m4 and -m5</td></tr><tr><td>
+				Threads</td><td>
+				1
+				.. 256 (<code>-mt</code>)</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h2 class="ch" id="b-appendix-b-glossary">B Appendix B: glossary</h2>
+<table class="tech-table"><thead><tr><th>
+				<b>Term</b></th><th>
+				<b>Meaning</b></th></tr></thead><tbody><tr><td>
+				<b>AEAD</b></td><td>
+				Authenticated
+				encryption with associated data: encrypts and detects any
+				modification, also of data that is sent in clear (such as the
+				header).</td></tr><tr><td>
+				<b>Argon2id</b></td><td>
+				A
+				memory-hard password-hashing function standardised in RFC 9106;
+				turns a password into a key at a deliberately high memory cost.</td></tr><tr><td>
+				<b>CRC32</b></td><td>
+				A
+				32-bit checksum that detects accidental damage. Not a security
+				feature.</td></tr><tr><td>
+				<b>FSE</b></td><td>
+				Finite-state
+				entropy: the table-driven entropy coder used by Zstandard.</td></tr><tr><td>
+				<b>Grover&#x27;s
+				algorithm</b></td><td>
+				A
+				quantum search algorithm with a quadratic speed-up; halves the
+				effective length of symmetric keys.</td></tr><tr><td>
+				<b>LPC</b></td><td>
+				Linear
+				predictive coding: predicting a sample from a weighted sum of the
+				preceding ones.</td></tr><tr><td>
+				<b>Levinson-Durbin</b></td><td>
+				A
+				recursion that computes optimal predictor coefficients of every
+				order from the autocorrelation of a signal.</td></tr><tr><td>
+				<b>LZMA2</b></td><td>
+				The
+				Lempel-Ziv-Markov chain algorithm used by 7-Zip and xz: LZ77
+				matching with optimal parsing and a binary range coder.</td></tr><tr><td>
+				<b>MED</b></td><td>
+				Median
+				edge detector: a pixel predictor from the LOCO-I / JPEG-LS image
+				coder.</td></tr><tr><td>
+				<b>Memory-hard</b></td><td>
+				A
+				function whose cost is dominated by memory, which limits the
+				speed-up available from GPUs and custom chips.</td></tr><tr><td>
+				<b>NAC</b></td><td>
+				nikpak&#x27;s
+				lossless audio codec.</td></tr><tr><td>
+				<b>PPMd</b></td><td>
+				Prediction
+				by Partial Matching (variant I): predicts each byte from the
+				preceding up to 8 bytes; very strong on text.</td></tr><tr><td>
+				<b>preflate</b></td><td>
+				A
+				method (and library) that turns a Deflate stream into its plain
+				data plus small corrections, from which the identical Deflate
+				stream can be rebuilt.</td></tr><tr><td>
+				<b>Rice
+				coding</b></td><td>
+				A
+				simple, fast code for numbers with a roughly geometric
+				distribution: a unary quotient and a fixed number of low bits.</td></tr><tr><td>
+				<b>Shor&#x27;s
+				algorithm</b></td><td>
+				A
+				quantum algorithm that factors integers and computes discrete
+				logarithms, breaking RSA and elliptic-curve cryptography.</td></tr><tr><td>
+				<b>Solid
+				archive</b></td><td>
+				An
+				archive compressed as one continuous stream, so that redundancy
+				between files can be exploited.</td></tr><tr><td>
+				<b>STREAM</b></td><td>
+				A
+				construction that encrypts a long message as authenticated chunks
+				with counter and last-chunk flag in the nonce.</td></tr><tr><td>
+				<b>Zig-zag
+				mapping</b></td><td>
+				Mapping
+				signed integers to unsigned ones (0, -1, 1, -2 ... to 0, 1, 2, 3
+				...), so that small magnitudes become small numbers.</td></tr><tr><td>
+				<b>Zstandard</b></td><td>
+				A
+				modern open compression format combining LZ77 matching with
+				Huffman and FSE entropy coding.</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p>Version 1.6.2 · October 2026 Page 19</p></div></div>
+</main>
+<footer>
+  <div class="wrap">
+    <div class="cols">
+      <div>
+        <a class="brand" href="index.html"><img src="../assets/img/favicon.png" alt="" width="30" height="30">NikPak</a>
+        <p class="dim" style="margin-top:12px">快速、识别媒体的 .nik 格式归档工具，采用抗量子加密。</p>
+        <p class="dim">NikPak 是共享软件。unNik 是免费软件。</p>
+      </div>
+      <div>
+        <span class="label">产品</span>
+        <a href="features.html">功能</a>
+        <a href="benchmarks.html">基准测试</a>
+        <a href="index.html#download">免费下载</a>
+        <a href="buy.html">购买许可证</a>
+      </div>
+      <div>
+        <span class="label">支持</span>
+        <a href="guide.html">用户指南</a>
+        <a href="contact.html">联系我们</a>
+        <a href="../LICENSE.txt">许可条款（EULA）</a>
+      </div>
+      <div>
+        <span class="label">社区</span>
+        <p class="dim">新闻、问题、想法和错误报告。</p>
+        <div class="soc-row"><a class="soc-btn soc-tg" href="https://t.me/cryptonikko" target="_blank" rel="noopener" aria-label="Telegram" title="Telegram"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M20.7 4.3 2.9 11.2c-1.2.5-1.2 1.2-.2 1.5l4.6 1.4 1.7 5.4c.2.6.4.8.9.8.4 0 .6-.2.9-.5l2.2-2.1 4.6 3.4c.8.5 1.4.2 1.6-.8l3-14.1c.3-1.3-.5-1.8-1.5-1.4zM9.4 14.4l8.4-5.3c.4-.2.7-.1.4.2l-7 6.3-.3 3z"/></svg></a><a class="soc-btn soc-x" href="https://x.com/cryptonikkoid" target="_blank" rel="noopener" aria-label="X" title="X"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M17.8 3h3.1l-6.8 7.7L22 21h-6.2l-4.9-6.3L5.3 21H2.2l7.3-8.3L2 3h6.4l4.4 5.8zm-1.1 16.2h1.7L7.4 4.7H5.6z"/></svg></a><a class="soc-btn soc-dc" href="https://discord.com/users/1537826350759415811" target="_blank" rel="noopener" aria-label="Discord" title="Discord"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M19.3 5.3A17 17 0 0 0 15 4l-.5 1a15.7 15.7 0 0 0-5 0L9 4a17 17 0 0 0-4.3 1.3C2 9.4 1.3 13.3 1.6 17.2A17.2 17.2 0 0 0 6.9 20l1.1-1.8c-.6-.2-1.2-.5-1.7-.9l.4-.3a12.3 12.3 0 0 0 10.6 0l.4.3c-.5.4-1.1.7-1.7.9l1.1 1.8a17.1 17.1 0 0 0 5.3-2.8c.4-4.5-.7-8.4-3.1-11.9zM8.5 14.8c-1 0-1.9-1-1.9-2.2s.8-2.2 1.9-2.2 1.9 1 1.9 2.2-.8 2.2-1.9 2.2zm7 0c-1 0-1.9-1-1.9-2.2s.8-2.2 1.9-2.2 1.9 1 1.9 2.2-.8 2.2-1.9 2.2z"/></svg></a></div>
+      </div>
+    </div>
+    <div class="copy"><span>© 2026 Nicolas Choukroun。由 Nikkoid LLC 发行并授权。</span><span>nikpak.nikkoid.com</span></div>
+  </div>
+</footer>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="../assets/js/site.js" defer></script>
+
+</body>
+</html>

@@ -1,0 +1,101 @@
+<a href="#1-introduction" class="">1 Introduction</a>
+<a href="#1-1-design-goals" class="sub">1.1 Design goals</a>
+<a href="#1-2-results-at-a-glance" class="sub">1.2 Results at a glance</a>
+<a href="#1-3-who-is-it-for" class="sub">1.3 Who is it for?</a>
+<a href="#1-4-how-to-read-this-guide" class="sub">1.4 How to read this guide</a>
+<a href="#1-5-community-and-contact" class="sub">1.5 Community and contact</a>
+<a href="#2-feature-overview" class="">2 Feature overview</a>
+<a href="#2-1-capabilities" class="sub">2.1 Capabilities</a>
+<a href="#2-2-nikpak-and-rar-side-by-side" class="sub">2.2 nikpak and RAR side by side</a>
+<a href="#3-command-line-reference" class="">3 Command-line reference</a>
+<a href="#3-1-commands" class="sub">3.1 Commands</a>
+<a href="#3-2-options" class="sub">3.2 Options</a>
+<a href="#3-3-passwords-in-detail" class="sub">3.3 Passwords in detail</a>
+<a href="#3-4-exit-codes" class="sub">3.4 Exit codes</a>
+<a href="#3-5-examples" class="sub">3.5 Examples</a>
+<a href="#3-6-integration-with-total-commander-and-other-front-ends" class="sub">3.6 Integration with Total Commander and other front-ends</a>
+<a href="#3-7-the-graphical-interface" class="sub">3.7 The graphical interface</a>
+<a href="#3-8-licence-and-registration-shareware" class="sub">3.8 Licence and registration (shareware)</a>
+<a href="#3-9-unnik-the-free-archive-browser" class="sub">3.9 unNik, the free archive browser</a>
+<a href="#3-10-skins" class="sub">3.10 Skins</a>
+<a href="#3-11-the-file-manager-menu" class="sub">3.11 The file-manager menu</a>
+<a href="#4-architecture" class="">4 Architecture</a>
+<a href="#4-1-data-flow-when-creating-an-archive" class="sub">4.1 Data flow when creating an archive</a>
+<a href="#4-2-source-code-map" class="sub">4.2 Source code map</a>
+<a href="#4-3-creating-an-archive-step-by-step" class="sub">4.3 Creating an archive, step by step</a>
+<a href="#4-4-extracting-an-archive-step-by-step" class="sub">4.4 Extracting an archive, step by step</a>
+<a href="#4-5-memory-and-threading" class="sub">4.5 Memory and threading</a>
+<a href="#5-the-nik-container-format" class="">5 The .nik container format</a>
+<a href="#5-1-header" class="sub">5.1 Header</a>
+<a href="#5-2-entry-records" class="sub">5.2 Entry records</a>
+<a href="#5-3-encrypted-body-framing" class="sub">5.3 Encrypted body framing</a>
+<a href="#5-4-why-a-solid-stream" class="sub">5.4 Why a solid stream?</a>
+<a href="#5-5-versioning" class="sub">5.5 Versioning</a>
+<a href="#5-6-multi-engine-body-version-3" class="sub">5.6 Multi-engine body (version 3)</a>
+<a href="#6-the-compression-engine" class="">6 The compression engine</a>
+<a href="#6-1-why-zstandard" class="sub">6.1 Why Zstandard</a>
+<a href="#6-2-level-mapping" class="sub">6.2 Level mapping</a>
+<a href="#6-3-large-window-and-long-distance-matching" class="sub">6.3 Large window and long-distance matching</a>
+<a href="#6-4-multi-threading" class="sub">6.4 Multi-threading</a>
+<a href="#6-5-integrity-inside-the-stream" class="sub">6.5 Integrity inside the stream</a>
+<a href="#6-6-store-mode" class="sub">6.6 Store mode</a>
+<a href="#6-7-the-maximum-level-lzma2-and-ppmd" class="sub">6.7 The maximum level: LZMA2 and PPMd</a>
+<a href="#7-media-intelligence" class="">7 Media intelligence</a>
+<a href="#7-1-detection-by-content" class="sub">7.1 Detection by content</a>
+<a href="#7-2-the-trial-choosing-the-best-filter-per-file" class="sub">7.2 The trial: choosing the best filter per file</a>
+<a href="#7-3-the-nac-audio-codec" class="sub">7.3 The NAC audio codec</a>
+<a href="#7-4-self-verification" class="sub">7.4 Self-verification</a>
+<a href="#7-5-shuffle-and-shuffle-delta" class="sub">7.5 Shuffle and Shuffle+Delta</a>
+<a href="#7-6-protracker-mod-files" class="sub">7.6 ProTracker MOD files</a>
+<a href="#7-7-bmp-images" class="sub">7.7 BMP images</a>
+<a href="#7-8-why-this-beats-rar" class="sub">7.8 Why this beats RAR</a>
+<a href="#7-9-office-documents-pdf-and-gzip-deflate-recompression" class="sub">7.9 Office documents, PDF and gzip: Deflate recompression</a>
+<a href="#8-encryption" class="">8 Encryption</a>
+<a href="#8-1-threat-model" class="sub">8.1 Threat model</a>
+<a href="#8-2-from-password-to-key-argon2id" class="sub">8.2 From password to key: Argon2id</a>
+<a href="#8-3-xchacha20-poly1305-in-the-stream-construction" class="sub">8.3 XChaCha20-Poly1305 in the STREAM construction</a>
+<a href="#8-4-what-an-observer-can-and-cannot-see" class="sub">8.4 What an observer can and cannot see</a>
+<a href="#8-5-password-handling" class="sub">8.5 Password handling</a>
+<a href="#8-6-attack-tests" class="sub">8.6 Attack tests</a>
+<a href="#9-quantum-resistance" class="">9 Quantum resistance</a>
+<a href="#9-1-what-quantum-computers-change" class="sub">9.1 What quantum computers change</a>
+<a href="#9-2-nikpak-s-position" class="sub">9.2 nikpak&#x27;s position</a>
+<a href="#9-3-what-about-the-password" class="sub">9.3 What about the password?</a>
+<a href="#9-4-harvest-now-decrypt-later" class="sub">9.4 &quot;Harvest now, decrypt later&quot;</a>
+<a href="#9-5-honest-limits-and-the-road-ahead" class="sub">9.5 Honest limits and the road ahead</a>
+<a href="#10-hardening-and-robustness" class="">10 Hardening and robustness</a>
+<a href="#10-1-safe-extraction" class="sub">10.1 Safe extraction</a>
+<a href="#10-2-bounded-decoders" class="sub">10.2 Bounded decoders</a>
+<a href="#10-3-safe-creation-and-honest-errors" class="sub">10.3 Safe creation and honest errors</a>
+<a href="#11-benchmarks" class="">11 Benchmarks</a>
+<a href="#11-1-method" class="sub">11.1 Method</a>
+<a href="#11-2-media-files" class="sub">11.2 Media files</a>
+<a href="#11-3-general-data" class="sub">11.3 General data</a>
+<a href="#11-4-speed-on-a-single-large-media-file" class="sub">11.4 Speed on a single large media file</a>
+<a href="#11-5-encryption-overhead" class="sub">11.5 Encryption overhead</a>
+<a href="#11-6-reproducing-the-results" class="sub">11.6 Reproducing the results</a>
+<a href="#11-7-second-run-nikpak-rar-7-7-zip-and-zip" class="sub">11.7 Second run: nikpak, RAR 7, 7-Zip and ZIP</a>
+<a href="#12-nikpak-and-rar-compared" class="">12 nikpak and RAR compared</a>
+<a href="#12-1-where-nikpak-is-ahead" class="sub">12.1 Where nikpak is ahead</a>
+<a href="#12-2-where-rar-is-ahead" class="sub">12.2 Where RAR is ahead</a>
+<a href="#12-3-quantum-resistance-in-perspective" class="sub">12.3 Quantum resistance in perspective</a>
+<a href="#12-4-which-one-to-choose" class="sub">12.4 Which one to choose</a>
+<a href="#12-5-and-7-zip-and-zip" class="sub">12.5 And 7-Zip and ZIP?</a>
+<a href="#13-building-deploying-and-integrating" class="">13 Building, deploying and integrating</a>
+<a href="#13-1-windows-with-powershell" class="sub">13.1 Windows with PowerShell</a>
+<a href="#13-2-building-with-npm" class="sub">13.2 Building with npm</a>
+<a href="#13-3-a-self-contained-executable" class="sub">13.3 A self-contained executable</a>
+<a href="#13-4-macos-and-linux" class="sub">13.4 macOS and Linux</a>
+<a href="#13-5-dependencies" class="sub">13.5 Dependencies</a>
+<a href="#13-6-scripting" class="sub">13.6 Scripting</a>
+<a href="#13-7-total-commander" class="sub">13.7 Total Commander</a>
+<a href="#14-testing-and-verification" class="">14 Testing and verification</a>
+<a href="#14-1-unit-tests" class="sub">14.1 Unit tests</a>
+<a href="#14-2-end-to-end-tests" class="sub">14.2 End-to-end tests</a>
+<a href="#14-3-attack-tests" class="sub">14.3 Attack tests</a>
+<a href="#14-4-defects-found-by-testing" class="sub">14.4 Defects found by testing</a>
+<a href="#15-limitations-and-roadmap" class="">15 Limitations and roadmap</a>
+<a href="#15-1-current-limitations" class="sub">15.1 Current limitations</a>
+<a href="#15-2-roadmap" class="sub">15.2 Roadmap</a>
+<a href="#a-appendix-a-format-constants-and-limits" class="">A Appendix A: format constants and limits</a>
+<a href="#b-appendix-b-glossary" class="">B Appendix B: glossary</a>

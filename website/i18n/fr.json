@@ -10,7 +10,8 @@
   "t_buy": "Acheter une licence",
   "t_contact": "Contact",
   "t_thanks": "Merci",
-  "t_skins": "Thèmes"
+  "t_skins": "Thèmes",
+  "t_tech": "Guide technique · NikPak"
  },
  "nav": {
   "home": "Accueil",
@@ -22,7 +23,8 @@
   "menu": "Menu",
   "language": "Langue",
   "skip": "Aller au contenu",
-  "skins": "Thèmes"
+  "skins": "Thèmes",
+  "tech": "Guide technique"
  },
  "common": {
   "download": "Téléchargement gratuit",
@@ -574,7 +576,7 @@
   "tc_p": "Comme NikPak accepte la syntaxe de commande de RAR, un programme capable de piloter un rar.exe externe peut piloter nikpak.exe. Dans Total Commander, déclarez l'extension <code>nik</code> comme compresseur supplémentaire et faites pointer les commandes de compression et de décompression vers nikpak.exe. Utilisez <code>-o+</code> ou <code>-y</code> pour une extraction sans surveillance. Les options souvent envoyées par les interfaces RAR (<code>-s</code>, <code>-ma5</code>, <code>-md64m</code>, <code>-ibck</code>, <code>-rr</code> et autres) sont acceptées et ignorées.",
   "tc_note": "<b>Dossiers avec des espaces sous Windows :</b> un chemin entre guillemets qui se termine par une barre oblique inverse, comme \"C:\\Mon Dossier\\\", est mal lu par Windows. Utilisez plutôt <code>-d \"C:\\Mon Dossier\"</code>.",
   "more_t": "Pour aller plus loin",
-  "more_p": "Le guide technique décrit le format .nik, le codec NAC, la conception du chiffrement et l'ensemble des comparatifs. Des questions ? <a href=\"contact.html\">Écrivez-nous</a>.",
+  "more_p": "Le guide technique complet — architecture, le format .nik, le codec NAC, la conception du chiffrement et tous les benchmarks — se trouve <a href=\"tech.html\">sur cette page</a>. Des questions ? <a href=\"contact.html\">Écrivez-nous</a>.",
   "install_unix": "<b>macOS et Linux :</b> décompressez l'archive et lancez <code>./install.sh</code>. Il copie nikpak et unNik dans <code>~/.local/bin</code> (Linux) ou <code>/usr/local/bin</code> (macOS) et ajoute le menu contextuel du gestionnaire de fichiers (Dolphin, Nemo, Nautilus ; actions rapides du Finder). Lancez ensuite la fenêtre avec <code>nikpak</code>.",
   "skins_t": "Thèmes",
   "skins_p": "NikPak et unNik partagent 55 thèmes. Le menu s'ouvre à côté du programme : toute l'interface reste visible dans le thème que vous essayez.",
