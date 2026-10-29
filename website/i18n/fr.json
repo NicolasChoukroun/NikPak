@@ -233,7 +233,7 @@
    "<b>Archives multivolumes et mises à jour :</b> découper les grandes archives, ajouter et remplacer des fichiers.",
    "<b>Partage par clés publiques :</b> un hybride X25519 et ML-KEM, sûr si l'un des deux tient.",
    "<b>Plus de filtres médias :</b> audio en virgule flottante, trackers XM/S3M/IT, recompression PNG, TGA et TIFF.",
-   "<b>ZIP et RAR dans unNik, intégration à l'explorateur :</b> pour que NikPak soit le seul archiveur nécessaire.",
+   "<b>ZIP et RAR dans unNik :</b> ouvrir les formats courants dans unNik, pour que NikPak soit le seul archiveur nécessaire. (Le menu de l’explorateur de fichiers est arrivé en 1.5.5.)",
    "<b>Un niveau maximal plus rapide :</b> LZMA2 et PPMd multithreads, déduplication, filtre pour les exécutables.",
    "<b>Un audit de sécurité externe</b> de la cryptographie et de l'extracteur."
   ],

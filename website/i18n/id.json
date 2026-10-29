@@ -233,7 +233,7 @@
    "<b>Arsip multivolume dan pembaruan:</b> membagi arsip besar, menambah dan mengganti file.",
    "<b>Berbagi dengan kunci publik:</b> gabungan X25519 dan ML-KEM, aman jika salah satunya bertahan.",
    "<b>Lebih banyak filter media:</b> audio floating-point, tracker XM/S3M/IT, kompresi ulang PNG, TGA, dan TIFF.",
-   "<b>ZIP dan RAR di unNik, integrasi dengan Explorer:</b> agar NikPak menjadi satu-satunya pengarsip yang Anda perlukan.",
+   "<b>ZIP dan RAR di unNik:</b> membuka format umum di unNik, agar NikPak menjadi satu-satunya pengarsip yang Anda perlukan. (Menu pengelola berkas hadir di 1.5.5.)",
    "<b>Tingkat maksimum yang lebih cepat:</b> LZMA2 dan PPMd multi-thread, deduplikasi, filter untuk file eksekusi.",
    "<b>Audit keamanan eksternal</b> atas kriptografi dan pengekstrak."
   ],

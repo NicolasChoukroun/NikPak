@@ -233,7 +233,7 @@
    "<b>Arquivos multivolume e atualizações:</b> dividir arquivos grandes, adicionar e substituir arquivos.",
    "<b>Compartilhamento com chaves públicas:</b> um híbrido de X25519 e ML-KEM, seguro se qualquer um dos dois resistir.",
    "<b>Mais filtros de mídia:</b> áudio em ponto flutuante, trackers XM/S3M/IT, recompressão PNG, TGA e TIFF.",
-   "<b>ZIP e RAR no unNik, integração com o Explorer:</b> para que o NikPak seja o único compactador de que você precisa.",
+   "<b>ZIP e RAR no unNik:</b> abrir os formatos comuns no unNik, para que o NikPak seja o único compactador de que você precisa. (O menu do gerenciador de arquivos chegou na 1.5.5.)",
    "<b>Um nível máximo mais rápido:</b> LZMA2 e PPMd multithread, deduplicação, um filtro para executáveis.",
    "<b>Uma auditoria de segurança externa</b> da criptografia e do extrator."
   ],

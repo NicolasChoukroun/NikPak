@@ -233,7 +233,7 @@
    "<b>Archivos multivolumen y actualizaciones:</b> dividir archivos grandes, añadir y reemplazar archivos.",
    "<b>Compartir con claves públicas:</b> un híbrido de X25519 y ML-KEM, seguro si cualquiera de los dos resiste.",
    "<b>Más filtros multimedia:</b> audio en coma flotante, trackers XM/S3M/IT, recompresión PNG, TGA y TIFF.",
-   "<b>ZIP y RAR en unNik, integración con el explorador:</b> para que NikPak sea el único compresor que necesite.",
+   "<b>ZIP y RAR en unNik:</b> abrir los formatos comunes en unNik, para que NikPak sea el único compresor que necesite. (El menú del administrador de archivos llegó en la 1.5.5.)",
    "<b>Un nivel máximo más rápido:</b> LZMA2 y PPMd multihilo, deduplicación, un filtro para ejecutables.",
    "<b>Una auditoría de seguridad externa</b> de la criptografía y del extractor."
   ],

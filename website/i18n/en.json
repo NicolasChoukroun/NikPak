@@ -233,7 +233,7 @@
    "<b>Multi-volume archives and updates:</b> splitting large archives, adding and replacing files.",
    "<b>Sharing with public keys:</b> a hybrid of X25519 and ML-KEM, safe if either one holds.",
    "<b>More media filters:</b> floating-point audio, XM/S3M/IT trackers, PNG recompression, TGA and TIFF.",
-   "<b>ZIP and RAR in unNik, shell integration:</b> so that NikPak can be the only archiver you need.",
+   "<b>ZIP and RAR in unNik:</b> unpack the common formats in unNik, so that NikPak can be the only archiver you need. (The file-manager menu shipped in 1.5.5.)",
    "<b>A faster maximum level:</b> multi-threaded LZMA2 and PPMd, deduplication, a filter for executables.",
    "<b>An external security review</b> of the cryptography and the extractor."
   ],
