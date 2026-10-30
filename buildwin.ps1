@@ -17,11 +17,13 @@
 #>
 param([switch]$Test, [switch]$Clean, [switch]$Upload)
 
-# $args is a reserved automatic variable; use a real variable so the switches reach buildall.ps1
-$buildArgs = @()
-if ($Test)   { $buildArgs += '-Test' }
-if ($Clean)  { $buildArgs += '-Clean' }
-if (-not $Upload) { $buildArgs += '-NoUpload' }
+# Forward switches via a hashtable (array splatting of '-Switch' strings would pass them as
+# positional values, which buildall.ps1 would mis-bind). $args is a reserved automatic variable,
+# so a real variable is used.
+$params = @{}
+if ($Test)         { $params['Test']     = $true }
+if ($Clean)        { $params['Clean']    = $true }
+if (-not $Upload)  { $params['NoUpload'] = $true }
 
-& (Join-Path $PSScriptRoot 'buildall.ps1') @buildArgs
+& (Join-Path $PSScriptRoot 'buildall.ps1') @params
 exit $LASTEXITCODE
