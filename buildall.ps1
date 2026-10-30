@@ -166,12 +166,22 @@ Step 'Building the website (website\build.py)'
 if ($LASTEXITCODE -ne 0) { Fail 'The website build failed (website\build.py).' }
 
 # --- 7. Website downloads -------------------------------------------------------------
+# Every published build goes into website\dist\downloads\ so the site's download
+# buttons (build.py / site.json) always point at real files. The Windows files come
+# from this run; the macOS / Linux / .deb packages are added by buildmac.ps1 and
+# buildunix.ps1, which copy their downloads here too.
 Step 'Adding the downloads to the website'
 $downloads = Join-Path $PSScriptRoot 'website\dist\downloads'
 New-Item -ItemType Directory -Force -Path $downloads | Out-Null
-foreach ($f in $files + 'SHA256SUMS.txt') {
-    Copy-Item -Force (Join-Path 'binaries' $f) (Join-Path $downloads $f)
+# drop older versions from the downloads folder, then copy everything in binaries\
+Get-ChildItem $downloads -File | ForEach-Object {
+    $m = [regex]::Match($_.Name, '(?<!\d)(\d+\.\d+\.\d+)(?!\d)')
+    if ($m.Success -and $m.Groups[1].Value -ne $version) {
+        Write-Host "   removing old download: $($_.Name)" -ForegroundColor DarkYellow
+        Remove-Item $_.FullName -Force
+    }
 }
+Get-ChildItem 'binaries' -File | Copy-Item -Destination $downloads -Force
 Write-Host "  copied to $downloads"
 
 # --- 8. Upload the website (FTP) ------------------------------------------------------

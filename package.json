@@ -1,6 +1,6 @@
 {
   "name": "nikpak",
-  "version": "1.6.2",
+  "version": "1.6.3",
   "private": true,
   "description": "npm convenience wrapper: npm run build compiles nikpak and unNik with Cargo (Rust does the real work)",
   "scripts": {

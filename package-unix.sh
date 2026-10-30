@@ -46,6 +46,12 @@ else
   fi
   mkdir -p "$STAGE/$NAME"
   cp "$BIN/nikpak" "$BIN/unNik" "$STAGE/$NAME/"
+  # the two Debian packages (nikpak + unNik), from the same binaries
+  if [ "$ZIG" = "1" ]; then
+    NIKPAK_DEB_DEPENDS="libc6 (>= 2.28)" sh make-deb.sh "$BIN"
+  else
+    sh make-deb.sh "$BIN"
+  fi
 fi
 
 D="$STAGE/$NAME"

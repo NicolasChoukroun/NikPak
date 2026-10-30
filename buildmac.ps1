@@ -143,6 +143,19 @@ try {
 }
 catch { Write-Host $_.Exception.Message -ForegroundColor Red }
 
+if ($ok) {
+    # put the new package where the web site's download buttons read it, so a
+    # later buildweb.ps1 / buildall.ps1 upload picks it up
+    Step 'Copying into website\dist\downloads'
+    $downloads = Join-Path $PSScriptRoot 'website\dist\downloads'
+    New-Item -ItemType Directory -Force -Path $downloads | Out-Null
+    Get-ChildItem $downloads -File |
+        Where-Object { $_.Name -like 'nikpak-*-macos.zip' } |
+        Remove-Item -Force
+    Get-ChildItem $Dist -File -Filter 'nikpak-*-macos.zip' | Copy-Item -Destination $downloads -Force
+    Write-Host '   copied to website\dist\downloads'
+}
+
 Step 'Summary'
 if (-not $ok) { Write-Host '   macOS build FAILED' -ForegroundColor Red; exit 1 }
 Write-Host '   macOS build ok:' -ForegroundColor Green

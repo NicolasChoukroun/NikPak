@@ -1873,7 +1873,7 @@ dependencies = [
 
 [[package]]
 name = "nikpak"
-version = "1.6.2"
+version = "1.6.3"
 dependencies = [
  "ab_glyph",
  "argon2",

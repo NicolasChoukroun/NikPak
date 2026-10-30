@@ -143,10 +143,25 @@ try {
 }
 catch { Write-Host $_.Exception.Message -ForegroundColor Red }
 
+if ($ok) {
+    # put the new packages where the web site's download buttons read them, so a
+    # later buildweb.ps1 / buildall.ps1 upload picks them up
+    Step 'Copying into website\dist\downloads'
+    $downloads = Join-Path $PSScriptRoot 'website\dist\downloads'
+    New-Item -ItemType Directory -Force -Path $downloads | Out-Null
+    Get-ChildItem $downloads -File |
+        Where-Object { $_.Name -like 'nikpak-*-linux-*.tar.gz' -or $_.Name -like '*_amd64.deb' } |
+        Remove-Item -Force
+    Get-ChildItem $Dist -File |
+        Where-Object { $_.Name -like 'nikpak-*-linux-*.tar.gz' -or $_.Name -like '*_amd64.deb' } |
+        Copy-Item -Destination $downloads -Force
+    Write-Host '   copied to website\dist\downloads'
+}
+
 Step 'Summary'
 if (-not $ok) { Write-Host '   Linux build FAILED' -ForegroundColor Red; exit 1 }
 Write-Host '   Linux build ok:' -ForegroundColor Green
 $files = Get-ChildItem $Dist -File |
-  Where-Object { $_.Name -like 'nikpak-*-linux-*.tar.gz' } | Sort-Object Name
+  Where-Object { $_.Name -like 'nikpak-*-linux-*.tar.gz' -or $_.Name -like '*_amd64.deb' } | Sort-Object Name
 if (-not $files) { Write-Host '   (nothing in binaries\ yet)' }
 foreach ($f in $files) { Write-Host ('   {0,-72} {1,8:N1} MB' -f $f.FullName, ($f.Length / 1MB)) }

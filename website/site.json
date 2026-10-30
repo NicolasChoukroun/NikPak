@@ -1,13 +1,15 @@
 {
   "_comment": "Public settings of the web site. Edit, then run: python build.py. Secrets (API keys) go in shop-config.php on the server, never here.",
   "domain": "https://nikpak.nikkoid.com",
-  "version": "1.6.2",
+  "version": "1.6.3",
   "downloads": {
     "_comment": "{v} is replaced by the version above. Put the files in dist/downloads/ (or change the paths).",
     "windows": "downloads/nikpak-{v}-setup.exe",
     "macos": "downloads/nikpak-{v}-macos.zip",
     "linux": "downloads/nikpak-{v}-linux-x86_64.tar.gz",
-    "deb": "downloads/nikpak_{v}_amd64.deb"
+    "deb": "downloads/nikpak_{v}_amd64.deb",
+    "windows_unnik": "downloads/unnik-{v}-setup.exe",
+    "deb_unnik": "downloads/unnik_{v}_amd64.deb"
   },
   "contact_email": "contact@nikkoid.com",
   "mail_from": "NikPak <noreply@nikkoid.com>",

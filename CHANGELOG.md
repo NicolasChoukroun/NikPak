@@ -5,6 +5,28 @@ The newest version is at the top. Format: version – date – summary, then the
 
 ---
 
+## 1.6.3 – 30 October 2026 – Fast, Medium and Best compression in the window
+
+### Changed
+- The drop window no longer compresses at one fixed level. Three pills at the
+  centre top pick the level for the next archive: **Fast** (Zstandard 1),
+  **Medium** (Zstandard 6, the default) and **Best** (`-m5`, the multi-engine
+  LZMA2/PPMd method with Deflate recompression).
+- **Live estimates while compressing:** under the progress ring, one line now
+  shows `Ratio · Time · Size` - the compression ratio so far, the time still to
+  go and the size the archive will have, extrapolated from the bytes already
+  written. The three one-word labels are translated into the ten languages.
+- The old fixed `-m5` is still there: it is simply called **Best** now.
+
+### Tools
+- **The Linux leg now also builds the two Debian packages** (`nikpak` and
+  `unnik`, `make-deb.sh`, called by `package-unix.sh`), so `buildunix.ps1`
+  downloads the `.deb` files together with the `.tar.gz`. The website's six
+  download buttons (Windows, unNik-for-Windows, macOS, Linux, Debian, and
+  unNik-for-Debian) are all produced by the build scripts now.
+
+---
+
 ## 1.6.2 – 24 October 2026 – the painted skins step behind the interface
 
 ### Changed

@@ -73,4 +73,5 @@ jobs:
           path: |
             binaries/*.zip
             binaries/*.tar.gz
+            binaries/*.deb
           retention-days: 14

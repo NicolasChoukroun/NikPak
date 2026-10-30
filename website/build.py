@@ -68,6 +68,7 @@ GENERAL = [  # tool, size, %, creation s, extraction s, is nikpak
 
 # ---- Changelog (CHANGELOG.md, newest first): version, date, one-line summary ----
 CHANGELOG = [
+    ("1.6.3", "30 October 2026", "Fast, Medium and Best compression in the window, with live size and time estimates."),
     ("1.6.2", "24 October 2026", "The fourteen painted skins step behind the interface, so the window stays readable."),
     ("1.6.1", "24 October 2026", "The storm and the mountains, painted again."),
     ("1.6.0", "24 October 2026", "Fourteen painted skins, a real thunderstorm and better mountains."),
@@ -328,7 +329,7 @@ def footer(L):
 
 
 # one download per system; site.js makes the visitor's system the highlighted button
-DL_OS = [("windows", "win", "Windows", "setup .exe"), ("macos", "mac", "macOS", ".zip"), ("linux", "linux", "Linux / Unix", ".tar.gz"), ("deb", "linux", "Debian / Ubuntu", ".deb")]
+DL_OS = [("windows", "win", "Windows", "setup .exe"), ("windows_unnik", "win", "unNik for Windows", "setup .exe"), ("macos", "mac", "macOS", ".zip"), ("linux", "linux", "Linux / Unix", ".tar.gz"), ("deb", "linux", "Debian / Ubuntu", ".deb"), ("deb_unnik", "linux", "unNik for Debian / Ubuntu", ".deb")]
 
 
 def download_file(os_key):
