@@ -5,9 +5,12 @@
 .DESCRIPTION
   No build, no Inno - just the web site. It:
     1. runs  python website\build.py  which rebuilds website\dist (public pages only);
-    2. copies whatever is in binaries\ into website\dist\downloads\;
+    2. removes installers of older versions from binaries\ and copies only the current
+       version's files into website\dist\downloads\;
     3. uploads website\dist to the web host by FTP (overwriting), 10 files at a time,
-       with one inline progress line.
+       with one inline progress line;
+    4. removes downloads of older versions from the server, so only the latest build
+       is ever offered.
 
   Run it after buildall.ps1 / buildwin.ps1 when you only need to refresh the web
   site (or the download list) without rebuilding anything.
@@ -49,12 +52,30 @@ Step 'Building the website (website\build.py)'
 if ($LASTEXITCODE -ne 0) { Fail 'The website build failed (website\build.py).' }
 
 # --- 3. Website downloads --------------------------------------------------------
+# Only the current version is ever published: installers of older versions are removed
+# from binaries\ and from the downloads folder first, so stale builds are never uploaded.
 Step 'Adding the downloads to the website'
+$version = (Select-String -Path 'Cargo.toml' -Pattern '^version\s*=\s*"([^"]+)"' | Select-Object -First 1).Matches[0].Groups[1].Value
+if (-not $version) { Fail 'Cannot read the version from Cargo.toml.' }
+
+function Remove-OldVersionFiles([string]$dir) {
+    if (-not (Test-Path $dir)) { return }
+    Get-ChildItem $dir -File | ForEach-Object {
+        $m = [regex]::Match($_.Name, '(?<!\d)(\d+\.\d+\.\d+)(?!\d)')
+        if ($m.Success -and $m.Groups[1].Value -ne $version) {
+            Write-Host "  removing old version: $($_.Name)" -ForegroundColor DarkYellow
+            Remove-Item $_.FullName -Force
+        }
+    }
+}
+Remove-OldVersionFiles 'binaries'
+
 $downloads = Join-Path $PSScriptRoot 'website\dist\downloads'
 New-Item -ItemType Directory -Force -Path $downloads | Out-Null
+Remove-OldVersionFiles $downloads
 if (Test-Path 'binaries') {
     Get-ChildItem 'binaries' -File | Copy-Item -Destination $downloads -Force
-    Write-Host "  copied $(@(Get-ChildItem 'binaries' -File).Count) file(s) to $downloads"
+    Write-Host "  copied $(@(Get-ChildItem 'binaries' -File).Count) file(s) to $downloads (NikPak $version)"
 } else {
     Write-Host '  binaries\ is empty: the download page will have no files' -ForegroundColor Yellow
 }
@@ -216,3 +237,42 @@ if ($errors.Count) { $msg += ", $($errors.Count) FAILED" }
 Write-Host "  $msg" -ForegroundColor $(if ($errors.Count) { 'Red' } else { 'Green' })
 foreach ($e in $errors) { Write-Host "    FAILED  $e" -ForegroundColor Red }
 if ($errors.Count) { exit 1 }
+
+# --- 5. Remove old downloads on the server --------------------------------------
+# The upload above only adds/overwrites files; it never deletes. So installers of
+# older versions that earlier builds put on the server would stay there forever.
+# Delete any remote download whose version number differs from the current one, so
+# the server only ever offers the latest build.
+Step 'Removing old downloads on the server'
+$remoteDownloads = $FtpBasePath.TrimEnd('/') + '/downloads'
+$dlUrl = "ftp://$FtpHost/$($remoteDownloads.TrimStart('/'))"
+
+function Get-FtpNames([string]$dirUrl, $creds) {
+    $req = New-FtpRequest $dirUrl $creds ([System.Net.WebRequestMethods+Ftp]::ListDirectory)
+    $req.UseBinary = $false   # a listing is text, not binary
+    $resp = $req.GetResponse()
+    $reader = New-Object System.IO.StreamReader($resp.GetResponseStream())
+    try { $text = $reader.ReadToEnd() } finally { $reader.Close(); $resp.Close() }
+    return @($text -split "`r?`n" | Where-Object { $_.Trim() -ne '' })
+}
+
+try {
+    $names = Get-FtpNames $dlUrl $creds
+    $removed = 0
+    foreach ($n in $names) {
+        $name = ($n -split '/')[-1].Trim()
+        # reject LIST detail lines and anything that is not a plain file name
+        if ($name -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]*$') { continue }
+        $m = [regex]::Match($name, '(?<!\d)(\d+\.\d+\.\d+)(?!\d)')
+        if ($m.Success -and $m.Groups[1].Value -ne $version) {
+            $req = New-FtpRequest "$dlUrl/$name" $creds ([System.Net.WebRequestMethods+Ftp]::DeleteFile)
+            $req.GetResponse().Close()
+            Write-Host "  removed old download: $name" -ForegroundColor DarkYellow
+            $removed++
+        }
+    }
+    $c = if ($removed) { 'Yellow' } else { 'DarkGray' }
+    Write-Host "  $removed old download(s) removed from the server" -ForegroundColor $c
+} catch {
+    Write-Host "  could not list/clean $remoteDownloads : $($_.Exception.Message)" -ForegroundColor Yellow
+}

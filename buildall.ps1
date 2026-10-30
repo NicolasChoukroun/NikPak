@@ -136,6 +136,15 @@ if ($Clean -and (Test-Path binaries)) {
     Get-ChildItem binaries -File | Remove-Item -Force
 }
 New-Item -ItemType Directory -Force -Path binaries | Out-Null
+# Only the current version is kept: installers of older versions are removed so they are
+# never copied to the website or uploaded again.
+Get-ChildItem binaries -File | ForEach-Object {
+    $m = [regex]::Match($_.Name, '(?<!\d)(\d+\.\d+\.\d+)(?!\d)')
+    if ($m.Success -and $m.Groups[1].Value -ne $version) {
+        Write-Host "   removing old version: $($_.Name)" -ForegroundColor DarkYellow
+        Remove-Item $_.FullName -Force
+    }
+}
 $files = @('nikpak.exe', 'unNik.exe', "nikpak-$version-setup.exe", "unnik-$version-setup.exe")
 foreach ($f in $files) {
     Copy-Item -Force (Join-Path 'dist' $f) (Join-Path 'binaries' $f)
