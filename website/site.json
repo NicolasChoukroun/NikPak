@@ -11,6 +11,15 @@
     "windows_unnik": "downloads/unnik-{v}-setup.exe",
     "deb_unnik": "downloads/unnik_{v}_amd64.deb"
   },
+  "download_sizes": {
+    "_comment": "Display size of each download on the site (empty hides it). Fill after building the binaries.",
+    "windows": "",
+    "macos": "",
+    "linux": "",
+    "deb": "",
+    "windows_unnik": "",
+    "deb_unnik": ""
+  },
   "contact_email": "contact@nikkoid.com",
   "mail_from": "NikPak <noreply@nikkoid.com>",
   "community": {

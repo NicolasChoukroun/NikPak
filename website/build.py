@@ -270,7 +270,7 @@ def layout(L, page, body, extra_head="", scripts=""):
   <div class="wrap">
     <a class="brand" href="index.html"><img src="../assets/img/favicon.png" alt="" width="30" height="30">NikPak</a>
     <details class="apps">
-      <summary aria-label="Our Apps"><svg class="apps-ico" viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><rect x="1.5" y="1.5" width="5" height="5" rx="1.3" fill="currentColor"/><rect x="9.5" y="1.5" width="5" height="5" rx="1.3" fill="currentColor"/><rect x="1.5" y="9.5" width="5" height="5" rx="1.3" fill="currentColor"/><rect x="9.5" y="9.5" width="5" height="5" rx="1.3" fill="currentColor"/></svg></summary>
+      <summary aria-label="Our Apps"><svg class="apps-ico" viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><rect x="1.5" y="1.5" width="5" height="5" rx="1.3" fill="currentColor"/><rect x="9.5" y="1.5" width="5" height="5" rx="1.3" fill="currentColor"/><rect x="1.5" y="9.5" width="5" height="5" rx="1.3" fill="currentColor"/><rect x="9.5" y="9.5" width="5" height="5" rx="1.3" fill="currentColor"/></svg><span class="apps-name">Our Apps</span><svg class="chev" viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
       <div class="apps-menu" role="list"><a class="apps-home" href="https://nikkoid.com">Nikkoid Network</a><hr><a href="https://nikkomander.nikkoid.com/index.html">Nikkomander</a><a href="https://nikedit.nikkoid.com/index.html">NikEDIT</a><a href="https://niksql.nikkoid.com/index.html">NikSQL</a><a href="https://nikpak.nikkoid.com/en/index.html" aria-current="true">NikPak</a><a href="https://hexawar.nikkoid.com/website/">Hexawar</a></div>
     </details>
     <nav class="nav" aria-label="{esc(L('nav.menu'))}">{''.join(nav)}</nav>
@@ -328,23 +328,61 @@ def footer(L):
 </footer>"""
 
 
-# one download per system; site.js makes the visitor's system the highlighted button
-DL_OS = [("windows", "win", "Windows", "setup .exe"), ("windows_unnik", "win", "unNik for Windows", "setup .exe"), ("macos", "mac", "macOS", ".zip"), ("linux", "linux", "Linux / Unix", ".tar.gz"), ("deb", "linux", "Debian / Ubuntu", ".deb"), ("deb_unnik", "linux", "unNik for Debian / Ubuntu", ".deb")]
+# downloads, grouped by operating system: (os icon, group title, [(key, label, format), ...])
+# "key" is the entry in SITE["downloads"]; file names and sizes come from site.json.
+DL_GROUPS = [
+    ("os_win", "Windows", [
+        ("windows", "NikPak", "Installer (.exe)"),
+        ("windows_unnik", "unNik", "Installer (.exe)"),
+    ]),
+    ("os_mac", "macOS", [
+        ("macos", "NikPak + unNik", "ZIP archive (.zip)"),
+    ]),
+    ("os_linux", "Linux / Unix", [
+        ("linux", "NikPak", "Tarball (.tar.gz)"),
+        ("deb", "NikPak", "Debian / Ubuntu (.deb)"),
+        ("deb_unnik", "unNik", "Debian / Ubuntu (.deb)"),
+    ]),
+]
 
 
 def download_file(os_key):
     return SITE["downloads"][os_key].replace("{v}", SITE["version"])
 
 
-def download_btn(L, anchor=False):
-    dl = esc(L("common.download"))
-    ver = esc(SITE["version"])
-    btns = "".join(
-        f'<a class="btn dl-btn{" btn-primary" if k == "windows" else ""}" data-os="{o}" href="../{esc(download_file(k))}" download title="{dl} · {name}">'
-        f'{icon("os_" + o)}<span><b>{name}</b><small>{ext}</small></span></a>'
-        for k, o, name, ext in DL_OS)
-    attr = ' id="download"' if anchor else ""
-    return f'<div class="dl"{attr}><div class="dl-head"><span class="label">{dl}</span><span class="dl-ver">v{ver}</span></div><div class="dl-row">{btns}</div></div>'
+def download_size(os_key):
+    return SITE.get("download_sizes", {}).get(os_key, "").strip()
+
+
+def download_btn(L):
+    """The download list: one panel per OS, each file with its name, file name and size."""
+    groups = []
+    for os_icon, os_title, items in DL_GROUPS:
+        rows = []
+        for key, label, fmt in items:
+            fn = download_file(key)
+            meta = os.path.basename(fn)
+            size = download_size(key)
+            if size:
+                meta += " · " + size
+            rows.append(
+                f'<a class="dl" href="../{esc(fn)}" download>'
+                f'<span class="dl-what"><span>{esc(label)} · {esc(fmt)}</span><small>{esc(meta)}</small></span>'
+                f'<span class="dl-get">{icon("download")}</span></a>')
+        os_code = "win" if os_icon == "os_win" else ("mac" if os_icon == "os_mac" else "linux")
+        groups.append(
+            f'<section class="dl-group" data-os="{os_code}" aria-label="{esc(os_title)}">'
+            f'<h3 class="dl-os-h">{icon(os_icon)}<span>{esc(os_title)}</span></h3>'
+            f'<div class="dl-grid">{"".join(rows)}</div></section>')
+    return f'<div class="dls">{"".join(groups)}</div>'
+
+
+def hero_cta(L):
+    """Two buttons in the hero: Free download (to #download) and Buy a licence."""
+    return (f'<div class="btn-row hero-cta">'
+            f'<a class="btn btn-primary" href="#download">{icon("download")}<span>{esc(L("common.download"))}</span></a>'
+            f'<a class="btn" href="buy.html">{icon("cart")}<span>{esc(L("common.buy"))}</span></a>'
+            f'</div>')
 
 
 def buy_btn(L, primary=False):
@@ -468,10 +506,16 @@ def page_index(L):
       <span class="label">{esc(L('home.kicker'))}</span>
       <h1>{L('home.title')}</h1>
       <p class="lead">{esc(L('home.lead'))}</p>
-      {download_btn(L, anchor=True)}<div class="btn-row">{buy_btn(L)}</div>
+      {hero_cta(L)}
       <p class="small">{esc(L('common.download_note', v=v))}<br>{esc(L('home.free_note'))}</p>
     </div>
     <div>{app_window(L)}</div>
+  </div>
+</section>
+<section id="download" class="downloads">
+  <div class="wrap">
+    <div class="section-head"><h2>{esc(L('common.download'))}</h2><p>{esc(L('common.download_note', v=v))}</p></div>
+    {download_btn(L)}
   </div>
 </section>
 <section class="stats"><div class="wrap grid g4">{stats}</div></section>
@@ -568,7 +612,7 @@ nikpak mt song.wav tracker.mod photo.bmp</pre>
     <div class="panel cta">
       <h2 class="glow-title">{esc(L('home.cta_title'))}</h2>
       <p class="dim">{esc(L('home.cta_text'))}</p>
-      {download_btn(L)}<div class="btn-row">{buy_btn(L)}</div>
+      {hero_cta(L)}
     </div>
   </div>
 </section>"""
@@ -1086,7 +1130,7 @@ def main():
     shutil.copytree(os.path.join(ROOT, "php"), DIST, dirs_exist_ok=True)
     os.makedirs(os.path.join(DIST, "downloads"), exist_ok=True)
     with open(os.path.join(DIST, "downloads", "PUT-THE-SETUP-HERE.txt"), "w", encoding="utf-8") as f:
-        f.write("Upload these files into this folder (see site.json, downloads):\n" + "".join(f"  {os.path.basename(download_file(k))}\n" for k, _, _, _ in DL_OS))
+        f.write("Upload these files into this folder (see site.json, downloads):\n" + "".join(f"  {os.path.basename(download_file(k))}\n" for _, _, items in DL_GROUPS for k, _, _ in items))
     lic = os.path.join(ROOT, "..", "LICENSE.txt")
     if os.path.exists(lic):
         shutil.copy(lic, os.path.join(DIST, "LICENSE.txt"))

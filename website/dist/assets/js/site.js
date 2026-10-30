@@ -173,11 +173,11 @@
     }
   }
 
-  // downloads: highlight the visitor's system (Windows is the default)
+  // downloads: highlight the visitor's system's group (Windows is the default)
   var ua = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || navigator.userAgent || '';
-  var os = /mac|iphone|ipad/i.test(ua) ? 'mac' : /linux|x11|bsd|cros|unix/i.test(ua) && !/android/i.test(navigator.userAgent) ? 'linux' : /win/i.test(ua) ? 'win' : '';
-  if (os) document.querySelectorAll('.dl-row').forEach(function (row) {
-    row.querySelectorAll('.dl-btn').forEach(function (a) { a.classList.toggle('btn-primary', a.getAttribute('data-os') === os); });
+  var os = /mac|iphone|ipad/i.test(ua) ? 'mac' : /linux|x11|bsd|cros|unix/i.test(ua) && !/android/i.test(navigator.userAgent) ? 'linux' : /win/i.test(ua) ? 'win' : 'win';
+  document.querySelectorAll('.dl-group[data-os]').forEach(function (g) {
+    g.classList.toggle('os-current', g.getAttribute('data-os') === os);
   });
 })();
 
