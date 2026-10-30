@@ -48,6 +48,9 @@ pub struct Progress {
     pub done: AtomicU64,
     /// total bytes of input
     pub total: AtomicU64,
+    /// bytes already written to the archive (create); the window uses it to
+    /// estimate the final size and ratio while compressing
+    pub out: AtomicU64,
     /// PHASE_* below
     pub phase: AtomicU8,
     /// files already added (create)
@@ -61,6 +64,7 @@ pub struct Progress {
 pub static PROGRESS: Progress = Progress {
     done: AtomicU64::new(0),
     total: AtomicU64::new(0),
+    out: AtomicU64::new(0),
     phase: AtomicU8::new(0),
     files_done: AtomicU64::new(0),
     files_total: AtomicU64::new(0),
@@ -95,6 +99,27 @@ impl Read for Counted {
     }
 }
 
+/// Counts the bytes written to the archive in PROGRESS.out, so the window can
+/// estimate the final size and ratio while compressing.
+struct CountedW(File);
+
+impl Write for CountedW {
+    fn write(&mut self, b: &[u8]) -> io::Result<usize> {
+        let n = self.0.write(b)?;
+        PROGRESS.out.fetch_add(n as u64, Relaxed);
+        Ok(n)
+    }
+    fn flush(&mut self) -> io::Result<()> {
+        self.0.flush()
+    }
+}
+
+impl CountedW {
+    fn sync_all(&self) -> io::Result<()> {
+        self.0.sync_all()
+    }
+}
+
 fn check_cancel() -> Result<()> {
     if PROGRESS.cancel.load(Relaxed) {
         Err(NikError::Fatal("Cancelled.".into()))
@@ -108,8 +133,8 @@ fn check_cancel() -> Result<()> {
 // ===========================================================================
 
 enum Sink {
-    Plain(BufWriter<File>),
-    Enc(EncryptWriter<BufWriter<File>>),
+    Plain(BufWriter<CountedW>),
+    Enc(EncryptWriter<BufWriter<CountedW>>),
 }
 
 impl Write for Sink {
@@ -392,6 +417,7 @@ pub fn create(o: &Options) -> Result<u8> {
     let started = Instant::now();
     PROGRESS.done.store(0, Relaxed);
     PROGRESS.total.store(0, Relaxed);
+    PROGRESS.out.store(0, Relaxed);
     PROGRESS.phase.store(PHASE_SCAN, Relaxed);
     PROGRESS.files_done.store(0, Relaxed);
     PROGRESS.files_total.store(0, Relaxed);
@@ -500,7 +526,7 @@ pub fn create(o: &Options) -> Result<u8> {
     let file = File::create(&tmp_path)
         .map_err(|e| NikError::Fatal(format!("Cannot create '{}': {e}", tmp_path.display())))?;
     let mut guard = TempGuard { path: tmp_path.clone(), armed: true };
-    let mut bw = BufWriter::with_capacity(IO_BUF, file);
+    let mut bw = BufWriter::with_capacity(IO_BUF, CountedW(file));
     bw.write_all(&header_bytes).map_err(|e| from_io(e, "Write error"))?;
 
     let sink = if let Some(pw) = &password {
@@ -1705,7 +1731,7 @@ pub fn delete(o: &Options, pick: Option<&Pick>) -> Result<u64> {
     let file = File::create(&tmp_path)
         .map_err(|e| NikError::Fatal(format!("Cannot create '{}': {e}", tmp_path.display())))?;
     let mut guard = TempGuard { path: tmp_path.clone(), armed: true };
-    let mut bw = BufWriter::with_capacity(IO_BUF, file);
+    let mut bw = BufWriter::with_capacity(IO_BUF, CountedW(file));
     bw.write_all(&header_bytes).map_err(|e| from_io(e, "Write error"))?;
     let sink = match &op.password {
         Some(pw) => {

@@ -1,0 +1,74 @@
+name: build
+# Builds NikPak (nikpak + unNik) for macOS and Linux on GitHub Actions.
+# Windows is built locally with buildall.ps1 / buildwin.ps1 / build.bat (and the Inno installers).
+# Trigger from the Actions tab (pick platforms), or from a terminal:
+#   gh workflow run build.yml -f platforms=macos,linux
+# buildall.ps1 (macOS + Linux), buildmac.ps1 (macOS) and buildunix.ps1 (Linux) drive it.
+#
+# Each leg runs package-unix.sh, the same script a developer uses by hand, which:
+#   - macOS: builds both Apple-silicon and Intel binaries and lipos them into a universal
+#     pair, then zips them into binaries/nikpak-<version>-macos.zip
+#   - Linux: builds x86_64 and tars it into binaries/nikpak-<version>-linux-x86_64.tar.gz
+# The result is attached as a run artifact (nikpak-macos / nikpak-linux) that the build*.ps1
+# scripts download into binaries\.
+
+on:
+  workflow_dispatch:
+    inputs:
+      platforms:
+        description: 'Platforms to build (comma-separated: macos, linux)'
+        required: true
+        default: 'macos,linux'
+
+jobs:
+  # pick which matrix legs to run (the dispatch input, or everything otherwise)
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - id: set-matrix
+        env:
+          PLATFORMS: ${{ inputs.platforms || 'macos,linux' }}
+        run: |
+          set -euo pipefail
+          entries=()
+          for p in ${PLATFORMS//,/ }; do
+            case "$p" in
+              macos) entries+=('{"platform":"macos-latest","name":"macos"}') ;;
+              linux) entries+=('{"platform":"ubuntu-22.04","name":"linux"}') ;;
+            esac
+          done
+          joined=$(IFS=,; echo "${entries[*]}")
+          echo "matrix={\"include\":[$joined]}" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          # macOS needs both targets for the universal binary (package-unix.sh lipos them)
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+      - uses: swatinem/rust-cache@v2
+      # eframe (glow backend) + winit need these headers to link the window on Linux
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev libwayland-dev
+      - name: Build and package (package-unix.sh)
+        shell: bash
+        run: ./package-unix.sh
+      - name: Upload the package
+        uses: actions/upload-artifact@v4
+        with:
+          name: nikpak-${{ matrix.name }}
+          path: |
+            binaries/*.zip
+            binaries/*.tar.gz
+          retention-days: 14

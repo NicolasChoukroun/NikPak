@@ -188,3 +188,21 @@
   document.addEventListener('click', function (e) { if (apps.open && !apps.contains(e.target)) apps.open = false; }, true);
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && apps.open) { apps.open = false; apps.querySelector('summary').focus(); } });
 })();
+
+// nav dropdowns (Guide › Technical, Contact › Changelog): one open at a time,
+// close on a click outside or Esc
+(function () {
+  var drops = document.querySelectorAll('nav .navdrop');
+  if (!drops.length) return;
+  drops.forEach(function (d) {
+    d.querySelector('summary').addEventListener('click', function () {
+      drops.forEach(function (o) { if (o !== d) o.open = false; });
+    });
+  });
+  document.addEventListener('click', function (e) {
+    drops.forEach(function (d) { if (d.open && !d.contains(e.target)) d.open = false; });
+  }, true);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') drops.forEach(function (d) { d.open = false; });
+  });
+})();

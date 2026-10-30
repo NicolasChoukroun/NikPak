@@ -11,7 +11,8 @@
   "t_contact": "Kontak",
   "t_thanks": "Terima kasih",
   "t_skins": "Skin",
-  "t_tech": "Panduan teknis"
+  "t_tech": "Panduan teknis",
+  "t_changelog": "Perubahan"
  },
  "nav": {
   "home": "Beranda",
@@ -25,7 +26,8 @@
   "skip": "Lompat ke konten",
   "skins": "Skin",
   "tech": "Teknis",
-  "tech_full": "Panduan teknis"
+  "tech_full": "Panduan teknis",
+  "changelog": "Perubahan"
  },
  "common": {
   "download": "Unduh gratis",
@@ -728,6 +730,10 @@
     "a": "Paddle menerbitkan faktur dengan data perusahaan Anda dan mengurus pajak negara Anda. Untuk metode lain, mintalah melalui formulir kontak."
    }
   ]
+ },
+ "changelog": {
+  "title": "Perubahan",
+  "sub": "Semua versi yang dirilis, yang terbaru di atas: tanggal dan apa yang berubah."
  },
  "contact": {
   "title": "Kontak",

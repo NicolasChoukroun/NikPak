@@ -11,7 +11,8 @@
   "t_contact": "Contato",
   "t_thanks": "Obrigado",
   "t_skins": "Temas",
-  "t_tech": "Guia técnico"
+  "t_tech": "Guia técnico",
+  "t_changelog": "Novidades"
  },
  "nav": {
   "home": "Início",
@@ -25,7 +26,8 @@
   "skip": "Ir para o conteúdo",
   "skins": "Temas",
   "tech": "Técnico",
-  "tech_full": "Guia técnico"
+  "tech_full": "Guia técnico",
+  "changelog": "Novidades"
  },
  "common": {
   "download": "Download gratuito",
@@ -728,6 +730,10 @@
     "a": "A Paddle emite faturas com os dados da sua empresa e cuida dos impostos do seu país. Para os outros meios, peça pelo formulário de contato."
    }
   ]
+ },
+ "changelog": {
+  "title": "Novidades",
+  "sub": "Todas as versões entregues, a mais recente primeiro: a data e o que mudou."
  },
  "contact": {
   "title": "Contato",

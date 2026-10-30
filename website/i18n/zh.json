@@ -11,7 +11,8 @@
   "t_contact": "联系我们",
   "t_thanks": "感谢",
   "t_skins": "皮肤",
-  "t_tech": "技术指南"
+  "t_tech": "技术指南",
+  "t_changelog": "更新日志"
  },
  "nav": {
   "home": "首页",
@@ -25,7 +26,8 @@
   "skip": "跳到正文",
   "skins": "皮肤",
   "tech": "技术",
-  "tech_full": "技术指南"
+  "tech_full": "技术指南",
+  "changelog": "更新日志"
  },
  "common": {
   "download": "免费下载",
@@ -728,6 +730,10 @@
     "a": "Paddle 会开具带有贵公司信息的发票，并处理你所在国家的税费。其他付款方式请通过联系表单向我们索取。"
    }
   ]
+ },
+ "changelog": {
+  "title": "更新日志",
+  "sub": "所有已发布的版本，最新在前：日期与变更内容。"
  },
  "contact": {
   "title": "联系我们",

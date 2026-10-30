@@ -179,6 +179,9 @@ $FtpUploads = @(
     @{ Local = (Join-Path $PSScriptRoot 'website\dist'); Remote = '/http/NikPak.nikkoid.com' }
 )
 
+# upload this many files at once, each on its own FTP connection
+$FtpWorkers = 10
+
 function New-FtpRequest([string]$url, $creds, [string]$method) {
     $req = [System.Net.WebRequest]::Create($url)
     if ($req -isnot [System.Net.FtpWebRequest]) { throw "this PowerShell cannot make FTP requests (run it in Windows PowerShell 5.1)" }
@@ -186,7 +189,7 @@ function New-FtpRequest([string]$url, $creds, [string]$method) {
     $req.Method = $method
     $req.UseBinary = $true
     $req.UsePassive = $true
-    $req.KeepAlive = $false
+    $req.KeepAlive = $true   # keep the control connection open between files
     $req.EnableSsl = $false
     $req.Timeout = 60000
     $req.ReadWriteTimeout = 600000
@@ -200,22 +203,31 @@ function New-FtpDir([string]$url, $creds) {
     } catch { }   # 550 "already exists" is the normal case
 }
 
+# directories already created this run (deduped), so a site with hundreds of files
+# does not re-issue a MKD round-trip for the same parent folders
+$script:MadeDirs = New-Object 'System.Collections.Generic.HashSet[string]'
+
 function Ensure-FtpPath([string]$base, [string]$rel, $creds) {
     $cur = $base.TrimEnd('/')
     foreach ($seg in ($rel -split '/')) {
         if ($seg -eq '') { continue }
         $cur = "$cur/$seg"
+        if ($script:MadeDirs.Contains($cur)) { continue }
         New-FtpDir $cur $creds
+        [void]$script:MadeDirs.Add($cur)
     }
 }
 
-function Send-FtpFile([string]$local, [string]$url, $creds) {
-    $req = New-FtpRequest $url $creds ([System.Net.WebRequestMethods+Ftp]::UploadFile)
-    $bytes = [System.IO.File]::ReadAllBytes($local)
-    $s = $req.GetRequestStream()
-    $s.Write($bytes, 0, $bytes.Length)
-    $s.Close()
-    $req.GetResponse().Close()
+function Write-FtpProgress([int]$done, [int]$count, [long]$sent, [long]$total, [int]$active) {
+    # one line, overwritten in place: files done / total, a byte bar, percent, MB, in-flight count
+    $w = 26
+    $filled = if ($total -gt 0) { [int][math]::Floor($w * $sent / $total) } else { $w }
+    if ($filled -lt 0) { $filled = 0 }
+    if ($filled -gt $w) { $filled = $w }
+    $bar = '[' + ('#' * $filled) + (' ' * ($w - $filled)) + ']'
+    $pct = if ($total -gt 0) { [int](100 * $sent / $total) } else { 100 }
+    $mb = if ($total -gt 0) { ('{0:N1}/{1:N1} MB' -f ($sent / 1MB), ($total / 1MB)) } else { '' }
+    Write-Host -NoNewline ("`r  {0,4}/{1,-4} {2} {3,3}%  {4}  ({5} uploading)    " -f $done, $count, $bar, $pct, $mb, $active)
 }
 
 if (-not $NoUpload) {
@@ -232,19 +244,94 @@ if (-not $NoUpload) {
         Ensure-FtpPath "ftp://$FtpHost" $remoteRel $creds
         $ftpUrl = "ftp://$FtpHost/$remoteRel"
         Write-Host "  $localDir  ->  $ftpUrl"
-        $total = 0
-        $errors = @()
-        foreach ($f in (Get-ChildItem -LiteralPath $localDir -Recurse -File)) {
+        $upFiles = @(Get-ChildItem -LiteralPath $localDir -Recurse -File)
+        $fileCount = $upFiles.Count
+        $totalBytes = [long]0
+        if ($fileCount -gt 0) { $totalBytes = [long](($upFiles | Measure-Object -Property Length -Sum).Sum) }
+
+        # allow one connection per worker (the .NET default of 2 would silently cap the parallelism)
+        [System.Net.ServicePointManager]::DefaultConnectionLimit = $FtpWorkers
+
+        # flatten the file list (relative path, size, upload URL) and ensure each directory once
+        $entries = @(foreach ($f in $upFiles) {
             $rel = $f.FullName.Substring($localDir.Length).TrimStart('\', '/').Replace('\', '/')
             $relDir = if ($rel.Contains('/')) { $rel.Substring(0, $rel.LastIndexOf('/')) } else { '' }
+            if ($relDir) { Ensure-FtpPath $ftpUrl $relDir $creds }
+            [pscustomobject]@{ FullName = $f.FullName; Rel = $rel; Size = $f.Length; Url = "$ftpUrl/$rel" }
+        })
+
+        $sync = [hashtable]::Synchronized(@{ bytesSent = [long]0 })
+        $chunk = 256 * 1024
+
+        # one worker uploads one file; self-contained because it runs in a separate runspace
+        $worker = {
+            param($e, $creds, $chunk, $sync)
+            $ok = $true; $err = ''
             try {
-                if ($relDir) { Ensure-FtpPath $ftpUrl $relDir $creds }
-                Send-FtpFile $f.FullName "$ftpUrl/$rel" $creds
-                $total++
+                $req = [System.Net.WebRequest]::Create($e.Url)
+                if ($req -isnot [System.Net.FtpWebRequest]) { throw "this PowerShell cannot make FTP requests (run it in Windows PowerShell 5.1)" }
+                $req.Credentials = $creds
+                $req.Method = [System.Net.WebRequestMethods+Ftp]::UploadFile
+                $req.UseBinary = $true
+                $req.UsePassive = $true
+                $req.KeepAlive = $true
+                $req.EnableSsl = $false
+                $req.Timeout = 60000
+                $req.ReadWriteTimeout = 600000
+                $req.ContentLength = $e.Size
+                $fs = [System.IO.File]::OpenRead($e.FullName)
+                try {
+                    $s = $req.GetRequestStream()
+                    try {
+                        $buf = New-Object byte[] $chunk
+                        while (($n = $fs.Read($buf, 0, $chunk)) -gt 0) {
+                            $s.Write($buf, 0, $n)
+                            $sync.bytesSent += $n
+                        }
+                    } finally { $s.Close() }
+                } finally { $fs.Close() }
+                $req.GetResponse().Close()
             } catch {
-                $errors += "$rel : $($_.Exception.Message)"
+                $ok = $false
+                $err = $_.Exception.Message
             }
+            [pscustomobject]@{ rel = $e.Rel; ok = $ok; err = $err }
         }
+
+        $pool = [runspacefactory]::CreateRunspacePool(1, $FtpWorkers)
+        $pool.Open()
+        $jobs = @(foreach ($e in $entries) {
+            $ps = [powershell]::Create()
+            $ps.RunspacePool = $pool
+            [void]$ps.AddScript($worker).AddArgument($e).AddArgument($creds).AddArgument($chunk).AddArgument($sync)
+            [pscustomobject]@{ ps = $ps; handle = $ps.BeginInvoke(); rel = $e.Rel }
+        })
+
+        # keep one line on screen until the last file is done
+        while ($true) {
+            $remaining = 0
+            foreach ($j in $jobs) { if (-not $j.handle.IsCompleted) { $remaining++ } }
+            if ($remaining -eq 0) { break }
+            Write-FtpProgress ($fileCount - $remaining) $fileCount ([long]$sync.bytesSent) $totalBytes ([math]::Min($FtpWorkers, $remaining))
+            Start-Sleep -Milliseconds 100
+        }
+        Write-Host ''   # move past the progress line
+
+        $total = 0
+        $errors = @()
+        foreach ($j in $jobs) {
+            try {
+                $out = $j.ps.EndInvoke($j.handle)
+                foreach ($r in $out) {
+                    if ($r.ok) { $total++ } else { $errors += "$($r.rel) : $($r.err)" }
+                }
+            } catch {
+                $errors += "$($j.rel) : $($_.Exception.Message)"
+            }
+            $j.ps.Dispose()
+        }
+        $pool.Close(); $pool.Dispose()
+
         $msg = "{0} files uploaded" -f $total
         if ($errors.Count) { $msg += ", $($errors.Count) FAILED" }
         Write-Host "  $msg" -ForegroundColor Green

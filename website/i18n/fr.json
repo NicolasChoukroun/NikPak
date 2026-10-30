@@ -11,7 +11,8 @@
   "t_contact": "Contact",
   "t_thanks": "Merci",
   "t_skins": "Thèmes",
-  "t_tech": "Guide technique"
+  "t_tech": "Guide technique",
+  "t_changelog": "Nouveautés"
  },
  "nav": {
   "home": "Accueil",
@@ -25,7 +26,8 @@
   "skip": "Aller au contenu",
   "skins": "Thèmes",
   "tech": "Technique",
-  "tech_full": "Guide technique"
+  "tech_full": "Guide technique",
+  "changelog": "Nouveautés"
  },
  "common": {
   "download": "Téléchargement gratuit",
@@ -728,6 +730,10 @@
     "a": "Paddle émet des factures au nom de votre entreprise et gère les taxes de votre pays. Pour les autres moyens, demandez-la-nous via le formulaire de contact."
    }
   ]
+ },
+ "changelog": {
+  "title": "Nouveautés",
+  "sub": "Toutes les versions livrées, de la plus récente à la plus ancienne : la date et ce qui a changé."
  },
  "contact": {
   "title": "Contact",

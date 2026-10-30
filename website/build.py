@@ -26,10 +26,13 @@ FONTS = {
     "bn": "&family=Noto+Sans+Bengali:wght@300;400;500;600",
     "ar": "&family=Noto+Sans+Arabic:wght@300;400;500;600",
 }
-PAGES = ["index", "features", "benchmarks", "guide", "tech", "skins", "buy", "contact", "thanks"]
-NAV = ["index", "features", "benchmarks", "guide", "tech", "skins", "buy", "contact"]
-NAV_KEY = {"index": "home", "features": "features", "benchmarks": "benchmarks", "guide": "guide", "tech": "tech", "skins": "skins", "buy": "buy", "contact": "contact"}
-TITLE_KEY = {"index": "t_home", "features": "t_features", "benchmarks": "t_benchmarks", "guide": "t_guide", "tech": "t_tech", "skins": "t_skins", "buy": "t_buy", "contact": "t_contact", "thanks": "t_thanks"}
+PAGES = ["index", "features", "benchmarks", "guide", "tech", "skins", "buy", "contact", "changelog", "thanks"]
+# Top navigation. A string is a plain link; a tuple is a dropdown:
+# ("guide", ["guide", "tech"]) -> a "User guide" dropdown with "User guide" and "Technical".
+# "buy" is left out of the top menu on purpose (it stays in the footer and the CTAs).
+NAV = ["index", "features", "benchmarks", ("guide", ["guide", "tech"]), "skins", ("contact", ["contact", "changelog"])]
+NAV_KEY = {"index": "home", "features": "features", "benchmarks": "benchmarks", "guide": "guide", "tech": "tech", "skins": "skins", "buy": "buy", "contact": "contact", "changelog": "changelog"}
+TITLE_KEY = {"index": "t_home", "features": "t_features", "benchmarks": "t_benchmarks", "guide": "t_guide", "tech": "t_tech", "skins": "t_skins", "buy": "t_buy", "contact": "t_contact", "changelog": "t_changelog", "thanks": "t_thanks"}
 
 # Number format per language: (thousands separator, decimal separator)
 NUMFMT = {"en": (",", "."), "zh": (",", "."), "hi": (",", "."), "bn": (",", "."), "ar": (",", "."),
@@ -62,6 +65,32 @@ GENERAL = [  # tool, size, %, creation s, extraction s, is nikpak
     ("RAR 7 -m3 -s", 34236198, 18.0, 48.2, 5.9, False), ("NikPak -m2", 48229284, 25.3, 1.7, .9, True),
     ("RAR 7 -m3", 56038351, 29.4, 20.2, 6.9, False), ("ZIP -9", 62198510, 32.7, 28.2, 6.9, False),
     ("ZIP -6", 62672415, 32.9, 7.3, 5.4, False)]
+
+# ---- Changelog (CHANGELOG.md, newest first): version, date, one-line summary ----
+CHANGELOG = [
+    ("1.6.2", "24 October 2026", "The fourteen painted skins step behind the interface, so the window stays readable."),
+    ("1.6.1", "24 October 2026", "The storm and the mountains, painted again."),
+    ("1.6.0", "24 October 2026", "Fourteen painted skins, a real thunderstorm and better mountains."),
+    ("1.5.6", "24 October 2026", "Skins: the 41 skins of Nikkomander in NikPak and unNik."),
+    ("1.5.5", "23 October 2026", "Right-click menu “NikPak” in Explorer, Dolphin, Nemo, Nautilus and Finder."),
+    ("1.5.4", "23 October 2026", "nikpak.exe and unNik.exe get their icons."),
+    ("1.5.3", "23 October 2026", "Packing folders with hundreds of thousands of files starts at once."),
+    ("1.5.2", "22 October 2026", "The setup installs both programs and registers .nik files."),
+    ("1.5.1", "22 October 2026", "Switch between NikPak and unNik, shared language, “open folder” buttons, sound effects."),
+    ("1.5.0", "22 October 2026", "unNik, the free archive browser; selective extraction and delete."),
+    ("1.4.5", "22 October 2026", "Ten languages, Cancel button, window sized for X posts."),
+    ("1.4.4", "22 October 2026", "Gentler volume prices (RarLab-style steps)."),
+    ("1.4.3", "22 October 2026", "New prices, new copyright, About box."),
+    ("1.4.2", "22 October 2026", "First test on Windows; dialogs in front."),
+    ("1.4.1", "22 October 2026", "Windows installer."),
+    ("1.4.0", "22 October 2026", "Shareware edition: registration, licence keys, licence server kit."),
+    ("1.3.1", "21 October 2026", "Drag and drop fix, choose files, brand-coloured links."),
+    ("1.3.0", "21 October 2026", "Drop window and community links."),
+    ("1.2.1", "21 October 2026", "Best compression by default."),
+    ("1.2.0", "21 October 2026", "Beats 7-Zip on office files, text and source code."),
+    ("1.1.0", "October 2026", "Media intelligence."),
+    ("1.0.0", "October 2026", "First version."),
+]
 
 
 def load(p):
@@ -191,9 +220,21 @@ def layout(L, page, body, extra_head="", scripts=""):
     alts = "".join(f'<link rel="alternate" hreflang="{HTML_LANG[c]}" href="{dom}/{c}/{page}.html">' for c in LANGS)
     alts += f'<link rel="alternate" hreflang="x-default" href="{dom}/en/{page}.html">'
     nav = []
-    for p in NAV:
-        cur = ' aria-current="page"' if p == page else ""
-        nav.append(f'<a href="{p}.html"{cur}>{esc(L("nav." + NAV_KEY[p]))}</a>')
+    for item in NAV:
+        if isinstance(item, str):
+            p = item
+            cur = ' aria-current="page"' if p == page else ""
+            nav.append(f'<a href="{p}.html"{cur}>{esc(L("nav." + NAV_KEY[p]))}</a>')
+        else:
+            label_p, children = item
+            on = ' class="on"' if any(c == page for c in children) else ""
+            links = []
+            for c in children:
+                cur = ' aria-current="page"' if c == page else ""
+                links.append(f'<a href="{c}.html"{cur}>{esc(L("nav." + NAV_KEY[c]))}</a>')
+            nav.append(
+                f'<details class="navdrop"{on}><summary>{esc(L("nav." + NAV_KEY[label_p]))}<i class="caret"></i></summary>'
+                f'<div class="navdrop-menu">{"".join(links)}</div></details>')
     langs = []
     for c in LANGS:
         cur = ' aria-current="true"' if c == code else ""
@@ -270,6 +311,8 @@ def footer(L):
       <div>
         <span class="label">{esc(L('common.support'))}</span>
         <a href="guide.html">{esc(L('nav.guide'))}</a>
+        <a href="tech.html">{esc(L('nav.tech_full'))}</a>
+        <a href="changelog.html">{esc(L('nav.changelog'))}</a>
         <a href="contact.html">{esc(L('nav.contact'))}</a>
         <a href="../LICENSE.txt">{esc(L('common.licence_terms'))}</a>
       </div>
@@ -294,12 +337,13 @@ def download_file(os_key):
 
 def download_btn(L, anchor=False):
     dl = esc(L("common.download"))
+    ver = esc(SITE["version"])
     btns = "".join(
         f'<a class="btn dl-btn{" btn-primary" if k == "windows" else ""}" data-os="{o}" href="../{esc(download_file(k))}" download title="{dl} · {name}">'
         f'{icon("os_" + o)}<span><b>{name}</b><small>{ext}</small></span></a>'
         for k, o, name, ext in DL_OS)
     attr = ' id="download"' if anchor else ""
-    return f'<div class="dl"{attr}><span class="label">{dl}</span><div class="dl-row">{btns}</div></div>'
+    return f'<div class="dl"{attr}><div class="dl-head"><span class="label">{dl}</span><span class="dl-ver">v{ver}</span></div><div class="dl-row">{btns}</div></div>'
 
 
 def buy_btn(L, primary=False):
@@ -829,6 +873,15 @@ def page_thanks(L):
     return layout(L, "thanks", body)
 
 
+def page_changelog(L):
+    c = lambda k: L("changelog." + k)
+    items = "".join(
+        f'<div class="cl-item"><div class="cl-head"><span class="cl-ver">{esc(v)}</span><span class="cl-date">{esc(d)}</span></div><p>{esc(s)}</p></div>'
+        for v, d, s in CHANGELOG)
+    body = page_head(L, c("title"), c("sub")) + f'<div class="wrap"><div class="changelog">{items}</div></div>'
+    return layout(L, "changelog", body)
+
+
 # the strip on the home and features pages: the default pair, two painted
 # skins of 1.6 and four classic ones
 SKIN_STRIP = ["nikkoid", "nikkoid-light", "moon", "pattaya", "sushi", "chess", "dracula", "8bit"]
@@ -941,7 +994,8 @@ def page_skins(L):
 
 
 BUILDERS = {"index": page_index, "features": page_features, "benchmarks": page_benchmarks, "guide": page_guide,
-            "tech": page_tech, "skins": page_skins, "buy": page_buy, "contact": page_contact, "thanks": page_thanks}
+            "tech": page_tech, "skins": page_skins, "buy": page_buy, "contact": page_contact, "changelog": page_changelog,
+            "thanks": page_thanks}
 
 
 def root_index():

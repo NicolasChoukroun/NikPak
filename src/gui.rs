@@ -2,9 +2,11 @@
 //! (for example by double-clicking nikpak.exe).
 //!
 //! One minimalist, frameless window: drop files or folders onto it and they
-//! are compressed with the best compression (-m5) into a .nik archive in the
-//! destination folder shown at the bottom (remembered between sessions).
-//! Progress is shown as a large percentage inside a circular meter.
+//! are compressed into a .nik archive in the destination folder shown at the
+//! bottom (remembered between sessions). The compression level (Fast / Medium /
+//! Best, shown at the centre top) is Medium by default; while compressing, the
+//! window also estimates the final size and time. Progress is shown as a large
+//! percentage inside a circular meter.
 
 use crate::archive::{self, PROGRESS, PHASE_FINISH, PHASE_SCAN};
 use crate::cli::{Command, EpMode, Level, MediaMode, Options, Overwrite};
@@ -97,6 +99,14 @@ pub const SOCIAL: [(&str, &str); 3] = [
     ("Telegram", "https://t.me/cryptonikko"),
     ("X", "https://x.com/cryptonikkoid"),
     ("Discord", "https://discord.com/users/1537826350759415811"),
+];
+
+/// The compression levels offered by the window, shown at the centre top and
+/// clicked to change. Medium (zstd 6) is the default: a good size/speed balance.
+const LEVELS: [(&str, Level); 3] = [
+    ("Fast", Level::Zstd(1)),
+    ("Medium", Level::Zstd(6)),
+    ("Best", Level::Max),
 ];
 
 pub(crate) fn alpha(c: Color32, a: u8) -> Color32 {
@@ -462,6 +472,17 @@ pub(crate) fn human(n: u64) -> String {
     }
 }
 
+/// A short, single-line duration (for the "time to compress" estimate).
+pub(crate) fn human_secs(s: f64) -> String {
+    if s < 90.0 {
+        format!("{:.0} s", s)
+    } else if s < 5400.0 {
+        format!("{:.1} min", s / 60.0)
+    } else {
+        format!("{:.1} h", s / 3600.0)
+    }
+}
+
 /// Open a web link in the default browser.
 pub(crate) fn open_link(url: &str) {
     #[cfg(windows)]
@@ -516,6 +537,8 @@ enum Modal {
 struct App {
     elevated: bool,
     dest: String,
+    /// compression level for the next archive (shown centre top)
+    level: Level,
     stage: Stage,
     start: Instant,
     shown: f32,
@@ -547,6 +570,7 @@ impl App {
         let mut app = App {
             elevated: is_elevated(),
             dest: load_destination(),
+            level: LEVELS[1].1,
             stage: Stage::Idle,
             start: Instant::now(),
             shown: 0.0,
@@ -647,7 +671,7 @@ impl App {
             archive: out.display().to_string(),
             files: paths.iter().map(|p| p.display().to_string()).collect(),
             password: PwdSpec::None,
-            level: Level::Max,
+            level: self.level,
             ep: EpMode::Names,
             overwrite: Overwrite::All,
             quiet: true,
@@ -1974,6 +1998,40 @@ impl eframe::App for App {
                 p.line_segment([pa, pb], Stroke::new(1.0_f32, alpha(ACCENT_SOFT(), (a * 200.0) as u8)));
             }
 
+            // ---- compression level, centre top: click to change -------------------
+            let lvl_font = FontId::new(11.5, family("ui"));
+            let lvl_txts: Vec<Txt> = LEVELS.iter().map(|(k, _)| lay(&p, t(*k), lvl_font.clone())).collect();
+            let lvl_sep = 6.0;
+            let lvl_w: f32 = lvl_txts.iter().map(|g| g.size().x + 20.0).sum::<f32>() + lvl_sep * (LEVELS.len() - 1) as f32;
+            let lvl_y = lr.bottom() + 20.0;
+            let mut lvl_x = panel.center().x - lvl_w / 2.0;
+            // right-to-left languages read the pills right-to-left
+            let lvl_order: Vec<usize> = if i18n::current().rtl() {
+                (0..LEVELS.len()).rev().collect()
+            } else {
+                (0..LEVELS.len()).collect()
+            };
+            for k in lvl_order {
+                let (key, lv) = LEVELS[k];
+                let w = lvl_txts[k].size().x + 20.0;
+                let rect = Rect::from_min_size(Pos2::new(lvl_x, lvl_y - 9.0), Vec2::new(w, 18.0));
+                let sel = self.level == lv;
+                let resp = ui.interact(rect, egui::Id::new(("level", k)), Sense::click()).on_hover_cursor(egui::CursorIcon::PointingHand);
+                let hover = resp.hovered() && !busy_now;
+                if sel {
+                    p.rect_filled(rect, rr(9), skin::c().accent_btn());
+                } else if hover {
+                    p.rect_filled(rect, rr(9), alpha(ACCENT(), 34));
+                }
+                let col = if sel { ACCENT_FG() } else if hover { TEXT() } else { TEXT_DIM() };
+                text_fit(&p, rect.center(), Align2::CENTER_CENTER, t(key), lvl_font.clone(), col, w - 10.0);
+                if resp.clicked() && !busy_now {
+                    sfx::play(Sfx::Click);
+                    self.level = lv;
+                }
+                lvl_x += w + lvl_sep;
+            }
+
             // ---- centre ------------------------------------------------------------
             let r = 92.0;
             let status_y = ring_c.y + r + 34.0;
@@ -2002,12 +2060,26 @@ impl eframe::App for App {
                     };
                     glow_text(&p, Pos2::new(ring_c.x, status_y), phase_txt, FontId::new(12.0, family("ui")), ACCENT_SOFT(), alpha(ACCENT(), 5), 3.0);
                     text(&p, Pos2::new(ring_c.x, status_y + 21.0), Align2::CENTER_CENTER, &job.label, FontId::new(14.0, family("ui-light")), TEXT());
-                    text(&p, 
+                    let out_now = PROGRESS.out.load(Relaxed);
+                    let (ratio_txt, eta_txt, size_txt) = if done > 0 && out_now > 0 {
+                        let ratio = out_now as f64 * 100.0 / done as f64;
+                        let eta = if total > done {
+                            job.started.elapsed().as_secs_f64() * (total - done) as f64 / done as f64
+                        } else {
+                            0.0
+                        };
+                        let est = out_now as f64 * total as f64 / done as f64;
+                        (format!("{:.0}%", ratio), human_secs(eta), human(est as u64))
+                    } else {
+                        ("…".to_string(), "…".to_string(), "…".to_string())
+                    };
+                    text_fit(&p,
                         Pos2::new(ring_c.x, status_y + 39.0),
                         Align2::CENTER_CENTER,
-                        format!("{}  ·  {:.0} s", tf("{} of {}", &[&human(done), &human(total)]), job.started.elapsed().as_secs_f32()),
+                        format!("{} {}   ·   {} {}   ·   {} {}", t("Ratio"), ratio_txt, t("Time"), eta_txt, t("Size"), size_txt),
                         FontId::new(12.0, family("ui-light")),
                         TEXT_DIM(),
+                        W - 40.0,
                     );
                     // Cancel: stops at once, removes the unfinished archive, keeps the window open
                     let cancel = Rect::from_center_size(Pos2::new(ring_c.x, status_y + 68.0), Vec2::new(140.0, 32.0));

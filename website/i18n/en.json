@@ -11,7 +11,8 @@
   "t_contact": "Contact",
   "t_thanks": "Thank you",
   "t_skins": "Skins",
-  "t_tech": "Technical guide"
+  "t_tech": "Technical guide",
+  "t_changelog": "Changelog"
  },
  "nav": {
   "home": "Home",
@@ -25,7 +26,8 @@
   "skip": "Skip to content",
   "skins": "Skins",
   "tech": "Technical",
-  "tech_full": "Technical guide"
+  "tech_full": "Technical guide",
+  "changelog": "Changelog"
  },
  "common": {
   "download": "Free download",
@@ -728,6 +730,10 @@
     "a": "Paddle issues invoices with your company details and handles the taxes of your country. For the other methods, ask us through the contact form."
    }
   ]
+ },
+ "changelog": {
+  "title": "Changelog",
+  "sub": "Every version that was delivered, newest first: the date and what changed."
  },
  "contact": {
   "title": "Contact",

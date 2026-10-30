@@ -101,6 +101,33 @@ html[lang="zh-Hans"] .label, html[lang="ar"] .label, html[lang="hi"] .label, htm
   .top .menu-toggle { display: inline-flex; margin-inline-start: auto; }
 }
 
+/* nav dropdowns (Guide › Technical, Contact › Changelog) */
+.navdrop { position: relative; }
+.navdrop > summary {
+  list-style: none; display: flex; align-items: center; gap: 7px;
+  padding: 8px 12px; border-radius: 10px; font-size: .95rem; color: var(--dim);
+  cursor: pointer; white-space: nowrap; user-select: none;
+}
+.navdrop > summary::-webkit-details-marker { display: none; }
+.navdrop > summary:hover, .navdrop[open] > summary { color: var(--text); background: rgba(95, 196, 255, .08); }
+.navdrop.on > summary { color: var(--text); background: rgba(30, 155, 255, .16); }
+.navdrop .caret { width: 0; height: 0; border-inline: 4px solid transparent; border-top: 5px solid var(--accent); transition: transform .15s; }
+.navdrop[open] .caret { transform: rotate(180deg); }
+.navdrop-menu {
+  position: absolute; top: calc(100% + 6px); inset-inline-start: 0; z-index: 60; min-width: 190px;
+  padding: 8px; background: linear-gradient(180deg, var(--panel-top), var(--panel-bottom));
+  border: 1px solid var(--line-strong); border-radius: 14px; box-shadow: 0 24px 60px rgba(0, 0, 0, .55);
+  display: grid; gap: 2px;
+}
+.navdrop-menu a { display: block; padding: 8px 12px; border-radius: 9px; color: var(--text); font-size: .95rem; white-space: nowrap; }
+.navdrop-menu a:hover, .navdrop-menu a:focus-visible { background: rgba(30, 155, 255, .14); text-decoration: none; }
+.navdrop-menu a[aria-current="page"] { background: color-mix(in srgb, var(--accent) 62%, #000); color: #fff; }
+@media (max-width: 1020px) {
+  .navdrop > summary { width: 100%; padding: 12px 14px; font-size: 1.05rem; justify-content: space-between; }
+  .navdrop-menu { position: static; box-shadow: none; background: none; border: 0; padding: 0 0 0 14px; min-width: 0; }
+  .navdrop-menu a { padding: 10px 14px; font-size: 1rem; }
+}
+
 /* language picker (the app's pill with flag) */
 .lang { position: relative; }
 .lang > button, .menu-toggle {
@@ -476,7 +503,10 @@ html[lang="zh-Hans"] .skin-tile .tag, html[lang="hi"] .skin-tile .tag, html[lang
 
 /* ---- downloads: one button per system (the visitor's system is highlighted) ---- */
 .dl { margin: 24px 0 12px; scroll-margin-top: 100px; }
+.dl-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.dl-ver { font-family: var(--mono); font-size: .78rem; font-weight: 600; color: var(--accent-soft); background: rgba(30, 155, 255, .12); border: 1px solid var(--line-strong); border-radius: 999px; padding: 1px 10px; line-height: 1.5; }
 .cta .dl { text-align: center; }
+.cta .dl-head { justify-content: center; }
 .dl-row { display: grid; grid-template-columns: repeat(3, minmax(0, max-content)); gap: 10px; margin-top: 10px; }
 .cta .dl-row { justify-content: center; }
 .dl-btn { justify-content: flex-start; text-align: start; padding: 10px 18px 10px 14px; }
@@ -523,6 +553,16 @@ html[lang="zh-Hans"] .skin-tile .tag, html[lang="hi"] .skin-tile .tag, html[lang
 .tech-content pre { white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; overflow-x: hidden; }
 .tech-content table { max-width: 100%; }
 .tech-content figure img { width: auto; max-width: 100%; }
+
+/* ---------- changelog timeline ---------- */
+.changelog { max-width: 760px; margin: 0 auto; padding-bottom: 56px; }
+.cl-item { padding: 20px 0; border-bottom: 1px solid rgba(95, 196, 255, .08); }
+.cl-item:first-child { padding-top: 8px; }
+.cl-item:last-child { border-bottom: 0; }
+.cl-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.cl-ver { font-family: var(--mono); font-weight: 600; color: var(--accent-soft); font-size: .95rem; background: rgba(30, 155, 255, .12); border: 1px solid var(--line-strong); border-radius: 8px; padding: 1px 10px; }
+.cl-date { color: var(--dim); font-size: .9rem; }
+.cl-item p { color: #C6DAF2; margin: 8px 0 0; }
 
 /* icon-only apps dropdown in the top bar */
 .apps summary { padding: 0 11px; gap: 0; }
