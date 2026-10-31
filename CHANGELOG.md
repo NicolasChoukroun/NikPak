@@ -14,7 +14,7 @@ The newest version is at the top. Format: version – date – summary, then the
 
 ### Changed
 - **The Amiga Computer skin is redrawn as a real Kickstart 1.3 screen.** The blue desktop now carries one Workbench window – white frame, black outline, light body, the two disk icons with their orange labels, the orange highlight row, the checkered Boing ball, a blue-bodied second window and the bottom bar – instead of the two washed-out grey windows it had.
-- **Its yellow lettering is readable now.** `accent-soft` was `#FFB44A`, which sat at 1.4:1 on the light panels: the "EVALUATION COPY · REGISTER" label, the modal kickers (ABOUT, SHAREWARE, REGISTRATION) and the web link were nearly invisible. It is `#7A3600` now (7:1 on the modal cards, 5.2:1 on the screen), the body text is `#0E1A26` (10:1), and the primary button uses white on the darkened orange (5.6:1). The window body is Amiga blue (`#D3E3F4`, veiled onto a `#A8C4E2` screen) rather than white, and the skin's corners are square, the way Amiga's were.
+- **Its yellow lettering is readable now.** `accent-soft` was `#FFB44A`, which sat at 1.4:1 on the light panels: the "EVALUATION COPY · REGISTER" label, the modal kickers (ABOUT, SHAREWARE, REGISTRATION) and the web link were nearly invisible. It is `#5C2700` now (9.8:1 on the modal cards, 4.9:1 on the screen), the body text is `#0E1A26` (7.1:1), the dim text is `#28384E` (4.8:1), and the primary button uses white on the darkened orange (5.6:1). The window body is Amiga blue (`#C9DCF5`, veiled onto a `#6FA0DC` screen) rather than white, and the skin's corners are square, the way Amiga's were.
 
 ## 1.6.3 – 30 October 2026 – Fast, Medium and Best compression in the window
 

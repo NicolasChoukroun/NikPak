@@ -1925,7 +1925,7 @@ fn sushi(c: &mut Canvas) {
 
 const AMIGA_FRAME: &str = "#FFFFFF";
 const AMIGA_INK: &str = "#0A1420";
-const AMIGA_BODY: &str = "#D3E3F4";
+const AMIGA_BODY: &str = "#C9DCF5";
 const AMIGA_ORANGE: &str = "#FF8800";
 
 /// The chrome of a Workbench window, the way Kickstart 1.3 drew it: a black
