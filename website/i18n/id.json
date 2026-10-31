@@ -131,7 +131,7 @@
   "honest_text": "RAR masih menawarkan catatan pemulihan, arsip multivolume dan ekstrak-sendiri, serta puluhan tahun pengujian lapangan. NikPak masih baru dan belum diaudit secara independen. Kami mengatakannya terus terang, dan peta jalan menunjukkan langkah berikutnya.",
   "cta_title": "Coba NikPak sekarang",
   "cta_text": "Satu penginstal memasang NikPak dan unNik. Tidak perlu mendaftar untuk mulai.",
-  "skins_title": "55 skin",
+  "skins_title": "89 skin",
   "skins_text": "Gelap, terang, ceria, atau klasik: tombol skin mengubah warna NikPak dan unNik, dan tombol matahari / bulan beralih antara gelap dan terang dengan satu klik.",
   "skins_link": "Lihat semua skin"
  },
@@ -243,7 +243,7 @@
    "<b>Audit keamanan eksternal</b> atas kriptografi dan pengekstrak."
   ],
   "skins_t": "Skin",
-  "skins_p": "55 skin untuk NikPak dan unNik: 41 dari Nikkomander dan 14 skin bergambar buatan kami. Pilihan disimpan dan dipakai bersama oleh kedua program, dan Anda dapat mengimpor skin .skin.json Anda sendiri.",
+  "skins_p": "89 skin untuk NikPak dan unNik: 75 dari Nikkomander dan 14 skin bergambar buatan kami. Pilihan disimpan dan dipakai bersama oleh kedua program, dan Anda dapat mengimpor skin .skin.json Anda sendiri.",
   "cli_t": "Baris perintah",
   "cli_p": "NikPak mengikuti sintaks RAR (a, x, e, l, v, lb, t, p, d, mt), dengan opsi gaya RAR dan zip, kode keluar yang dapat diprediksi, dan -help yang mendokumentasikan setiap opsi. Kata sandi bisa berasal dari variabel lingkungan, dan front-end seperti Total Commander dapat mengendalikannya seperti rar.exe.",
   "menu_t": "Menu pengelola berkas",
@@ -586,7 +586,7 @@
   "more_p": "Panduan teknis lengkap — arsitektur, format .nik, codec NAC, desain enkripsi, dan semua benchmark — ada <a href=\"tech.html\">di halaman ini</a>. Ada pertanyaan? <a href=\"contact.html\">Hubungi kami</a>.",
   "install_unix": "<b>macOS dan Linux:</b> ekstrak arsipnya lalu jalankan <code>./install.sh</code>. Skrip ini menyalin nikpak dan unNik ke <code>~/.local/bin</code> (Linux) atau <code>/usr/local/bin</code> (macOS) dan menambahkan menu klik kanan pengelola berkas (Dolphin, Nemo, Nautilus; Tindakan Cepat di Finder). Lalu buka jendelanya dengan <code>nikpak</code>.",
   "skins_t": "Skin",
-  "skins_p": "NikPak dan unNik berbagi 55 skin. Menu terbuka di samping program, sehingga seluruh antarmuka terlihat dalam skin yang sedang dicoba.",
+  "skins_p": "NikPak dan unNik berbagi 89 skin. Menu terbuka di samping program, sehingga seluruh antarmuka terlihat dalam skin yang sedang dicoba.",
   "skins_steps": [
    "Klik tombol palet di bilah judul. Jendela melebar dan kotak skin muncul di kanan, di luar program.",
    "Klik satu skin: seluruh jendela langsung mengambil warna dan latarnya.",

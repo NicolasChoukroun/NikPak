@@ -1,7 +1,7 @@
 {
   "_comment": "Public settings of the web site. Edit, then run: python build.py. Secrets (API keys) go in shop-config.php on the server, never here.",
   "domain": "https://nikpak.nikkoid.com",
-  "version": "1.6.3",
+  "version": "1.7.0",
   "downloads": {
     "_comment": "{v} is replaced by the version above. Put the files in dist/downloads/ (or change the paths).",
     "windows": "downloads/nikpak-{v}-setup.exe",

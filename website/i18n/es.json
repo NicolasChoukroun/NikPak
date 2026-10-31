@@ -131,7 +131,7 @@
   "honest_text": "RAR sigue ofreciendo registros de recuperación, archivos multivolumen y autoextraíbles, y décadas de uso. NikPak es nuevo y aún no ha sido auditado de forma independiente. Lo decimos claramente, y la hoja de ruta muestra lo que viene.",
   "cta_title": "Pruebe NikPak ahora",
   "cta_text": "Un solo instalador instala NikPak y unNik. No hace falta registrarse para empezar.",
-  "skins_title": "55 aspectos",
+  "skins_title": "89 aspectos",
   "skins_text": "Oscuros, claros, divertidos o clásicos: el botón de aspectos cambia los colores de NikPak y unNik, y el botón sol / luna pasa de oscuro a claro con un clic.",
   "skins_link": "Ver todos los aspectos"
  },
@@ -243,7 +243,7 @@
    "<b>Una auditoría de seguridad externa</b> de la criptografía y del extractor."
   ],
   "skins_t": "Aspectos",
-  "skins_p": "55 aspectos para NikPak y unNik: los 41 de Nikkomander y 14 aspectos pintados propios. La elección se guarda y la comparten ambos programas, y puede importar sus propios aspectos .skin.json.",
+  "skins_p": "89 aspectos para NikPak y unNik: los 75 de Nikkomander y 14 aspectos pintados propios. La elección se guarda y la comparten ambos programas, y puede importar sus propios aspectos .skin.json.",
   "cli_t": "Línea de comandos",
   "cli_p": "NikPak sigue la sintaxis de RAR (a, x, e, l, v, lb, t, p, d, mt), con opciones de RAR y de zip, códigos de salida predecibles y un -help que documenta cada opción. La contraseña puede venir de una variable de entorno, y front-ends como Total Commander pueden manejarlo como si fuera rar.exe.",
   "menu_t": "El menú del administrador de archivos",
@@ -586,7 +586,7 @@
   "more_p": "La guía técnica completa — arquitectura, el formato .nik, el códec NAC, el diseño de cifrado y todos los benchmarks — está <a href=\"tech.html\">en esta página</a>. ¿Preguntas? <a href=\"contact.html\">Escríbenos</a>.",
   "install_unix": "<b>macOS y Linux:</b> descomprima el archivo y ejecute <code>./install.sh</code>. Copia nikpak y unNik en <code>~/.local/bin</code> (Linux) o <code>/usr/local/bin</code> (macOS) y añade el menú contextual del gestor de archivos (Dolphin, Nemo, Nautilus; acciones rápidas del Finder). Después abra la ventana con <code>nikpak</code>.",
   "skins_t": "Aspectos",
-  "skins_p": "NikPak y unNik comparten 55 aspectos. El menú se abre junto al programa, para que toda la interfaz siga visible con el aspecto que prueba.",
+  "skins_p": "NikPak y unNik comparten 89 aspectos. El menú se abre junto al programa, para que toda la interfaz siga visible con el aspecto que prueba.",
   "skins_steps": [
    "Haga clic en el botón de la paleta de la barra de título. La ventana se ensancha y el cuadro de aspectos aparece a la derecha, fuera del programa.",
    "Haga clic en un aspecto: la ventana entera toma sus colores y su fondo al instante.",

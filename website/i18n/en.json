@@ -131,7 +131,7 @@
   "honest_text": "RAR still offers recovery records, multi-volume and self-extracting archives, and decades of field testing. NikPak is new and has not been independently audited yet. We say so plainly, and the roadmap shows what comes next.",
   "cta_title": "Try NikPak now",
   "cta_text": "One setup installs NikPak and unNik. No registration needed to start.",
-  "skins_title": "55 skins",
+  "skins_title": "89 skins",
   "skins_text": "Dark, bright, playful or classic: the skins button changes the colours of NikPak and unNik, and the sun / moon button switches between dark and bright in one click.",
   "skins_link": "See all skins"
  },
@@ -243,7 +243,7 @@
    "<b>An external security review</b> of the cryptography and the extractor."
   ],
   "skins_t": "Skins",
-  "skins_p": "55 skins for NikPak and unNik: the 41 of Nikkomander plus 14 painted ones of our own. The choice is saved and shared by both programs, and you can import your own .skin.json skins.",
+  "skins_p": "89 skins for NikPak and unNik: the 75 of Nikkomander plus 14 painted ones of our own. The choice is saved and shared by both programs, and you can import your own .skin.json skins.",
   "cli_t": "Command line",
   "cli_p": "NikPak follows the RAR command syntax (a, x, e, l, v, lb, t, p, d, mt) with RAR and zip-style options, predictable exit codes and a -help that documents every option. The password can come from an environment variable, and front-ends such as Total Commander can drive it like rar.exe.",
   "menu_t": "The file-manager menu",
@@ -586,7 +586,7 @@
   "more_p": "The complete technical guide — architecture, the .nik format, the NAC codec, the encryption design and the full benchmarks — is <a href=\"tech.html\">on this page</a>. Questions? <a href=\"contact.html\">Write to us</a>.",
   "install_unix": "<b>macOS and Linux:</b> unpack the archive and run <code>./install.sh</code>. It copies nikpak and unNik to <code>~/.local/bin</code> (Linux) or <code>/usr/local/bin</code> (macOS) and adds the right-click menu of the file manager (Dolphin, Nemo, Nautilus; Quick Actions in the Finder). Then start the window with <code>nikpak</code>.",
   "skins_t": "Skins",
-  "skins_p": "NikPak and unNik share 55 skins. The menu opens beside the program, so you can see the whole interface in the skin you are trying.",
+  "skins_p": "NikPak and unNik share 89 skins. The menu opens beside the program, so you can see the whole interface in the skin you are trying.",
   "skins_steps": [
    "Click the palette button in the title bar. The window widens and the skins box appears on the right, outside the program.",
    "Click a skin: the whole window takes its colours and its background at once.",

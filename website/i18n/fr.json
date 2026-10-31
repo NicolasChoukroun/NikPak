@@ -131,7 +131,7 @@
   "honest_text": "RAR offre encore les enregistrements de récupération, les archives multivolumes et auto-extractibles, et des décennies d'usage. NikPak est récent et n'a pas encore été audité de façon indépendante. Nous le disons clairement, et la feuille de route montre la suite.",
   "cta_title": "Essayez NikPak maintenant",
   "cta_text": "Un seul installateur installe NikPak et unNik. Aucune inscription pour commencer.",
-  "skins_title": "55 thèmes",
+  "skins_title": "89 thèmes",
   "skins_text": "Sombres, clairs, ludiques ou classiques : le bouton des thèmes change les couleurs de NikPak et d'unNik, et le bouton soleil / lune passe du sombre au clair en un clic.",
   "skins_link": "Voir tous les thèmes"
  },
@@ -243,7 +243,7 @@
    "<b>Un audit de sécurité externe</b> de la cryptographie et de l'extracteur."
   ],
   "skins_t": "Thèmes",
-  "skins_p": "55 thèmes pour NikPak et unNik : les 41 de Nikkomander et 14 thèmes peints de notre cru. Le choix est enregistré et partagé par les deux programmes, et vous pouvez importer vos propres thèmes .skin.json.",
+  "skins_p": "89 thèmes pour NikPak et unNik : les 75 de Nikkomander et 14 thèmes peints de notre cru. Le choix est enregistré et partagé par les deux programmes, et vous pouvez importer vos propres thèmes .skin.json.",
   "cli_t": "Ligne de commande",
   "cli_p": "NikPak suit la syntaxe RAR (a, x, e, l, v, lb, t, p, d, mt), avec les options RAR et zip, des codes de sortie prévisibles et un -help qui documente chaque option. Le mot de passe peut venir d’une variable d’environnement, et des front-ends comme Total Commander peuvent le piloter comme rar.exe.",
   "menu_t": "Le menu de l’explorateur de fichiers",
@@ -586,7 +586,7 @@
   "more_p": "Le guide technique complet — architecture, le format .nik, le codec NAC, la conception du chiffrement et tous les benchmarks — se trouve <a href=\"tech.html\">sur cette page</a>. Des questions ? <a href=\"contact.html\">Écrivez-nous</a>.",
   "install_unix": "<b>macOS et Linux :</b> décompressez l'archive et lancez <code>./install.sh</code>. Il copie nikpak et unNik dans <code>~/.local/bin</code> (Linux) ou <code>/usr/local/bin</code> (macOS) et ajoute le menu contextuel du gestionnaire de fichiers (Dolphin, Nemo, Nautilus ; actions rapides du Finder). Lancez ensuite la fenêtre avec <code>nikpak</code>.",
   "skins_t": "Thèmes",
-  "skins_p": "NikPak et unNik partagent 55 thèmes. Le menu s'ouvre à côté du programme : toute l'interface reste visible dans le thème que vous essayez.",
+  "skins_p": "NikPak et unNik partagent 89 thèmes. Le menu s'ouvre à côté du programme : toute l'interface reste visible dans le thème que vous essayez.",
   "skins_steps": [
    "Cliquez le bouton palette de la barre de titre. La fenêtre s'élargit et la boîte des thèmes apparaît à droite, en dehors du programme.",
    "Cliquez un thème : la fenêtre entière prend aussitôt ses couleurs et son fond.",

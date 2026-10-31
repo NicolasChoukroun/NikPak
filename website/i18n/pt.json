@@ -131,7 +131,7 @@
   "honest_text": "O RAR ainda oferece registros de recuperação, arquivos multivolume e autoextraíveis, e décadas de uso. O NikPak é novo e ainda não passou por auditoria independente. Dizemos isso claramente, e o roteiro mostra o que vem a seguir.",
   "cta_title": "Experimente o NikPak agora",
   "cta_text": "Um único instalador instala o NikPak e o unNik. Não é preciso cadastro para começar.",
-  "skins_title": "55 temas",
+  "skins_title": "89 temas",
   "skins_text": "Escuros, claros, divertidos ou clássicos: o botão de temas muda as cores do NikPak e do unNik, e o botão sol / lua alterna entre escuro e claro com um clique.",
   "skins_link": "Ver todos os temas"
  },
@@ -243,7 +243,7 @@
    "<b>Uma auditoria de segurança externa</b> da criptografia e do extrator."
   ],
   "skins_t": "Temas",
-  "skins_p": "55 temas para NikPak e unNik: os 41 do Nikkomander e 14 temas pintados nossos. A escolha é salva e compartilhada pelos dois programas, e você pode importar seus próprios temas .skin.json.",
+  "skins_p": "89 temas para NikPak e unNik: os 75 do Nikkomander e 14 temas pintados nossos. A escolha é salva e compartilhada pelos dois programas, e você pode importar seus próprios temas .skin.json.",
   "cli_t": "Linha de comando",
   "cli_p": "O NikPak segue a sintaxe do RAR (a, x, e, l, v, lb, t, p, d, mt), com opções RAR e zip, códigos de saída previsíveis e um -help que documenta cada opção. A senha pode vir de uma variável de ambiente, e front-ends como o Total Commander podem usá-lo como se fosse o rar.exe.",
   "menu_t": "O menu do gerenciador de arquivos",
@@ -586,7 +586,7 @@
   "more_p": "O guia técnico completo — arquitetura, o formato .nik, o codec NAC, o design de criptografia e todos os benchmarks — está <a href=\"tech.html\">nesta página</a>. Dúvidas? <a href=\"contact.html\">Escreva-nos</a>.",
   "install_unix": "<b>macOS e Linux:</b> descompacte o arquivo e execute <code>./install.sh</code>. Ele copia nikpak e unNik para <code>~/.local/bin</code> (Linux) ou <code>/usr/local/bin</code> (macOS) e adiciona o menu de contexto do gerenciador de arquivos (Dolphin, Nemo, Nautilus; ações rápidas do Finder). Depois abra a janela com <code>nikpak</code>.",
   "skins_t": "Temas",
-  "skins_p": "NikPak e unNik compartilham 55 temas. O menu abre ao lado do programa, para que toda a interface fique visível no tema que você experimenta.",
+  "skins_p": "NikPak e unNik compartilham 89 temas. O menu abre ao lado do programa, para que toda a interface fique visível no tema que você experimenta.",
   "skins_steps": [
    "Clique no botão da paleta na barra de título. A janela alarga-se e a caixa de temas aparece à direita, fora do programa.",
    "Clique num tema: a janela inteira assume as suas cores e o seu fundo de imediato.",

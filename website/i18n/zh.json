@@ -131,7 +131,7 @@
   "honest_text": "RAR 仍然提供恢复记录、分卷和自解压压缩包，以及数十年的实际使用验证。NikPak 是新软件，尚未经过独立审计。我们如实说明，路线图展示了接下来的计划。",
   "cta_title": "立即试用 NikPak",
   "cta_text": "一个安装程序即可安装 NikPak 和 unNik。无需注册即可开始使用。",
-  "skins_title": "55 款皮肤",
+  "skins_title": "89 款皮肤",
   "skins_text": "深色、浅色、活泼或经典：皮肤按钮可更改 NikPak 和 unNik 的颜色，太阳 / 月亮按钮一键切换深色与浅色。",
   "skins_link": "查看全部皮肤"
  },
@@ -243,7 +243,7 @@
    "<b>外部安全审计：</b>审查密码学部分和解压器。"
   ],
   "skins_t": "皮肤",
-  "skins_p": "NikPak 和 unNik 共有 55 款皮肤：41 款来自 Nikkomander，另有 14 款手绘皮肤。选择会被保存并由两个程序共用，还可以导入自己的 .skin.json 皮肤。",
+  "skins_p": "NikPak 和 unNik 共有 89 款皮肤：75 款来自 Nikkomander，另有 14 款手绘皮肤。选择会被保存并由两个程序共用，还可以导入自己的 .skin.json 皮肤。",
   "cli_t": "命令行",
   "cli_p": "NikPak 遵循 RAR 的命令语法（a、x、e、l、v、lb、t、p、d、mt），支持 RAR 和 zip 风格的选项、可预测的退出码，以及记录每个选项的 -help。密码可以从环境变量读取，Total Commander 等前端可以像调用 rar.exe 一样调用它。",
   "menu_t": "文件管理器菜单",
@@ -586,7 +586,7 @@
   "more_p": "完整的技术指南——架构、.nik 格式、NAC 编解码器、加密设计和全部基准测试——都在<a href=\"tech.html\">这个页面</a>。有问题？<a href=\"contact.html\">联系我们</a>。",
   "install_unix": "<b>macOS 和 Linux：</b>解压后运行 <code>./install.sh</code>。它会把 nikpak 和 unNik 复制到 <code>~/.local/bin</code>（Linux）或 <code>/usr/local/bin</code>（macOS），并添加文件管理器的右键菜单（Dolphin、Nemo、Nautilus；Finder 的快速操作）。然后用 <code>nikpak</code> 打开窗口。",
   "skins_t": "皮肤",
-  "skins_p": "NikPak 和 unNik 共用 55 款皮肤。菜单在程序旁边打开，试用时整个界面都清晰可见。",
+  "skins_p": "NikPak 和 unNik 共用 89 款皮肤。菜单在程序旁边打开，试用时整个界面都清晰可见。",
   "skins_steps": [
    "点击标题栏中的调色板按钮。窗口会变宽，皮肤面板出现在右侧、程序之外。",
    "点击一款皮肤：整个窗口立刻换成它的颜色和背景。",
