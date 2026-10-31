@@ -5,6 +5,13 @@ The newest version is at the top. Format: version – date – summary, then the
 
 ---
 
+## 1.7.0 – 31 October 2026 – 34 operating-system skins, and an update screen
+
+### Added
+- 34 skins that dress the window as a desktop operating system: Windows 10, Windows 11, Windows Vista, Windows 7, Windows 95, macOS Tahoe, Sequoia, Sonoma, Ventura, Monterey, Big Sur, Catalina, Mojave and Sierra, OS X El Capitan, Yosemite, Mavericks, Lion, Leopard and Tiger, and Ubuntu Resolute Raccoon, Noble Numbat, Jammy Jellyfish, Focal Fossa, Bionic Beaver, Xenial Xerus, Trusty Tahr, Precise Pangolin, Natty Narwhal, Lucid Lynx, Karmic Koala, Hardy Heron, Gutsy Gibbon and Dapper Drake. NikPak and unNik share the list, so both show 89 built-in skins.
+- **An update screen at launch**: when a newer version is published, NikPak says so once at start (installed version, new version, what changed) with **Cancel** and **Download**, which opens the download section of the site. The check runs on a background thread with the system curl and an eight-second limit; it never installs anything by itself and stays silent when offline. The same logic is in NikEdit, NikSQL and Nikkomander.
+- The drop ring, its arrow and the text under it now sit on a small dark shadow, so they stay readable on the bright skins (macOS, Windows 7/10/11, the light Ubuntu releases).
+
 ## 1.6.3 – 30 October 2026 – Fast, Medium and Best compression in the window
 
 ### Changed

@@ -785,7 +785,7 @@
   "contact": "Nous contacter"
  },
  "skins": {
-  "title": "55 thèmes, un clic",
+  "title": "89 thèmes, un clic",
   "sub": "NikPak et unNik portent les mêmes thèmes que Nikkomander, de Nikkoid Blue à Pizza, Matrix et 8-Bit Game. Choisissez-en un : les deux programmes le gardent.",
   "how_t": "Comment ça marche",
   "how_list": [
@@ -793,7 +793,7 @@
    "<b>Appliquer ou annuler :</b> la boîte se déplace par sa barre de titre. <b>Appliquer le thème</b> le garde pour NikPak et unNik ; <b>Annuler</b> (ou Échap) revient au thème précédent.",
    "<b>Soleil et lune :</b> le bouton voisin passe de Nikkoid Blue (sombre) à Nikkoid Bright en un clic, comme dans Nikkomander.",
    "<b>Mémorisé :</b> le thème choisi est enregistré et repris au démarrage suivant. NikPak et unNik le partagent : changez-le dans l'un, l'autre suit en quelques secondes.",
-   "<b>Peints et plats :</b> 41 thèmes repris des dégradés CSS de Nikkomander — rayures, étoiles, briques — et 14 nouveaux dont l'illustration est dessinée par NikPak lui-même : un orage, des montagnes au crépuscule, une rue néon, de vieux ordinateurs, un échiquier. Ils restent nets à toute taille de fenêtre. Depuis la 1.6.2, l'illustration peinte s'efface derrière l'interface : adoucie et fondue derrière le titre, l'anneau et le texte d'état, elle ne se bat plus avec la fenêtre."
+   "<b>Peints et plats :</b> 75 thèmes repris des dégradés CSS de Nikkomander — rayures, étoiles, briques — et 14 nouveaux dont l'illustration est dessinée par NikPak lui-même : un orage, des montagnes au crépuscule, une rue néon, de vieux ordinateurs, un échiquier. Ils restent nets à toute taille de fenêtre. Depuis la 1.6.2, l'illustration peinte s'efface derrière l'interface : adoucie et fondue derrière le titre, l'anneau et le texte d'état, elle ne se bat plus avec la fenêtre."
   ],
   "gallery_t": "Galerie",
   "gallery_sub": "NikPak dans chaque thème. Cliquez sur une image pour la voir en grand.",

@@ -1072,7 +1072,7 @@ impl App {
             start: Instant::now(),
             shown: 0.0,
             big: false,
-            elevated: crate::gui::is_elevated(),
+            elevated: crate::gui::is_elevated() && std::env::var_os("NIKPAK_GUI_CAPTURE").is_none(),
             search_focus: false,
             viewer_find_focus: false,
             error_idle: None,
@@ -3578,8 +3578,11 @@ fn relaunch_unelevated() -> bool {
 
 /// Open the window; `archive` is opened at once (unNik archive.nik).
 pub fn run(archive: Option<PathBuf>) -> Result<(), String> {
+    // NIKPAK_GUI_CAPTURE: the window is being photographed (tools\site-shots.ps1).
+    // It then stays elevated instead of restarting through Explorer, so the shell
+    // that started it - often an administrator one - owns the window.
     #[cfg(windows)]
-    if archive.is_none() && relaunch_unelevated() {
+    if archive.is_none() && std::env::var_os("NIKPAK_GUI_CAPTURE").is_none() && relaunch_unelevated() {
         return Ok(());
     }
     run_window(archive, None)

@@ -648,7 +648,7 @@ def page_features(L):
         ("levels", f("engine_t"), f'<p>{esc(f("engine_p"))}</p><div class="table-wrap"><table><thead><tr><th>{esc(f("lv_col_level"))}</th><th>{esc(f("lv_col_use"))}</th></tr></thead><tbody>{levels}</tbody></table></div>'),
         ("encryption", f("crypto_t"), f'<p>{esc(f("crypto_p"))}</p>{checks([esc(x) for x in L.raw("features.crypto_list")])}{cmp}'),
         ("safety", f("safety_t"), checks([esc(x) for x in L.raw("features.safety_list")])),
-        ("apps", f("apps_t"), f'<p>{esc(f("apps_p"))}</p><div class="shots"><img class="shot" src="../assets/img/nikpak-choose.webp" alt="NikPak" width="500" height="560" loading="lazy"><img class="shot" src="../assets/img/nikpak-about.webp" alt="NikPak" width="500" height="560" loading="lazy"></div><figure style="margin-top:24px"><img class="shot" src="../assets/img/unnik-dialogs.webp" alt="unNik" width="1393" height="560" loading="lazy"></figure>'),
+        ("apps", f("apps_t"), f'<p>{esc(f("apps_p"))}</p><div class="shots"><img class="shot" src="../assets/img/nikpak-choose.webp" alt="NikPak" width="500" height="560" loading="lazy"><img class="shot" src="../assets/img/nikpak-about.webp" alt="NikPak" width="500" height="560" loading="lazy"></div><figure style="margin-top:24px"><img class="shot" src="../assets/img/unnik-dialogs2.webp" alt="unNik" width="1393" height="559" loading="lazy"></figure>'),
         ("menu", f("menu_t"), f'<p>{esc(f("menu_p"))}</p>'),
         ("cli", f("cli_t"), f'<p>{esc(f("cli_p"))} <a href="tech.html#3-command-line-reference">{esc(L("nav.tech"))} →</a></p>'),
         ("skins", f("skins_t"), f'<p>{esc(f("skins_p"))} <a href="skins.html">{esc(L("home.skins_link"))} →</a></p><a class="skin-strip" href="skins.html" aria-label="{esc(L("home.skins_link"))}">{skin_strip()}</a>'),
@@ -932,9 +932,20 @@ def page_changelog(L):
 SKIN_STRIP = ["nikkoid", "nikkoid-light", "moon", "pattaya", "sushi", "chess", "dracula", "8bit"]
 
 
+def skin_file(s, suffix):
+    """The picture of a skin. Skins.json may name it ("img": "win11.png"); the
+    first pictures are .webp, the ones taken without Python are .png."""
+    if s.get("img") and not suffix:
+        return s["img"]
+    if s.get("thumb") and suffix:
+        return s["thumb"]
+    return f'{s["id"]}{suffix}.webp'
+
+
 def skin_strip():
     names = {s["id"]: s["name"] for s in SKINS}
-    return "".join(f'<img src="../assets/img/skins/{i}-thumb.webp" alt="{esc(names[i])}" title="{esc(names[i])}" width="250" height="280" loading="lazy">' for i in SKIN_STRIP)
+    by_id = {s["id"]: s for s in SKINS}
+    return "".join(f'<img src="../assets/img/skins/{skin_file(by_id[i], "-thumb")}" alt="{esc(names[i])}" title="{esc(names[i])}" width="250" height="280" loading="lazy">' for i in SKIN_STRIP)
 
 
 SKIN_EXAMPLE = """{
@@ -966,12 +977,12 @@ def page_skins(L):
         new = f'<i class="tag n">{esc(k("tag_new"))}</i>' if s.get("new") else ""
         tiles.append(
             f'<figure class="skin-tile reveal" data-dark="{1 if s["dark"] else 0}">'
-            f'<a href="../assets/img/skins/{s["id"]}.webp" data-name="{esc(s["name"])}">'
-            f'<img src="../assets/img/skins/{s["id"]}-thumb.webp" alt="NikPak · {esc(s["name"])}" width="250" height="280" loading="lazy"></a>'
+            f'<a href="../assets/img/skins/{skin_file(s, "")}" data-name="{esc(s["name"])}">'
+            f'<img src="../assets/img/skins/{skin_file(s, "-thumb")}" alt="NikPak · {esc(s["name"])}" width="250" height="280" loading="lazy"></a>'
             f'<figcaption><span lang="en">{esc(s["name"])}</span><span class="tags">{new}<i class="tag {"d" if s["dark"] else "b"}">{esc(tag)}</i></span></figcaption></figure>')
     # the painted skins of 1.6, shown above the full gallery
     new_strip = "".join(
-        f'<a href="#gallery"><img src="../assets/img/skins/{s["id"]}-thumb.webp" alt="NikPak · {esc(s["name"])}" width="250" height="280" loading="lazy"></a>'
+        f'<a href="#gallery"><img src="../assets/img/skins/{skin_file(s, "-thumb")}" alt="NikPak · {esc(s["name"])}" width="250" height="280" loading="lazy"></a>'
         for s in [s for s in SKINS if s.get("new")][:8])
     band = f"""
 <section>
@@ -1128,6 +1139,8 @@ def main():
     os.makedirs(DIST)
     shutil.copytree(os.path.join(ROOT, "static"), os.path.join(DIST, "assets"))
     shutil.copytree(os.path.join(ROOT, "php"), DIST, dirs_exist_ok=True)
+    # the update manifest, published at the root: the app asks for /version.json
+    shutil.copy(os.path.join(ROOT, "version.json"), os.path.join(DIST, "version.json"))
     os.makedirs(os.path.join(DIST, "downloads"), exist_ok=True)
     with open(os.path.join(DIST, "downloads", "PUT-THE-SETUP-HERE.txt"), "w", encoding="utf-8") as f:
         f.write("Upload these files into this folder (see site.json, downloads):\n" + "".join(f"  {os.path.basename(download_file(k))}\n" for _, _, items in DL_GROUPS for k, _, _ in items))

@@ -402,6 +402,10 @@ pub const KEYS: &[&str] = &[
 // ---------------------------------------------------------------------------
 
 const ES: &[(&str, &str)] = &[
+    ("UPDATE", "ACTUALIZACIÓN"),
+    ("NikPak {} is available", "NikPak {} ya está disponible"),
+    ("You have {}. The download page has the new version.", "Tienes {}. La página de descarga tiene la versión nueva."),
+    ("Download", "Descargar"),
     ("SHAREWARE", "SHAREWARE"),
     ("Evaluation copy", "Copia de evaluación"),
     ("NikPak is shareware. You may test it for free, without time limit, for personal use.", "NikPak es shareware. Puede probarlo gratis, sin límite de tiempo, para uso personal."),
@@ -628,6 +632,10 @@ const ES: &[(&str, &str)] = &[
 ];
 
 const FR: &[(&str, &str)] = &[
+    ("UPDATE", "MISE À JOUR"),
+    ("NikPak {} is available", "NikPak {} est disponible"),
+    ("You have {}. The download page has the new version.", "Vous avez {}. La page de téléchargement contient la nouvelle version."),
+    ("Download", "Télécharger"),
     ("SHAREWARE", "SHAREWARE"),
     ("Evaluation copy", "Version d'évaluation"),
     ("NikPak is shareware. You may test it for free, without time limit, for personal use.", "NikPak est un shareware. Vous pouvez l'essayer gratuitement, sans limite de durée, pour un usage personnel."),
@@ -854,6 +862,10 @@ const FR: &[(&str, &str)] = &[
 ];
 
 const PT: &[(&str, &str)] = &[
+    ("UPDATE", "ATUALIZAÇÃO"),
+    ("NikPak {} is available", "NikPak {} está disponível"),
+    ("You have {}. The download page has the new version.", "Você tem {}. A página de transferência tem a versão nova."),
+    ("Download", "Transferir"),
     ("SHAREWARE", "SHAREWARE"),
     ("Evaluation copy", "Cópia de avaliação"),
     ("NikPak is shareware. You may test it for free, without time limit, for personal use.", "NikPak é shareware. Você pode testá-lo gratuitamente, sem limite de tempo, para uso pessoal."),
@@ -1080,6 +1092,10 @@ const PT: &[(&str, &str)] = &[
 ];
 
 const ID: &[(&str, &str)] = &[
+    ("UPDATE", "PEMBARUAN"),
+    ("NikPak {} is available", "NikPak {} tersedia"),
+    ("You have {}. The download page has the new version.", "Anda memakai {}. Halaman unduhan punya versi barunya."),
+    ("Download", "Unduh"),
     ("SHAREWARE", "SHAREWARE"),
     ("Evaluation copy", "Salinan evaluasi"),
     ("NikPak is shareware. You may test it for free, without time limit, for personal use.", "NikPak adalah shareware. Anda boleh mencobanya gratis, tanpa batas waktu, untuk penggunaan pribadi."),
@@ -1306,6 +1322,10 @@ const ID: &[(&str, &str)] = &[
 ];
 
 const RU: &[(&str, &str)] = &[
+    ("UPDATE", "ОБНОВЛЕНИЕ"),
+    ("NikPak {} is available", "Доступен NikPak {}"),
+    ("You have {}. The download page has the new version.", "У вас {}. На странице загрузки — новая версия."),
+    ("Download", "Скачать"),
     ("SHAREWARE", "SHAREWARE"),
     ("Evaluation copy", "Ознакомительная версия"),
     ("NikPak is shareware. You may test it for free, without time limit, for personal use.", "NikPak — условно-бесплатная программа. Для личных целей ею можно пользоваться бесплатно и без ограничения по времени."),
@@ -1532,6 +1552,10 @@ const RU: &[(&str, &str)] = &[
 ];
 
 const ZH: &[(&str, &str)] = &[
+    ("UPDATE", "更新"),
+    ("NikPak {} is available", "NikPak {} 已发布"),
+    ("You have {}. The download page has the new version.", "你使用的是 {}。下载页面已有新版本。"),
+    ("Download", "下载"),
     ("SHAREWARE", "共享软件"),
     ("Evaluation copy", "试用版"),
     ("NikPak is shareware. You may test it for free, without time limit, for personal use.", "NikPak 是共享软件。个人使用可免费试用，没有时间限制。"),
@@ -1758,6 +1782,10 @@ const ZH: &[(&str, &str)] = &[
 ];
 
 const HI: &[(&str, &str)] = &[
+    ("UPDATE", "अपडेट"),
+    ("NikPak {} is available", "NikPak {} उपलब्ध है"),
+    ("You have {}. The download page has the new version.", "आपके पास {} है। डाउनलोड पृष्ठ पर नया संस्करण है।"),
+    ("Download", "डाउनलोड"),
     ("SHAREWARE", "शेयरवेयर"),
     ("Evaluation copy", "मूल्यांकन संस्करण"),
     ("NikPak is shareware. You may test it for free, without time limit, for personal use.", "NikPak एक शेयरवेयर है। आप इसे व्यक्तिगत उपयोग के लिए बिना किसी समय-सीमा के मुफ़्त में आज़मा सकते हैं।"),
@@ -1984,6 +2012,10 @@ const HI: &[(&str, &str)] = &[
 ];
 
 const BN: &[(&str, &str)] = &[
+    ("UPDATE", "হালনাগাদ"),
+    ("NikPak {} is available", "NikPak {} পাওয়া যাচ্ছে"),
+    ("You have {}. The download page has the new version.", "আপনার কাছে {} আছে। ডাউনলোড পাতায় নতুন সংস্করণ রয়েছে।"),
+    ("Download", "ডাউনলোড"),
     ("SHAREWARE", "শেয়ারওয়্যার"),
     ("Evaluation copy", "মূল্যায়ন সংস্করণ"),
     ("NikPak is shareware. You may test it for free, without time limit, for personal use.", "NikPak একটি শেয়ারওয়্যার। ব্যক্তিগত ব্যবহারের জন্য আপনি এটি কোনো সময়সীমা ছাড়াই বিনামূল্যে ব্যবহার করে দেখতে পারেন।"),
@@ -2210,6 +2242,10 @@ const BN: &[(&str, &str)] = &[
 ];
 
 const AR: &[(&str, &str)] = &[
+    ("UPDATE", "تحديث"),
+    ("NikPak {} is available", "الإصدار {} من NikPak متوفر"),
+    ("You have {}. The download page has the new version.", "لديك {}. صفحة التنزيل تضم الإصدار الجديد."),
+    ("Download", "تنزيل"),
     ("SHAREWARE", "برنامج مشاركة"),
     ("Evaluation copy", "نسخة تقييمية"),
     ("NikPak is shareware. You may test it for free, without time limit, for personal use.", "NikPak برنامج مشاركة. يمكنك تجربته مجانًا ودون حدّ زمني للاستخدام الشخصي."),

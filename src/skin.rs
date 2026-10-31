@@ -1436,7 +1436,7 @@ mod tests {
 
     #[test]
     fn every_builtin_skin_parses() {
-        assert_eq!(BUILTIN.len(), 41);
+        assert_eq!(BUILTIN.len(), 75);
         assert_eq!(EXTRA.len(), 14);
         assert_eq!(BUILTIN[0].0, DEFAULT);
         assert!(BUILTIN.iter().any(|b| b.0 == BRIGHT && !b.2));

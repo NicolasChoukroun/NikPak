@@ -34,4 +34,5 @@ pub mod unnik;
 pub mod media;
 pub mod nac;
 pub mod recomp;
+pub mod update;
 pub mod util;

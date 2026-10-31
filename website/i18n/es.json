@@ -785,7 +785,7 @@
   "contact": "Contáctenos"
  },
  "skins": {
-  "title": "55 aspectos, un clic",
+  "title": "89 aspectos, un clic",
   "sub": "NikPak y unNik llevan los mismos aspectos que Nikkomander, de Nikkoid Blue a Pizza, Matrix y 8-Bit Game. Elija uno y los dos programas lo conservan.",
   "how_t": "Cómo funciona",
   "how_list": [
@@ -793,7 +793,7 @@
    "<b>Aplicar o cancelar:</b> el cuadro se arrastra por su barra de título. <b>Aplicar aspecto</b> lo conserva para NikPak y unNik; <b>Cancelar</b> (o Esc) vuelve al que tenía.",
    "<b>Sol y luna:</b> el botón de al lado cambia entre Nikkoid Blue (oscuro) y Nikkoid Bright con un clic, como en Nikkomander.",
    "<b>Recordado:</b> el aspecto elegido se guarda y se usa en el siguiente inicio. NikPak y unNik lo comparten: cámbielo en uno y el otro lo sigue en segundos.",
-   "<b>Pintados y planos:</b> 41 aspectos tomados de los degradados CSS de Nikkomander —rayas, estrellas, ladrillos— y 14 nuevos cuya ilustración dibuja el propio NikPak: una tormenta, montañas al atardecer, una calle de neón, ordenadores antiguos, un tablero de ajedrez. Se mantienen nítidos a cualquier tamaño de ventana. Desde la 1.6.2, la ilustración pintada da un paso atrás: se suaviza y se desvanece detrás del título, el anillo y el texto de estado, para no competir con la ventana."
+   "<b>Pintados y planos:</b> 75 aspectos tomados de los degradados CSS de Nikkomander —rayas, estrellas, ladrillos— y 14 nuevos cuya ilustración dibuja el propio NikPak: una tormenta, montañas al atardecer, una calle de neón, ordenadores antiguos, un tablero de ajedrez. Se mantienen nítidos a cualquier tamaño de ventana. Desde la 1.6.2, la ilustración pintada da un paso atrás: se suaviza y se desvanece detrás del título, el anillo y el texto de estado, para no competir con la ventana."
   ],
   "gallery_t": "Galería",
   "gallery_sub": "NikPak con cada aspecto. Haga clic en una imagen para verla en tamaño completo.",

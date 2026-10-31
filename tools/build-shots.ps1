@@ -18,29 +18,37 @@
 
   The PNGs go to screenshots\<version>\ (00-skins-menu.png, 01-moon.png, ...)
   and the backgrounds to screenshots\<version>\backgrounds\.
+  An elevated PowerShell works too: the capture part is then run by a
+  normal-user task (tools\unelevated.ps1), because NikPak never keeps running
+  elevated.
   Keep the window in front and the desktop unlocked while it runs: the shots
   are taken with CopyFromScreen, which captures whatever is on screen.
 #>
-param([switch]$NoBuild, [switch]$Test, [string]$OutDir)
+param(
+    [switch]$NoBuild,
+    [switch]$Test,
+    [string]$OutDir,
+    # set by tools\unelevated.ps1 on the copy that runs as the normal user
+    [switch]$Inner,
+    [string]$Root
+)
 
 $ErrorActionPreference = 'Stop'
-Set-Location (Split-Path $PSScriptRoot -Parent)
-$root = Get-Location
+$root = if ($Root) { $Root } else { Split-Path $PSScriptRoot -Parent }
+Set-Location $root
+. (Join-Path $root 'tools\unelevated.ps1')
 
-# The skins must be shown as users normally see them. NikPak refuses to run its
-# window as administrator (it relaunches it through Explorer), which breaks the
-# capture. Run this from a normal (non-administrator) PowerShell.
-$principal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
-if ($principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    Write-Host 'Do not run this as administrator.' -ForegroundColor Red
-    Write-Host 'NikPak relaunches its window as a normal user when started elevated, so the'
-    Write-Host 'capture fails. Open a normal PowerShell (Win+X, "Windows PowerShell" without'
-    Write-Host '"Administrator", or Win+R then "powershell") and run the command there.'
-    exit 1
-}
+# the copy that runs as the normal user writes what it does to this file
+if ($Inner) { Start-Transcript -Path $script:UnelevatedLog -Force | Out-Null }
 
-# --- 1. cargo ---------------------------------------------------------------
-if (-not $NoBuild) {
+# Elevation is not a problem: NIKPAK_GUI_CAPTURE tells NikPak / unNik to stay in
+# the process that was started instead of restarting itself through Explorer, so
+# the shell that started them - elevated or not - owns the window and can copy
+# it off the screen.
+$env:NIKPAK_GUI_CAPTURE = '1'
+
+# --- 1. cargo (in this shell, before the capture is handed over) -------------
+if (-not $NoBuild -and -not $Inner) {
     if (-not (Get-Command cargo -ErrorAction SilentlyContinue)) {
         $cargoBin = Join-Path $env:USERPROFILE '.cargo\bin'
         if (Test-Path (Join-Path $cargoBin 'cargo.exe')) { $env:Path = "$cargoBin;$env:Path" }

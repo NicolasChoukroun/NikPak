@@ -532,6 +532,8 @@ enum Modal {
     Register { name: String, email: String, key: String, error: Option<String>, done: Option<String> },
     /// version, copyright and licence status (the small "i" button)
     About,
+    /// a newer release on the web site: shown once, at launch
+    Update(crate::update::UpdateInfo),
 }
 
 struct App {
@@ -555,6 +557,10 @@ struct App {
     /// the size the window was asked to take (it widens while the skins box
     /// is open, to give the box room beside the program)
     win_size: Vec2,
+    /// the answer of the launch update check, when it arrives
+    update_rx: Option<crate::update::Answer>,
+    /// the update screen was shown once: this launch is done asking
+    update_shown: bool,
 }
 
 impl App {
@@ -568,7 +574,12 @@ impl App {
             Modal::Nag { register_left: rand::random::<bool>() }
         };
         let mut app = App {
-            elevated: is_elevated(),
+            // NIKPAK_GUI_CAPTURE: the window is being photographed (buildskins.ps1).
+            // It then stays elevated instead of restarting through Explorer, so the
+            // shell that started it - often an administrator one - owns the window
+            // and can copy it off the screen. The warning about drag and drop is
+            // left out too: the picture must show the program as users see it.
+            elevated: is_elevated() && std::env::var_os("NIKPAK_GUI_CAPTURE").is_none(),
             dest: load_destination(),
             level: LEVELS[1].1,
             stage: Stage::Idle,
@@ -581,6 +592,9 @@ impl App {
             skins: SkinMenu { open: std::env::var_os("NIKPAK_GUI_SKINMENU").is_some(), beside: true, ..Default::default() },
             was_hover: false,
             win_size: Vec2::new(W, H),
+            // the check runs in the background; the window opens immediately
+            update_rx: if std::env::var_os("NIKPAK_GUI_NO_UPDATE").is_some() { None } else { Some(crate::update::check_in_background()) },
+            update_shown: false,
         };
         // Test hooks (screenshots)
         match std::env::var("NIKPAK_GUI_MODAL").as_deref() {
@@ -876,6 +890,13 @@ pub(crate) fn text_fit(p: &egui::Painter, pos: Pos2, align: Align2, s: impl AsRe
     r
 }
 
+/// Paint text with a small, dark drop shadow so it stays readable on bright
+/// wallpapers; on dark skins the shadow is invisible. One soft copy, not a glow.
+pub(crate) fn paint_shadowed(p: &egui::Painter, t: &Txt, pos: Pos2, color: Color32) {
+    t.paint(p, pos + Vec2::new(0.0, 1.6), Color32::from_black_alpha(96));
+    t.paint(p, pos, color);
+}
+
 /// Tooltips are drawn by egui itself: keep English for scripts it cannot shape.
 pub(crate) fn tip(s: &'static str) -> &'static str {
     let tr = t(s);
@@ -972,7 +993,7 @@ pub(crate) fn text_link(ui: &mut egui::Ui, p: &egui::Painter, pos: Pos2, text: &
     let rect = Rect::from_min_size(pos, g.size()).expand(3.0);
     let resp = ui.interact(rect, egui::Id::new(id), Sense::click()).on_hover_cursor(egui::CursorIcon::PointingHand);
     let col = if resp.hovered() { TEXT() } else { ACCENT_SOFT() };
-    g.paint(p, pos, col);
+    paint_shadowed(p, &g, pos, col);
     let uy = pos.y + g.size().y - if matches!(g, Txt::S(_)) { 5.0 } else { 0.0 };
     p.line_segment([Pos2::new(pos.x, uy), Pos2::new(pos.x + g.size().x, uy)], Stroke::new(1.0_f32, alpha(col, if resp.hovered() { 200 } else { 70 })));
     if resp.clicked() {
@@ -1769,6 +1790,37 @@ impl App {
                             next = Some(Modal::None);
                         }
                     }
+                    Modal::Update(info) => {
+                        let c = Rect::from_center_size(Pos2::new(cx, panel.center().y), Vec2::new(372.0, 300.0));
+                        card(&p, c);
+                        glow_text(&p, Pos2::new(cx, c.top() + 32.0), t("UPDATE"), FontId::new(11.0, family("ui")), ACCENT_SOFT(), alpha(ACCENT(), 5), 3.0);
+                        glow_text(&p, Pos2::new(cx, c.top() + 70.0), &tf("NikPak {} is available", &[info.latest.as_str()]), FontId::new(21.0, family("display")), TEXT(), alpha(ACCENT(), 6), 1.0);
+                        p.line_segment([Pos2::new(cx - 60.0, c.top() + 92.0), Pos2::new(cx + 60.0, c.top() + 92.0)], Stroke::new(1.0_f32, alpha(ACCENT_SOFT(), 60)));
+                        let mut y = c.top() + 108.0;
+                        y += wrapped(&p, Pos2::new(c.left() + 30.0, y), c.width() - 60.0,
+                            &tf("You have {}. The download page has the new version.", &[info.current.as_str()]), 13.5, TEXT());
+                        if !info.notes.is_empty() {
+                            y += 8.0;
+                            wrapped(&p, Pos2::new(c.left() + 30.0, y), c.width() - 60.0, &info.notes, 12.0, TEXT_DIM());
+                        }
+                        // Cancel (or Esc, or the cross) closes it; Download opens the site
+                        let no = Rect::from_min_size(Pos2::new(c.left() + 30.0, c.bottom() - 66.0), Vec2::new(140.0, 44.0));
+                        let yes = no.translate(Vec2::new(160.0, 0.0));
+                        if pill_button(ui, &p, no, t("Cancel"), false, "upd-cancel") || ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+                            next = Some(Modal::None);
+                        }
+                        if pill_button(ui, &p, yes, t("Download"), true, "upd-download") {
+                            open_link(&info.url);
+                            next = Some(Modal::None);
+                        }
+                        let x = Rect::from_center_size(Pos2::new(c.right() - 26.0, c.top() + 26.0), Vec2::splat(26.0));
+                        let (xr, col) = icon_button(ui, x, "upd-x");
+                        p.line_segment([x.center() + Vec2::new(-5.0, -5.0), x.center() + Vec2::new(5.0, 5.0)], Stroke::new(1.4_f32, col));
+                        p.line_segment([x.center() + Vec2::new(-5.0, 5.0), x.center() + Vec2::new(5.0, -5.0)], Stroke::new(1.4_f32, col));
+                        if xr.clicked() {
+                            next = Some(Modal::None);
+                        }
+                    }
                     Modal::Register { name, email, key, error, done } => {
                         let c = Rect::from_center_size(Pos2::new(cx, panel.center().y), Vec2::new(392.0, 516.0));
                         card(&p, c);
@@ -1869,6 +1921,28 @@ impl eframe::App for App {
         follow_language(ctx);
         skin::sync_style(ctx);
         self.poll_job();
+
+        // ---- the launch update check -------------------------------------
+        // The answer arrives from a thread (src/update.rs); it is shown once,
+        // and only when nothing else is open, so it never cuts off the
+        // shareware reminder or the drop animation.
+        if !self.update_shown {
+            if let Some(rx) = self.update_rx.take() {
+                match rx.try_recv() {
+                    Ok(info) => {
+                        if info.newer && matches!(self.modal, Modal::None) {
+                            self.modal = Modal::Update(info);
+                            self.update_shown = true;
+                        }
+                    }
+                    Err(std::sync::mpsc::TryRecvError::Empty) => {
+                        self.update_rx = Some(rx);
+                        ctx.request_repaint_after(std::time::Duration::from_millis(250));
+                    }
+                    Err(std::sync::mpsc::TryRecvError::Disconnected) => {}
+                }
+            }
+        }
 
         // ---- drag and drop -----------------------------------------------
         let (dropped, hovering) = ctx.input(|i| {
@@ -2180,6 +2254,8 @@ impl eframe::App for App {
                         if glow_a > 0 {
                             p.add(PathShape::line(pts.clone(), Stroke::new(8.0_f32, alpha(ACCENT(), glow_a))));
                         }
+                        // a small dark shadow under each dash keeps the ring readable on bright skins
+                        p.add(PathShape::line(arc_points(ring_c + Vec2::new(0.0, 2.0), r, a0, a1), Stroke::new(2.0_f32, Color32::from_black_alpha(90))));
                         p.add(PathShape::line(pts, Stroke::new(2.0_f32, alpha(ACCENT_SOFT(), ring_a))));
                     }
                     p.circle_stroke(ring_c, r + 14.0, Stroke::new(1.0_f32, alpha(ACCENT_SOFT(), 30)));
@@ -2193,8 +2269,13 @@ impl eframe::App for App {
                         vec![ring_c + Vec2::new(-36.0, 14.0), ring_c + Vec2::new(-36.0, 36.0), ring_c + Vec2::new(36.0, 36.0), ring_c + Vec2::new(36.0, 14.0)],
                     ];
                     if !self.chooser {
+                        // a small dark shadow keeps the arrow readable on bright wallpapers
+                        let sh = Stroke::new(3.0_f32, Color32::from_black_alpha(96));
                         for line in &arrow {
                             p.add(PathShape::line(line.clone(), halo));
+                        }
+                        for line in &arrow {
+                            p.add(PathShape::line(line.iter().map(|pt| *pt + Vec2::new(0.0, 2.0)).collect(), sh));
                         }
                         for line in arrow {
                             p.add(PathShape::line(line, s));
@@ -2202,7 +2283,9 @@ impl eframe::App for App {
                     }
                     let files_hover = ctx.input(|i| !i.raw.hovered_files.is_empty());
                     let msg = if files_hover { t("Release to compress") } else { t("Drop a file or a folder to compress it") };
-                    text_fit(&p, Pos2::new(ring_c.x, status_y), Align2::CENTER_CENTER, msg, FontId::new(16.0, family("ui-light")), TEXT(), W - 70.0);
+                    let msg_t = lay_fit(&p, &msg, FontId::new(16.0, family("ui-light")), W - 70.0);
+                    let msg_r = Align2::CENTER_CENTER.anchor_size(Pos2::new(ring_c.x, status_y), msg_t.size());
+                    paint_shadowed(&p, &msg_t, msg_r.min, TEXT());
                     // "or choose files · choose a folder" (mirrored for right-to-left languages)
                     let small = FontId::new(13.0, family("ui-light"));
                     let mut parts: Vec<(usize, &str)> = vec![(0, t("or")), (1, t("choose files")), (2, "·"), (3, t("choose a folder"))];
@@ -2228,7 +2311,7 @@ impl eframe::App for App {
                                     chosen = pick_folder(parent);
                                 }
                             }
-                            _ => l.paint(&p, pos, TEXT_DIM()),
+                            _ => paint_shadowed(&p, l, pos, TEXT_DIM()),
                         }
                         x += l.size().x + gap;
                     }
@@ -2425,8 +2508,10 @@ pub(crate) fn relaunch_unelevated() -> bool {
 }
 
 pub fn run() -> Result<(), String> {
+    // a capture keeps the window it was given: the shell that started it has to
+    // own it to copy it, and that shell is often elevated (see App::new)
     #[cfg(windows)]
-    if relaunch_unelevated() {
+    if std::env::var_os("NIKPAK_GUI_CAPTURE").is_none() && relaunch_unelevated() {
         return Ok(());
     }
     #[cfg(windows)]

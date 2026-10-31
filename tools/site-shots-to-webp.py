@@ -121,7 +121,8 @@ def dialogs(password_name, extract_name, out):
     ex = ex.resize(EXTRACT_WIN, Image.LANCZOS)
     scale = PASSWORD_WIN[1] / EXTRACT_WIN[1]
     ex = ex.resize((round(EXTRACT_WIN[0] * scale), PASSWORD_WIN[1]), Image.LANCZOS)
-    sheet = Image.new("RGB", (PASSWORD_WIN[0] + GUTTER + ex.size[0], PASSWORD_WIN[1]), WHITE)
+    # transparent gutter, so the gap between the two boxes shows the page behind
+    sheet = Image.new("RGBA", (PASSWORD_WIN[0] + GUTTER + ex.size[0], PASSWORD_WIN[1]), (0, 0, 0, 0))
     sheet.paste(pw, (0, 0), pw)
     sheet.paste(ex, (PASSWORD_WIN[0] + GUTTER, 0), ex)
     save(sheet, out, 90)
@@ -137,7 +138,7 @@ def main():
         single(n)
     grid(["lang-zh", "lang-hi-nag", "lang-ar", "lang-en-menu"], "lang-quad")
     pair("unnik-idle", "unnik-browser", "unnik-pair")
-    dialogs("unnik-password", "unnik-extract", "unnik-dialogs")
+    dialogs("unnik-password", "unnik-extract", "unnik-dialogs2")
     print("done")
 
 

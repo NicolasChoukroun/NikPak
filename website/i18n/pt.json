@@ -785,7 +785,7 @@
   "contact": "Fale conosco"
  },
  "skins": {
-  "title": "55 temas, um clique",
+  "title": "89 temas, um clique",
   "sub": "NikPak e unNik usam os mesmos temas do Nikkomander, do Nikkoid Blue ao Pizza, Matrix e 8-Bit Game. Escolha um e os dois programas o mantêm.",
   "how_t": "Como funciona",
   "how_list": [
@@ -793,7 +793,7 @@
    "<b>Aplicar ou cancelar:</b> a caixa é arrastada pela barra de título. <b>Aplicar tema</b> o mantém para NikPak e unNik; <b>Cancelar</b> (ou Esc) volta ao anterior.",
    "<b>Sol e lua:</b> o botão ao lado alterna entre Nikkoid Blue (escuro) e Nikkoid Bright com um clique, como no Nikkomander.",
    "<b>Lembrado:</b> o tema escolhido é salvo e usado na próxima abertura. NikPak e unNik o compartilham: mude em um e o outro acompanha em segundos.",
-   "<b>Pintados e planos:</b> 41 temas dos gradientes CSS do Nikkomander — listras, estrelas, tijolos — e 14 novos cuja arte o próprio NikPak desenha: uma tempestade, montanhas ao anoitecer, uma rua de neón, computadores antigos, um tabuleiro de xadrez. Ficam nítidos em qualquer tamanho de janela. Desde a 1.6.2, a arte pintada recua: é suavizada e esbatida por trás do título, do anel e do texto de estado, para não competir com a janela."
+   "<b>Pintados e planos:</b> 75 temas dos gradientes CSS do Nikkomander — listras, estrelas, tijolos — e 14 novos cuja arte o próprio NikPak desenha: uma tempestade, montanhas ao anoitecer, uma rua de neón, computadores antigos, um tabuleiro de xadrez. Ficam nítidos em qualquer tamanho de janela. Desde a 1.6.2, a arte pintada recua: é suavizada e esbatida por trás do título, do anel e do texto de estado, para não competir com a janela."
   ],
   "gallery_t": "Galeria",
   "gallery_sub": "O NikPak em cada tema. Clique numa imagem para vê-la em tamanho real.",
