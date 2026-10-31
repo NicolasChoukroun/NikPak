@@ -1915,36 +1915,63 @@ fn sushi(c: &mut Canvas) {
     grain(c, 0.012);
 }
 
-fn amiga_window(c: &mut Canvas, x0: f32, y0: f32, x1: f32, y1: f32, title: &str, active: bool) {
-    let shadow = mask_rect(c, x0 + 0.012, y0 + 0.014, x1 + 0.012, y1 + 0.014, 2.0);
-    c.blend(&shadow, hex("#02142C"), 1.0);
-    c.blend(&mask_rect(c, x0, y0, x1, y1, 0.7), hex("#D8D8D0"), 1.0);
-    c.blend(&mask_rect(c, x0 + 0.006, y0 + 0.006, x1 - 0.006, y1 - 0.006, 0.6), hex("#A8A8A0"), 1.0);
-    c.blend(&mask_rect(c, x0 + 0.010, y0 + 0.010, x1 - 0.010, y1 - 0.010, 0.6), hex("#C4C4BC"), 1.0);
-    let bar = if active { hex("#FF8800") } else { hex("#888880") };
-    c.blend(&mask_rect(c, x0 + 0.012, y0 + 0.012, x1 - 0.012, y0 + 0.060, 0.4), bar, 1.0);
-    let txt = text_mask(c, title, x0 + 0.022, y0 + 0.024, 0.0042);
-    c.blend(&txt, if active { hex("#0A0A0A") } else { hex("#333333") }, 1.0);
-    c.blend(&mask_rect(c, x1 - 0.040, y0 + 0.020, x1 - 0.018, y0 + 0.048, 0.4), hex("#B0B0A8"), 1.0);
-    c.add(&mask_rect(c, x1 - 0.040, y0 + 0.020, x1 - 0.018, y0 + 0.022, 0.2), hex("#FFFFFF"), 0.5);
+// --- Amiga Workbench -------------------------------------------------------
+//
+// A Kickstart 1.3 screen: the blue desktop with its dither, and the Workbench
+// disk window lying on it - white frame, black outline, light body, the disk
+// icons with their orange labels, the checkered ball and the bottom bar.
+// The window is what the interface is drawn on, so it stays a light, quiet
+// field; the blue reads as the screen around it.
+
+const AMIGA_FRAME: &str = "#FFFFFF";
+const AMIGA_INK: &str = "#0A1420";
+const AMIGA_BODY: &str = "#D3E3F4";
+const AMIGA_ORANGE: &str = "#FF8800";
+
+/// The chrome of a Workbench window, the way Kickstart 1.3 drew it: a black
+/// outline, a white border, an optional title bar and a body inset by a
+/// hairline bevel.
+fn amiga_frame(c: &mut Canvas, x0: f32, y0: f32, x1: f32, y1: f32, body_col: &str, bar_bottom: f32) {
+    let shadow = mask_rect(c, x0 + 0.007, y0 + 0.008, x1 + 0.007, y1 + 0.008, 2.0);
+    c.blend(&shadow, hex("#012A5A"), 0.55);
+    c.blend(&mask_rect(c, x0, y0, x1, y1, 0.6), hex(AMIGA_FRAME), 1.0);
+    let ink = hex(AMIGA_INK);
+    // the black outline of the window
+    c.blend(&mask_rect(c, x0, y0, x0 + 0.005, y1, 0.4), ink, 1.0);
+    c.blend(&mask_rect(c, x1 - 0.005, y0, x1, y1, 0.4), ink, 1.0);
+    c.blend(&mask_rect(c, x0, y0, x1, y0 + 0.0030, 0.4), ink, 1.0);
+    c.blend(&mask_rect(c, x0, y1 - 0.0030, x1, y1, 0.4), ink, 1.0);
+    // title bar, and the rule that closes it off
+    if bar_bottom > y0 {
+        c.blend(&mask_rect(c, x0 + 0.005, y0 + 0.0030, x1 - 0.005, bar_bottom, 0.5), hex(AMIGA_FRAME), 1.0);
+        c.blend(&mask_rect(c, x0 + 0.005, bar_bottom, x1 - 0.005, bar_bottom + 0.0030, 0.4), ink, 1.0);
+    }
+    let top = (bar_bottom + 0.0030).max(y0 + 0.0030);
+    c.blend(&mask_rect(c, x0 + 0.005, top, x1 - 0.005, y1 - 0.0030, 0.5), hex(body_col), 1.0);
+    // bevel: a light edge at the top left, a grey one at the bottom right
+    let light = hex("#FFFFFF");
+    let grey = hex("#B4BEC8");
+    c.blend(&mask_rect(c, x0 + 0.005, top, x0 + 0.0065, y1 - 0.0030, 0.4), light, 0.85);
+    c.blend(&mask_rect(c, x0 + 0.005, top, x1 - 0.005, top + 0.0022, 0.4), light, 0.85);
+    c.blend(&mask_rect(c, x1 - 0.0065, top, x1 - 0.005, y1 - 0.0030, 0.4), grey, 0.85);
+    c.blend(&mask_rect(c, x0 + 0.005, y1 - 0.0050, x1 - 0.005, y1 - 0.0030, 0.4), grey, 0.85);
 }
 
-fn amiga(c: &mut Canvas) {
-    vgrad(c, &[(0.0, "#0A3A78"), (0.55, "#06509E"), (1.0, "#043268")]);
-    c.add(&mask_rect(c, 0.0, 0.0, 1.0, 1.0, 0.0), hex("#4DA0FF"), 0.02);
-    amiga_window(c, 0.06, 0.10, 0.66, 0.44, "WORKBENCH", true);
-    amiga_window(c, 0.30, 0.50, 0.94, 0.82, "NIKPAK", false);
-    let disks = [(0.105f32, "NIKPAK"), (0.275, "DISK")];
-    for &(dx, label) in disks.iter() {
-        c.blend(&mask_rect(c, dx, 0.20, dx + 0.085, 0.275, 0.5), hex("#1D4E9A"), 1.0);
-        c.blend(&mask_rect(c, dx + 0.005, 0.207, dx + 0.080, 0.234, 0.4), hex("#E8E8E0"), 1.0);
-        c.blend(&mask_rect(c, dx + 0.028, 0.220, dx + 0.057, 0.233, 0.3), hex("#222222"), 1.0);
-        c.add(&mask_rect(c, dx, 0.20, dx + 0.085, 0.205, 0.3), hex("#8FC0FF"), 0.4);
-        let tt = text_mask(c, label, dx + 0.006, 0.288, 0.0027);
-        c.blend(&tt, hex("#101010"), 1.0);
-    }
-    // a checkered sphere
-    let (cx, cy, r) = (0.80f32, 0.26f32, 0.105f32);
+/// One of the floppy-disk icons of the Workbench disk window: pale shell,
+/// dark shutter, an orange label stripe and the name written underneath.
+fn amiga_floppy(c: &mut Canvas, x: f32, y: f32, label: &str) {
+    let (w, h) = (0.068, 0.060);
+    c.blend(&mask_rect(c, x + 0.003, y + 0.003, x + w + 0.003, y + h + 0.003, 0.6), hex("#AEBECF"), 1.0);
+    c.blend(&mask_rect(c, x, y, x + w, y + h, 0.5), hex("#22303F"), 1.0);
+    c.blend(&mask_rect(c, x + 0.005, y + 0.004, x + w - 0.005, y + 0.017, 0.4), hex("#8A9AAB"), 1.0);
+    c.blend(&mask_rect(c, x + 0.014, y + 0.006, x + w - 0.014, y + 0.012, 0.4), hex("#22303F"), 1.0);
+    c.blend(&mask_rect(c, x + 0.006, y + 0.025, x + w - 0.006, y + h - 0.004, 0.4), hex("#FFFFFF"), 1.0);
+    c.blend(&mask_rect(c, x + 0.006, y + 0.026, x + w - 0.006, y + 0.033, 0.4), hex(AMIGA_ORANGE), 1.0);
+    c.blend(&text_mask(c, label, x + 0.002, y + h + 0.0045, 0.0022), hex(AMIGA_INK), 0.85);
+}
+
+/// The checkered Boing ball, Amiga's mascot.
+fn amiga_ball(c: &mut Canvas, cx: f32, cy: f32, r: f32) {
     let sphere = mask_disc(c, cx, cy, r, r, 0.9);
     c.blend(&sphere, hex("#C8102E"), 1.0);
     let mut chk = Mask::new(c.w, c.h);
@@ -1953,6 +1980,9 @@ fn amiga(c: &mut Canvas) {
         for i in 0..c.w {
             let x = (i as f32 + 0.5) / c.w as f32;
             let d = ((x - cx).powi(2) + (y - cy).powi(2)).sqrt();
+            if d > r {
+                continue;
+            }
             let v = (d / r).clamp(0.0, 1.0);
             let u = (y - cy).atan2(x - cx);
             let lat = (1.0 - 2.0 * v * v).clamp(-1.0, 1.0).acos() / std::f32::consts::PI;
@@ -1962,35 +1992,89 @@ fn amiga(c: &mut Canvas) {
             }
         }
     }
-    c.blend(&mask_mul(&sphere, &chk), hex("#F2F2EA"), 1.0);
-    // shading and highlight
-    let mut sh = vec![0.0f32; c.w * c.h];
+    c.blend(&mask_mul(&sphere, &chk), hex("#FFFFFF"), 1.0);
+    // shading round the rim, so it reads as a ball and not as a disc
+    let mut shade = vec![0.0f32; c.w * c.h];
     for j in 0..c.h {
         let y = (j as f32 + 0.5) / c.h as f32;
         for i in 0..c.w {
             let x = (i as f32 + 0.5) / c.w as f32;
             let d = ((x - cx).powi(2) + (y - cy).powi(2)).sqrt();
             let v = (d / r).clamp(0.0, 1.0);
-            sh[j * c.w + i] = sphere.v[j * c.w + i] * smoothstep(0.45, 1.05, v) * 0.55;
+            shade[j * c.w + i] = sphere.v[j * c.w + i] * smoothstep(0.42, 1.02, v) * 0.45;
         }
     }
     for i in 0..c.px.len() {
-        let k = 1.0 - sh[i];
+        let k = 1.0 - shade[i];
         let p = &mut c.px[i];
         p[0] *= k;
         p[1] *= k;
         p[2] *= k;
     }
-    c.add(&mask_disc(c, cx - r * 0.4, cy - r * 0.45, r * 0.28, r * 0.20, 0.8), hex("#FFFFFF"), 0.35);
-    c.add(&blur(&sphere, 8.0), hex("#FF4A5E"), 0.18);
-    // task bar
-    c.blend(&mask_rect(c, 0.0, 0.94, 1.0, 1.0, 0.6), hex("#C4C4BC"), 1.0);
-    c.blend(&mask_rect(c, 0.0, 0.94, 1.0, 0.947, 0.4), hex("#F0F0E8"), 1.0);
-    let tt = text_mask(c, "NIKPAK 1.6", 0.74, 0.960, 0.0038);
-    c.blend(&tt, hex("#141414"), 1.0);
-    vignette(c, 0.22);
-    grain(c, 0.008);
+    let gloss = mask_disc(c, cx - r * 0.42, cy - r * 0.46, r * 0.26, r * 0.19, 0.8);
+    c.add(&gloss, hex("#FFFFFF"), 0.30);
 }
+
+fn amiga(c: &mut Canvas) {
+    // ---- the desktop: blue, in the dither the chipset drew it with --------
+    vgrad(c, &[(0.0, "#1266C4"), (0.5, "#0A56AE"), (1.0, "#064A9C")]);
+    for j in 0..c.h {
+        for i in 0..c.w {
+            if (i / 2 + j / 2) % 2 == 0 {
+                let p = &mut c.px[j * c.w + i];
+                p[0] *= 0.94;
+                p[1] *= 0.94;
+                p[2] *= 0.94;
+            }
+        }
+    }
+
+    // ---- the Workbench disk window ---------------------------------------
+    // Its title bar is left plain and runs down to the height of the
+    // program's own window buttons, which are drawn inside it.
+    amiga_frame(c, 0.030, 0.014, 0.970, 0.986, AMIGA_BODY, 0.070);
+
+    // ---- the disk icons, top left ----------------------------------------
+    amiga_floppy(c, 0.052, 0.066, "NIKPAK");
+    amiga_floppy(c, 0.148, 0.066, "DISK");
+
+    // ---- the orange highlight row ----------------------------------------
+    c.blend(&mask_rect(c, 0.050, 0.1460, 0.232, 0.1605, 0.5), hex(AMIGA_ORANGE), 1.0);
+    c.blend(&text_mask(c, "WORKBENCH", 0.055, 0.1475, 0.0018), hex(AMIGA_INK), 0.85);
+
+    // ---- a drawer, under the icons ---------------------------------------
+    c.blend(&mask_rect(c, 0.057, 0.1695, 0.129, 0.2135, 0.6), hex("#AEBECF"), 1.0);
+    c.blend(&mask_rect(c, 0.054, 0.1660, 0.126, 0.2100, 0.5), hex("#E8E0C4"), 1.0);
+    c.blend(&mask_rect(c, 0.054, 0.1660, 0.126, 0.1725, 0.4), hex("#22303F"), 1.0);
+    c.blend(&mask_rect(c, 0.058, 0.1750, 0.122, 0.1775, 0.4), hex(AMIGA_ORANGE), 1.0);
+    c.blend(&text_mask(c, "WORK", 0.054, 0.2125, 0.0022), hex(AMIGA_INK), 0.85);
+
+    // ---- the ball, top right ---------------------------------------------
+    amiga_ball(c, 0.855, 0.150, 0.072);
+
+    // ---- a second window, blue-bodied, at the right ----------------------
+    amiga_frame(c, 0.735, 0.258, 0.952, 0.400, "#0A3A6E", 0.2850);
+    c.blend(&text_mask(c, "WORKBENCH", 0.7455, 0.2655, 0.0022), hex(AMIGA_INK), 0.85);
+    for (i, &(k, col)) in [("NIKPAK", "#FFFFFF"), ("DISK", "#FFFFFF"), ("1.6.3", "#8FC0FF")].iter().enumerate() {
+        c.blend(&text_mask(c, k, 0.7465, 0.2900 + i as f32 * 0.0235, 0.0022), hex(col), 0.85);
+    }
+
+    // ---- the trashcan, bottom left ---------------------------------------
+    c.blend(&mask_rect(c, 0.053, 0.8560, 0.105, 0.8625, 0.4), hex("#22303F"), 1.0);
+    c.blend(&mask_rect(c, 0.058, 0.8600, 0.100, 0.9100, 0.5), hex("#EAEAE6"), 1.0);
+    c.blend(&mask_rect(c, 0.093, 0.8600, 0.100, 0.9100, 0.4), hex("#B0B6BE"), 0.9);
+    c.blend(&text_mask(c, "TRASH", 0.052, 0.9130, 0.0022), hex(AMIGA_INK), 0.85);
+
+    // ---- the bottom bar of the screen ------------------------------------
+    c.blend(&mask_rect(c, 0.030, 0.9540, 0.970, 0.9740, 0.6), hex("#D6DEE8"), 1.0);
+    c.blend(&mask_rect(c, 0.030, 0.9540, 0.970, 0.9557, 0.4), hex("#8A96A4"), 1.0);
+    c.blend(&mask_rect(c, 0.040, 0.9595, 0.046, 0.9685, 0.4), hex(AMIGA_ORANGE), 1.0);
+    c.blend(&text_mask(c, "NIKPAK 1.6", 0.7520, 0.9570, 0.0022), hex(AMIGA_INK), 0.85);
+
+    vignette(c, 0.10);
+    grain(c, 0.006);
+}
+
 
 fn msx(c: &mut Canvas) {
     vgrad(c, &[(0.0, "#020A20"), (0.55, "#03102E"), (1.0, "#01061A")]);

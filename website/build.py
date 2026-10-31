@@ -975,23 +975,11 @@ def page_skins(L):
     tiles = []
     for s in SKINS:
         tag = k("tag_dark") if s["dark"] else k("tag_bright")
-        new = f'<i class="tag n">{esc(k("tag_new"))}</i>' if s.get("new") else ""
         tiles.append(
             f'<figure class="skin-tile reveal" data-dark="{1 if s["dark"] else 0}">'
             f'<a href="../assets/img/skins/{skin_file(s, "")}" data-name="{esc(s["name"])}">'
             f'<img src="../assets/img/skins/{skin_file(s, "-thumb")}" alt="NikPak · {esc(s["name"])}" width="250" height="280" loading="lazy"></a>'
-            f'<figcaption><span lang="en">{esc(s["name"])}</span><span class="tags">{new}<i class="tag {"d" if s["dark"] else "b"}">{esc(tag)}</i></span></figcaption></figure>')
-    # the painted skins of 1.6, shown above the full gallery
-    new_strip = "".join(
-        f'<a href="#gallery"><img src="../assets/img/skins/{skin_file(s, "-thumb")}" alt="NikPak · {esc(s["name"])}" width="250" height="280" loading="lazy"></a>'
-        for s in [s for s in SKINS if s.get("new")][:8])
-    band = f"""
-<section>
-  <div class="wrap">
-    <div class="section-head"><h2>{esc(k('new_t'))}</h2><p>{esc(k('new_p'))}</p></div>
-    <div class="skin-strip">{new_strip}</div>
-  </div>
-</section>"""
+            f'<figcaption><span lang="en">{esc(s["name"])}</span><span class="tags"><i class="tag {"d" if s["dark"] else "b"}">{esc(tag)}</i></span></figcaption></figure>')
     chips = (f'<div class="chips" role="group" aria-label="{esc(k("gallery_t"))}">'
              f'<button type="button" class="chip" data-filter="all" aria-pressed="true">{esc(k("all"))} <b>{len(SKINS)}</b></button>'
              f'<button type="button" class="chip" data-filter="1" aria-pressed="false">{esc(k("dark"))} <b>{n_dark}</b></button>'
@@ -1005,7 +993,7 @@ def page_skins(L):
     </div>
     <div class="shots wide"><img class="shot" src="../assets/img/skins-menu.webp" alt="" loading="lazy"><img class="shot" src="../assets/img/skins-menu-bright.webp" alt="" loading="lazy"></div>
   </div>
-</section>{band}
+</section>
 <section id="gallery">
   <div class="wrap">
     <div class="section-head"><h2>{esc(k('gallery_t'))}</h2><p>{esc(k('gallery_sub'))}</p></div>

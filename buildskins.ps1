@@ -86,7 +86,9 @@ $NEW = @(
     @('ubuntu-trusty', 'Ubuntu Trusty Tahr', $true, 4), @('ubuntu-precise', 'Ubuntu Precise Pangolin', $false, 4),
     @('ubuntu-natty', 'Ubuntu Natty Narwhal', $false, 4), @('ubuntu-lucid', 'Ubuntu Lucid Lynx', $true, 4),
     @('ubuntu-karmic', 'Ubuntu Karmic Koala', $true, 4), @('ubuntu-hardy', 'Ubuntu Hardy Heron', $true, 3),
-    @('ubuntu-gutsy', 'Ubuntu Gutsy Gibbon', $false, 3), @('ubuntu-dapper', 'Ubuntu Dapper Drake', $false, 3)
+    @('ubuntu-gutsy', 'Ubuntu Gutsy Gibbon', $false, 3), @('ubuntu-dapper', 'Ubuntu Dapper Drake', $false, 3),
+    # a painted skin, listed so -Only / -Force can redo it on its own
+    @('amiga', 'Amiga Computer', $false, 3)
 )
 
 # --- python, wherever it is ------------------------------------------------

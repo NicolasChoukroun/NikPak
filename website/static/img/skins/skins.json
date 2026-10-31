@@ -45,7 +45,6 @@
   {"id": "pattaya", "name": "Pattaya Neons", "dark": true, "new": true},
   {"id": "burgers", "name": "Burgers Tokyo", "dark": true, "new": true},
   {"id": "sushi", "name": "Sushi", "dark": true, "new": true},
-  {"id": "amiga", "name": "Amiga Computer", "dark": false, "new": true},
   {"id": "msx", "name": "MSX Computer", "dark": true, "new": true},
   {"id": "colecovision", "name": "Colecovision", "dark": true, "new": true},
   {"id": "zx-spectrum", "name": "ZX Spectrum", "dark": true, "new": true},
@@ -87,5 +86,6 @@
   {"id": "ubuntu-karmic", "name": "Ubuntu Karmic Koala", "dark": true, "img": "ubuntu-karmic.png", "thumb": "ubuntu-karmic-thumb.png"},
   {"id": "ubuntu-hardy", "name": "Ubuntu Hardy Heron", "dark": true, "img": "ubuntu-hardy.png", "thumb": "ubuntu-hardy-thumb.png"},
   {"id": "ubuntu-gutsy", "name": "Ubuntu Gutsy Gibbon", "dark": false, "img": "ubuntu-gutsy.png", "thumb": "ubuntu-gutsy-thumb.png"},
-  {"id": "ubuntu-dapper", "name": "Ubuntu Dapper Drake", "dark": false, "img": "ubuntu-dapper.png", "thumb": "ubuntu-dapper-thumb.png"}
+  {"id": "ubuntu-dapper", "name": "Ubuntu Dapper Drake", "dark": false, "img": "ubuntu-dapper.png", "thumb": "ubuntu-dapper-thumb.png"},
+  {"id": "amiga", "name": "Amiga Computer", "dark": false, "img": "amiga.png", "thumb": "amiga-thumb.png"}
 ]
