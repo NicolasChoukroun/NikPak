@@ -502,6 +502,21 @@
     "Folder tujuan untuk x dan e."
    ],
    [
+    "-legal &lt;file&gt;",
+    "",
+    "Lampirkan pernyataan hukum dari berkas teks ke arsip baru; harus diterima sebelum arsip dibuka."
+   ],
+   [
+    "-cover &lt;file&gt;",
+    "",
+    "Lampirkan gambar sampul ke arsip baru (dipotong persegi, disimpan 1024 × 1024)."
+   ],
+   [
+    "-accept",
+    "",
+    "Terima pernyataan hukum arsip tanpa bertanya (skrip)."
+   ],
+   [
     "-inul -idq",
     "-q",
     "Senyap: hanya galat yang ditampilkan."
@@ -564,6 +579,11 @@
     "11",
     "Kata sandi salah atau tidak ada",
     "Kata sandi keliru, atau arsip terenkripsi telah diubah"
+   ],
+   [
+    "12",
+    "Ketentuan tidak diterima",
+    "Pernyataan hukum arsip ditolak"
    ]
   ],
   "ex_t": "Contoh",
@@ -577,7 +597,8 @@
    "daftar PDF saja",
    "uji (meminta kata sandi)",
    "hapus entri",
-   "filter media mana yang menang?"
+   "filter media mana yang menang?",
+   "dengan sampul dan ketentuan yang harus diterima"
   ],
   "tc_t": "Total Commander dan antarmuka lain",
   "tc_p": "Karena NikPak menerima sintaks perintah RAR, program yang bisa menjalankan rar.exe eksternal juga bisa menjalankan nikpak.exe. Di Total Commander, daftarkan ekstensi <code>nik</code> sebagai pengarsip tambahan dan arahkan perintah pengemas dan pembongkar ke nikpak.exe. Gunakan <code>-o+</code> atau <code>-y</code> untuk ekstraksi tanpa pengawasan. Opsi yang sering dikirim antarmuka RAR (<code>-s</code>, <code>-ma5</code>, <code>-md64m</code>, <code>-ibck</code>, <code>-rr</code>, dan sejenisnya) diterima lalu diabaikan.",
@@ -604,7 +625,16 @@
    "Menu ini memakai <code>nikpak --add</code> dan <code>--add-here</code>, serta <code>unNik --extract</code>, <code>--extract-here</code> dan <code>--extract-to</code>."
   ],
   "menu_note": "Penginstal kedua, <code>unnik-&lt;version&gt;-setup.exe</code>, memasang unNik saja — penjelajah arsip gratis — untuk orang yang hanya menerima arsip .nik.",
-  "tech_sub": "Panduan teknis lengkap: arsitektur dan format .nik, mesin kompresi dan codec media, desain enkripsi dan ketahanan kuantum, pengerasan, semua benchmark, serta catatan build, pengujian, dan peta jalan."
+  "tech_sub": "Panduan teknis lengkap: arsitektur dan format .nik, mesin kompresi dan codec media, desain enkripsi dan ketahanan kuantum, pengerasan, semua benchmark, serta catatan build, pengujian, dan peta jalan.",
+  "terms_t": "Ketentuan dan sampul",
+  "terms_p": "Arsip dapat membawa pernyataan hukum (ketentuan penggunaan, lisensi, pemberitahuan hak cipta) dan gambar sampul. Keduanya ditampilkan sebelum yang lain, tanpa kata sandi.",
+  "terms_list": [
+   "Di jendela NikPak, <b>§ Legal</b> di samping Cepat / Sedang / Terbaik membuka kotak untuk menulis ketentuan; <b>▣ Sampul</b> membuka kotak untuk gambar — klik bingkai untuk memilihnya, atau seret ke jendela. Gambar apa pun dipotong persegi dan disimpan 1024 × 1024. Tombol tetap menyala selama berlaku untuk arsip baru.",
+   "Di baris perintah: <code>-legal terms.txt</code> dan <code>-cover art.png</code> saat membuat; <code>-accept</code> menerima ketentuan dalam skrip.",
+   "unNik menampilkan sampul dan ketentuan terlebih dahulu: tidak ada yang ditampilkan atau diekstrak sampai Anda mengeklik <b>Saya setuju</b>. Sampul juga ada di bilah judul — klik untuk melihatnya besar.",
+   "Nikkomander melakukan hal yang sama saat membuka atau mengekstrak arsip, dan menampilkan sampul di Tampilan cepat (<kbd>Ctrl</kbd>+<kbd>Q</kbd>)."
+  ],
+  "terms_note": "Dalam arsip terenkripsi, ketentuan dan sampul diautentikasi bersama data: mengubah atau menghapusnya membuat arsip gagal dibuka. nikpak versi lama menolak arsip seperti itu alih-alih melewati ketentuan."
  },
  "buy": {
   "title": "Beli NikPak",

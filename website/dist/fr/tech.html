@@ -240,7 +240,16 @@
 				<code>-x<pattern></pattern></code></td><td>
 				<code>-x <pattern></pattern></code></td><td><body><x>Exclut des fichiers ; peut être répété.</x></body></td></tr><tr><td>
 				<code>-d <dir></dir></code></td><td>
-				<code>-d <dir></dir></code></td><td><body><x>Dossier de destination pour <code>x</code> et <code>e</code>.</x></body></td></tr><tr><td><body><x><code>-inul</code> <code>-idq</code></x></body></td><td>
+				<code>-d <dir></dir></code></td><td><body><x>Dossier de destination pour <code>x</code> et <code>e</code>.</x></body></td></tr><tr><td>
+				<code>-legal &lt;file&gt;</code></td><td>
+				<br>
+				</td><td><body><x>Joint la déclaration légale contenue dans le fichier (UTF-8, jusqu'à 64 Ko) à une nouvelle archive. Elle doit être acceptée avant l'ouverture de l'archive.</x></body></td></tr><tr><td>
+				<code>-cover &lt;file&gt;</code></td><td>
+				<br>
+				</td><td><body><x>Joint une image de couverture à une nouvelle archive : recadrée en carré et stockée en JPEG 1024 x 1024.</x></body></td></tr><tr><td>
+				<code>-accept</code></td><td>
+				<br>
+				</td><td><body><x>Accepte la déclaration légale de l'archive sans demander (scripts).</x></body></td></tr><tr><td><body><x><code>-inul</code> <code>-idq</code></x></body></td><td>
 				<code>-q</code></td><td><body><x>Silencieux : seules les erreurs sont affichées.</x></body></td></tr><tr><td><body><x><code>@listfile</code></x></body></td><td>
 				<br>
 
@@ -270,7 +279,8 @@
 				3</td><td><body><x>Archive corrompue ou erreur CRC</x></body></td><td><body><x>Archive endommagée ou tronquée, somme de contrôle en échec</x></body></td></tr><tr><td>
 				7</td><td><body><x>Erreur de ligne de commande</x></body></td><td><body><x>Option inconnue, nom d'archive manquant</x></body></td></tr><tr><td>
 				10</td><td><body><x>Aucune correspondance</x></body></td><td><body><x>Aucun fichier ne correspond aux noms ou caractères génériques</x></body></td></tr><tr><td>
-				11</td><td><body><x>Mot de passe incorrect ou manquant</x></body></td><td><body><x>Mauvais mot de passe, ou archive chiffrée altérée</x></body></td></tr></tbody></table>
+				11</td><td><body><x>Mot de passe incorrect ou manquant</x></body></td><td><body><x>Mauvais mot de passe, ou archive chiffrée altérée</x></body></td></tr><tr><td>
+				12</td><td><body><x>Conditions non acceptées</x></body></td><td><body><x>La déclaration légale de l'archive a été refusée, ou non acceptée avec <code>-accept</code></x></body></td></tr></tbody></table>
 <p><br>
 <br>
 
@@ -361,7 +371,7 @@
 				8</td><td>
 				1</td><td><body><x>Version</x></body></td><td><body><x>3 (1 et 2 restent lisibles)</x></body></td></tr><tr><td>
 				9</td><td>
-				1</td><td><body><x>Drapeaux</x></body></td><td><body><x>bit 0 = chiffré ; les autres bits doivent être 0</x></body></td></tr><tr><td>
+				1</td><td><body><x>Drapeaux</x></body></td><td><body><x>bit 0 = chiffrée, bit 1 = déclaration légale, bit 2 = couverture ; les autres bits doivent valoir 0</x></body></td></tr><tr><td>
 				10</td><td>
 				1</td><td><body><x>Méthode</x></body></td><td><body><x>0 = stockage, 1 = Zstandard, 2 = blocs multi-moteurs (5.6)</x></body></td></tr><tr><td>
 				11</td><td>
@@ -381,7 +391,10 @@
 <br>
 
 </p>
-<p><body><x>L'en-tête complet (12 octets, ou 59 octets lorsqu'il est chiffré) est ensuite authentifié comme données associées de chaque bloc chiffré, de sorte qu'il ne peut pas être modifié sans être détecté.</x></body></p>
+<p><body><x>L'en-tête complet (12 octets, ou 59 octets quand l'archive est chiffrée, plus la déclaration légale et la couverture quand elles sont présentes) est ensuite authentifié comme donnée associée de chaque bloc chiffré : il ne peut pas être modifié sans que cela se voie.</x></body></p>
+<p><body><x><b>Déclaration légale</b> (bit 1 des drapeaux). Après les champs fixes viennent une longueur sur 4 octets et la déclaration en UTF-8, 64 Ko au plus. Elle est en clair pour qu'un programme puisse l'afficher avant de demander le mot de passe, et nikpak refuse de lister, tester, extraire ou supprimer quoi que ce soit tant qu'elle n'a pas été acceptée : dans une fenêtre avec <b>J'approuve</b>, en console en tapant YES, ou avec <code>-accept</code>. Un lecteur qui ne connaît pas le bit 1 refuse l'archive : la déclaration ne peut pas être contournée avec une version plus ancienne.</x></body></p>
+<p><body><x><b>Couverture</b> (bit 2 des drapeaux). Puis une longueur sur 4 octets et une image JPEG ou PNG, 4 Mo au plus ; nikpak la fabrique à partir de n'importe quelle image, recadrée en carré et mise à l'échelle 1024 x 1024. Elle se lit sans le mot de passe et s'affiche dans unNik et Nikkomander.</x></body></p>
+<p><body><x>Les deux font partie de l'en-tête : dans une archive chiffrée, elles sont authentifiées avec chaque bloc, et modifier ou retirer les conditions ou la couverture empêche l'archive de s'ouvrir. Les archives qui n'en ont pas sont écrites exactement comme avant.</x></body></p>
 <h3 class="se" id="5-2-entry-records"><body><x>5.2 Enregistrements d'entrée</x></body></h3>
 <p><body><x>À l'intérieur du flux (déchiffré, décompressé), chaque entrée est un enregistrement. Tous les entiers sont petit-boutistes.</x></body></p>
 <table class="tech-table"><thead><tr><th><body><x><b>Type</b></x></body></th><th><body><x><b>Disposition</b></x></body></th></tr></thead><tbody><tr><td><body><x><code>0</code> END</x></body></td><td><body><x><code>count:u64</code>. Marque la fin et indique combien d'entrées le précèdent.</x></body></td></tr><tr><td><body><x><code>1</code> FILE</x></body></td><td><body><x><code>name_len:u16 name mtime:i64 mode:u32 size:u64 data[size] crc32:u32</code></x></body></td></tr><tr><td><body><x><code>2</code> DIR</x></body></td><td><body><x><code>name_len:u16 name mtime:i64 mode:u32</code></x></body></td></tr><tr><td><body><x><code>3</code> MEDIA</x></body></td><td><body><x><code>name_len:u16 name mtime:i64 mode:u32 size:u64 filter:u8 method:u8 params_len:u8 params framed_stream crc32:u32</code></x></body></td></tr></tbody></table>

@@ -7,6 +7,7 @@
 pub mod archive;
 pub mod bits;
 pub mod cli;
+pub mod cover;
 pub mod crypto;
 pub mod engine;
 pub mod envpath;

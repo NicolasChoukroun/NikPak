@@ -240,7 +240,16 @@
 				<code>-x<pattern></pattern></code></td><td>
 				<code>-x <pattern></pattern></code></td><td><body><x>استبعاد ملفات؛ يمكن تكراره.</x></body></td></tr><tr><td>
 				<code>-d <dir></dir></code></td><td>
-				<code>-d <dir></dir></code></td><td><body><x>مجلد الوجهة لأمرَي <code>x</code> و<code>e</code>.</x></body></td></tr><tr><td><body><x><code>-inul</code> <code>-idq</code></x></body></td><td>
+				<code>-d <dir></dir></code></td><td><body><x>مجلد الوجهة لأمرَي <code>x</code> و<code>e</code>.</x></body></td></tr><tr><td>
+				<code>-legal &lt;file&gt;</code></td><td>
+				<br>
+				</td><td><body><x>يرفق البيان القانوني الموجود في الملف (UTF-8، حتى 64 كيلوبايت) بأرشيف جديد. يجب قبوله قبل فتح الأرشيف.</x></body></td></tr><tr><td>
+				<code>-cover &lt;file&gt;</code></td><td>
+				<br>
+				</td><td><body><x>يرفق صورة غلاف بأرشيف جديد: تُقص مربعة وتُخزّن بصيغة JPEG بحجم 1024 x 1024.</x></body></td></tr><tr><td>
+				<code>-accept</code></td><td>
+				<br>
+				</td><td><body><x>يقبل البيان القانوني للأرشيف دون سؤال (للبرامج النصية).</x></body></td></tr><tr><td><body><x><code>-inul</code> <code>-idq</code></x></body></td><td>
 				<code>-q</code></td><td><body><x>الصمت (Quiet): تُطبع الأخطاء فقط.</x></body></td></tr><tr><td><body><x><code>@listfile</code></x></body></td><td>
 				<br>
 
@@ -270,7 +279,8 @@
 				3</td><td><body><x>أرشيف تالف أو خطأ CRC</x></body></td><td><body><x>أرشيف تالف أو مبتور، فشل في المجموع الاختباري</x></body></td></tr><tr><td>
 				7</td><td><body><x>خطأ في سطر الأوامر</x></body></td><td><body><x>خيار غير معروف، اسم الأرشيف مفقود</x></body></td></tr><tr><td>
 				10</td><td><body><x>لا شيء مطابق</x></body></td><td><body><x>لم يطابق أي ملف الأسماء أو أحرف البدل</x></body></td></tr><tr><td>
-				11</td><td><body><x>كلمة مرور خاطئة أو مفقودة</x></body></td><td><body><x>كلمة مرور غير صحيحة، أو أرشيف مشفر تم العبث به</x></body></td></tr></tbody></table>
+				11</td><td><body><x>كلمة مرور خاطئة أو مفقودة</x></body></td><td><body><x>كلمة مرور غير صحيحة، أو أرشيف مشفر تم العبث به</x></body></td></tr><tr><td>
+				12</td><td><body><x>لم تُقبل الشروط</x></body></td><td><body><x>رُفض البيان القانوني للأرشيف، أو لم يُقبل باستخدام <code>-accept</code></x></body></td></tr></tbody></table>
 <p><br>
 <br>
 
@@ -361,7 +371,7 @@
 				8</td><td>
 				1</td><td><body><x>الإصدار</x></body></td><td><body><x>3 (الإصداران 1 و2 ما زالا قابلين للقراءة)</x></body></td></tr><tr><td>
 				9</td><td>
-				1</td><td><body><x>الأعلام</x></body></td><td><body><x>البت 0 = مشفر؛ ويجب أن تكون البتات الأخرى 0</x></body></td></tr><tr><td>
+				1</td><td><body><x>الأعلام</x></body></td><td><body><x>bit 0 = مشفّر، bit 1 = بيان قانوني، bit 2 = غلاف؛ ويجب أن تكون البتات الأخرى 0</x></body></td></tr><tr><td>
 				10</td><td>
 				1</td><td><body><x>الطريقة</x></body></td><td><body><x>0 = store، و1 = Zstandard، و2 = كتل متعددة المحركات (5.6)</x></body></td></tr><tr><td>
 				11</td><td>
@@ -381,7 +391,10 @@
 <br>
 
 </p>
-<p><body><x>تُوثَّق الترويسة الكاملة (12 بايتاً، أو 59 بايتاً عند التشفير) لاحقاً كبيانات مرتبطة لكل مقطع مشفر، لذا لا يمكن تعديلها دون اكتشاف ذلك.</x></body></p>
+<p><body><x>يُوثَّق الترويس الكامل (12 بايت، أو 59 بايت عند التشفير، إضافة إلى البيان القانوني والغلاف إن وُجدا) لاحقًا كبيانات مرافقة لكل كتلة مشفّرة، فلا يمكن تعديله دون اكتشاف ذلك.</x></body></p>
+<p><body><x><b>البيان القانوني</b> (البت 1 من الأعلام). بعد الحقول الثابتة يأتي طول من 4 بايت ثم البيان بترميز UTF-8، بحد أقصى 64 كيلوبايت. يُخزَّن نصًا صريحًا ليتمكن البرنامج من عرضه قبل طلب كلمة المرور، ويرفض nikpak عرض أي شيء أو اختباره أو استخراجه أو حذفه حتى يُقبل: في نافذة عبر <b>أوافق</b>، أو في الطرفية بكتابة YES، أو باستخدام <code>-accept</code>. القارئ الذي لا يعرف البت 1 يرفض الأرشيف، فلا يمكن تجاوز البيان بإصدار أقدم.</x></body></p>
+<p><body><x><b>الغلاف</b> (البت 2 من الأعلام). ثم طول من 4 بايت وصورة JPEG أو PNG بحد أقصى 4 ميغابايت؛ ينشئها nikpak من أي صورة بعد قصها مربعة وتحجيمها إلى 1024 x 1024. تُقرأ دون كلمة المرور ويعرضها unNik وNikkomander.</x></body></p>
+<p><body><x>كلاهما جزء من الترويس، لذا يُوثَّقان في الأرشيف المشفّر مع كل كتلة: تغيير الشروط أو الغلاف أو إزالتهما يمنع فتح الأرشيف. أما الأرشيفات التي لا تحتويهما فتُكتب تمامًا كما كانت.</x></body></p>
 <h3 class="se" id="5-2-entry-records"><body><x>5.2 سجلات العناصر</x></body></h3>
 <p><body><x>داخل التدفق (بعد فك التشفير وفك الضغط) يكون كل عنصر سجلاً. وجميع الأعداد الصحيحة بترتيب little endian.</x></body></p>
 <table class="tech-table"><thead><tr><th><body><x><b>النوع</b></x></body></th><th><body><x><b>التخطيط</b></x></body></th></tr></thead><tbody><tr><td><body><x><code>0</code> END</x></body></td><td><body><x><code>count:u64</code>. يعلّم النهاية ويحدد عدد العناصر التي تسبقه.</x></body></td></tr><tr><td><body><x><code>1</code> FILE</x></body></td><td><body><x><code>name_len:u16 name mtime:i64 mode:u32 size:u64 data[size] crc32:u32</code></x></body></td></tr><tr><td><body><x><code>2</code> DIR</x></body></td><td><body><x><code>name_len:u16 name mtime:i64 mode:u32</code></x></body></td></tr><tr><td><body><x><code>3</code> MEDIA</x></body></td><td><body><x><code>name_len:u16 name mtime:i64 mode:u32 size:u64 filter:u8 method:u8 params_len:u8 params framed_stream crc32:u32</code></x></body></td></tr></tbody></table>

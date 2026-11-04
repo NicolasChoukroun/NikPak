@@ -240,7 +240,16 @@
 				<code>-x<pattern></pattern></code></td><td>
 				<code>-x <pattern></pattern></code></td><td><body><x>Excluye archivos; se puede repetir.</x></body></td></tr><tr><td>
 				<code>-d <dir></dir></code></td><td>
-				<code>-d <dir></dir></code></td><td><body><x>Carpeta de destino para <code>x</code> y <code>e</code>.</x></body></td></tr><tr><td><body><x><code>-inul</code> <code>-idq</code></x></body></td><td>
+				<code>-d <dir></dir></code></td><td><body><x>Carpeta de destino para <code>x</code> y <code>e</code>.</x></body></td></tr><tr><td>
+				<code>-legal &lt;file&gt;</code></td><td>
+				<br>
+				</td><td><body><x>Adjunta la declaración legal del archivo indicado (UTF-8, hasta 64 KB) a un archivo nuevo. Debe aceptarse antes de abrir el archivo.</x></body></td></tr><tr><td>
+				<code>-cover &lt;file&gt;</code></td><td>
+				<br>
+				</td><td><body><x>Adjunta una imagen de portada a un archivo nuevo: recortada en cuadrado y guardada como JPEG de 1024 x 1024.</x></body></td></tr><tr><td>
+				<code>-accept</code></td><td>
+				<br>
+				</td><td><body><x>Acepta la declaración legal del archivo sin preguntar (scripts).</x></body></td></tr><tr><td><body><x><code>-inul</code> <code>-idq</code></x></body></td><td>
 				<code>-q</code></td><td><body><x>Silencioso: solo se imprimen los errores.</x></body></td></tr><tr><td><body><x><code>@listfile</code></x></body></td><td>
 				<br>
 
@@ -270,7 +279,8 @@
 				3</td><td><body><x>Archivo dañado o error de CRC</x></body></td><td><body><x>Archivo dañado o truncado, suma de comprobación fallida</x></body></td></tr><tr><td>
 				7</td><td><body><x>Error de línea de comandos</x></body></td><td><body><x>Opción desconocida, falta el nombre del archivo</x></body></td></tr><tr><td>
 				10</td><td><body><x>Nada coincidió</x></body></td><td><body><x>Ningún archivo coincidió con los nombres o comodines</x></body></td></tr><tr><td>
-				11</td><td><body><x>Contraseña incorrecta o ausente</x></body></td><td><body><x>Contraseña incorrecta, o un archivo cifrado manipulado</x></body></td></tr></tbody></table>
+				11</td><td><body><x>Contraseña incorrecta o ausente</x></body></td><td><body><x>Contraseña incorrecta, o un archivo cifrado manipulado</x></body></td></tr><tr><td>
+				12</td><td><body><x>Condiciones no aceptadas</x></body></td><td><body><x>Se rechazó la declaración legal del archivo, o no se aceptó con <code>-accept</code></x></body></td></tr></tbody></table>
 <p><br>
 <br>
 
@@ -361,7 +371,7 @@
 				8</td><td>
 				1</td><td><body><x>Versión</x></body></td><td><body><x>3 (1 y 2 siguen siendo legibles)</x></body></td></tr><tr><td>
 				9</td><td>
-				1</td><td><body><x>Indicadores</x></body></td><td><body><x>bit 0 = cifrado; los demás bits deben ser 0</x></body></td></tr><tr><td>
+				1</td><td><body><x>Indicadores</x></body></td><td><body><x>bit 0 = cifrado, bit 1 = declaración legal, bit 2 = portada; los demás bits deben ser 0</x></body></td></tr><tr><td>
 				10</td><td>
 				1</td><td><body><x>Método</x></body></td><td><body><x>0 = almacenar, 1 = Zstandard, 2 = bloques multimotor (5.6)</x></body></td></tr><tr><td>
 				11</td><td>
@@ -381,7 +391,10 @@
 <br>
 
 </p>
-<p><body><x>La cabecera completa (12 bytes, o 59 bytes cuando está cifrada) se autentica después como datos asociados de cada fragmento cifrado, de modo que no se puede alterar sin que se detecte.</x></body></p>
+<p><body><x>La cabecera completa (12 bytes, o 59 bytes cuando está cifrado, más la declaración legal y la portada cuando existen) se autentica después como dato asociado de cada bloque cifrado, así que no puede alterarse sin que se detecte.</x></body></p>
+<p><body><x><b>Declaración legal</b> (bit 1 de los indicadores). Tras los campos fijos van una longitud de 4 bytes y la declaración en UTF-8, 64 KB como máximo. Está en claro para que un programa pueda mostrarla antes de pedir la contraseña, y nikpak se niega a listar, probar, extraer o borrar nada hasta que se acepta: en una ventana con <b>Acepto</b>, en la consola escribiendo YES, o con <code>-accept</code>. Un lector que no conoce el bit 1 rechaza el archivo, así que la declaración no puede saltarse con una versión anterior.</x></body></p>
+<p><body><x><b>Portada</b> (bit 2 de los indicadores). Después, una longitud de 4 bytes y una imagen JPEG o PNG, 4 MB como máximo; nikpak la crea a partir de cualquier imagen, recortada en cuadrado y escalada a 1024 x 1024. Se lee sin la contraseña y la muestran unNik y Nikkomander.</x></body></p>
+<p><body><x>Ambas forman parte de la cabecera: en un archivo cifrado se autentican con cada bloque, y cambiar o quitar las condiciones o la portada impide abrir el archivo. Los archivos sin ellas se escriben exactamente igual que antes.</x></body></p>
 <h3 class="se" id="5-2-entry-records"><body><x>5.2 Registros de entrada</x></body></h3>
 <p><body><x>Dentro del flujo (descifrado y descomprimido), cada entrada es un registro. Todos los enteros son little endian.</x></body></p>
 <table class="tech-table"><thead><tr><th><body><x><b>Tipo</b></x></body></th><th><body><x><b>Estructura</b></x></body></th></tr></thead><tbody><tr><td><body><x><code>0</code> END</x></body></td><td><body><x><code>count:u64</code>. Marca el final e indica cuántas entradas lo preceden.</x></body></td></tr><tr><td><body><x><code>1</code> FILE</x></body></td><td><body><x><code>name_len:u16 name mtime:i64 mode:u32 size:u64 data[size] crc32:u32</code></x></body></td></tr><tr><td><body><x><code>2</code> DIR</x></body></td><td><body><x><code>name_len:u16 name mtime:i64 mode:u32</code></x></body></td></tr><tr><td><body><x><code>3</code> MEDIA</x></body></td><td><body><x><code>name_len:u16 name mtime:i64 mode:u32 size:u64 filter:u8 method:u8 params_len:u8 params framed_stream crc32:u32</code></x></body></td></tr></tbody></table>

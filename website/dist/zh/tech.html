@@ -240,7 +240,16 @@
 				<code>-x<pattern></pattern></code></td><td>
 				<code>-x <pattern></pattern></code></td><td><body><x>排除文件；可重复使用。</x></body></td></tr><tr><td>
 				<code>-d <dir></dir></code></td><td>
-				<code>-d <dir></dir></code></td><td><body><x><code>x</code> 和 <code>e</code> 的目标文件夹。</x></body></td></tr><tr><td><body><x><code>-inul</code> <code>-idq</code></x></body></td><td>
+				<code>-d <dir></dir></code></td><td><body><x><code>x</code> 和 <code>e</code> 的目标文件夹。</x></body></td></tr><tr><td>
+				<code>-legal &lt;file&gt;</code></td><td>
+				<br>
+				</td><td><body><x>为新压缩包附加该文件中的法律声明（UTF-8，最多 64 KB）。打开压缩包前必须先同意。</x></body></td></tr><tr><td>
+				<code>-cover &lt;file&gt;</code></td><td>
+				<br>
+				</td><td><body><x>为新压缩包附加封面图片：裁成正方形，并以 1024 x 1024 的 JPEG 存储。</x></body></td></tr><tr><td>
+				<code>-accept</code></td><td>
+				<br>
+				</td><td><body><x>不询问直接同意压缩包的法律声明（用于脚本）。</x></body></td></tr><tr><td><body><x><code>-inul</code> <code>-idq</code></x></body></td><td>
 				<code>-q</code></td><td><body><x>安静：仅打印错误。</x></body></td></tr><tr><td><body><x><code>@listfile</code></x></body></td><td>
 				<br>
 
@@ -270,7 +279,8 @@
 				3</td><td><body><x>压缩包损坏或 CRC 错误</x></body></td><td><body><x>压缩包损坏或被截断，校验和失败</x></body></td></tr><tr><td>
 				7</td><td><body><x>命令行错误</x></body></td><td><body><x>未知选项，缺少压缩包名称</x></body></td></tr><tr><td>
 				10</td><td><body><x>没有匹配项</x></body></td><td><body><x>没有文件与名称或通配符匹配</x></body></td></tr><tr><td>
-				11</td><td><body><x>密码错误或缺失</x></body></td><td><body><x>密码错误，或加密压缩包被篡改</x></body></td></tr></tbody></table>
+				11</td><td><body><x>密码错误或缺失</x></body></td><td><body><x>密码错误，或加密压缩包被篡改</x></body></td></tr><tr><td>
+				12</td><td><body><x>未同意条款</x></body></td><td><body><x>压缩包的法律声明被拒绝，或未通过 <code>-accept</code> 同意</x></body></td></tr></tbody></table>
 <p><br>
 <br>
 
@@ -361,7 +371,7 @@
 				8</td><td>
 				1</td><td><body><x>版本</x></body></td><td><body><x>3（1 和 2 仍可读取）</x></body></td></tr><tr><td>
 				9</td><td>
-				1</td><td><body><x>标志</x></body></td><td><body><x>第 0 位 = 已加密；其他位必须为 0</x></body></td></tr><tr><td>
+				1</td><td><body><x>标志</x></body></td><td><body><x>bit 0 = 已加密，bit 1 = 法律声明，bit 2 = 封面；其余位必须为 0</x></body></td></tr><tr><td>
 				10</td><td>
 				1</td><td><body><x>方法</x></body></td><td><body><x>0 = 存储，1 = Zstandard，2 = 多引擎块（5.6）</x></body></td></tr><tr><td>
 				11</td><td>
@@ -381,7 +391,10 @@
 <br>
 
 </p>
-<p><body><x>完整的文件头（12 字节，加密时 59 字节）随后作为每个加密分块的关联数据进行认证，因此它无法被改动而不被发现。</x></body></p>
+<p><body><x>完整的文件头（12 字节，加密时为 59 字节，若有法律声明和封面则另加其长度）随后作为每个加密块的关联数据进行认证，因此任何改动都会被发现。</x></body></p>
+<p><body><x><b>法律声明</b>（标志位 bit 1）。固定字段之后是 4 字节长度和 UTF-8 编码的声明，最多 64 KB。它以明文存放，以便程序在询问密码之前显示；在同意之前，nikpak 拒绝列出、测试、解压或删除任何内容：在窗口中点击<b>我同意</b>，在控制台输入 YES，或使用 <code>-accept</code>。不认识 bit 1 的读取程序会拒绝该压缩包，因此无法用旧版本绕过声明。</x></body></p>
+<p><body><x><b>封面</b>（标志位 bit 2）。随后是 4 字节长度和一张 JPEG 或 PNG 图片，最多 4 MB；nikpak 可由任意图片生成，裁成正方形并缩放到 1024 x 1024。读取封面无需密码，unNik 和 Nikkomander 会显示它。</x></body></p>
+<p><body><x>两者都属于文件头，因此在加密压缩包中会与每个数据块一起认证：修改或删除条款或封面都会使压缩包无法打开。没有它们的压缩包与以前写法完全相同。</x></body></p>
 <h3 class="se" id="5-2-entry-records"><body><x>5.2 条目记录</x></body></h3>
 <p><body><x>在（解密、解压后的）流内部，每个条目是一条记录。所有整数均为小端。</x></body></p>
 <table class="tech-table"><thead><tr><th><body><x><b>类型</b></x></body></th><th><body><x><b>布局</b></x></body></th></tr></thead><tbody><tr><td><body><x><code>0</code> END</x></body></td><td><body><x><code>count:u64</code>。标记结束并说明其前面有多少个条目。</x></body></td></tr><tr><td><body><x><code>1</code> FILE</x></body></td><td><body><x><code>name_len:u16 name mtime:i64 mode:u32 size:u64 data[size] crc32:u32</code></x></body></td></tr><tr><td><body><x><code>2</code> DIR</x></body></td><td><body><x><code>name_len:u16 name mtime:i64 mode:u32</code></x></body></td></tr><tr><td><body><x><code>3</code> MEDIA</x></body></td><td><body><x><code>name_len:u16 name mtime:i64 mode:u32 size:u64 filter:u8 method:u8 params_len:u8 params framed_stream crc32:u32</code></x></body></td></tr></tbody></table>

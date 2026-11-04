@@ -99,7 +99,16 @@
 				<code>-x<pattern></pattern></code></td><td>
 				<code>-x <pattern></pattern></code></td><td><body><x>ফাইল বাদ দেয়; পুনরাবৃত্তি করা যায়।</x></body></td></tr><tr><td>
 				<code>-d <dir></dir></code></td><td>
-				<code>-d <dir></dir></code></td><td><body><x><code>x</code> ও <code>e</code>-এর জন্য গন্তব্য ফোল্ডার।</x></body></td></tr><tr><td><body><x><code>-inul</code> <code>-idq</code></x></body></td><td>
+				<code>-d <dir></dir></code></td><td><body><x><code>x</code> ও <code>e</code>-এর জন্য গন্তব্য ফোল্ডার।</x></body></td></tr><tr><td>
+				<code>-legal &lt;file&gt;</code></td><td>
+				<br>
+				</td><td><body><x>ফাইলে থাকা আইনি বিবৃতি (UTF-8, সর্বোচ্চ 64 KB) নতুন আর্কাইভে যুক্ত করে। আর্কাইভ খোলার আগে এটি গ্রহণ করতে হবে।</x></body></td></tr><tr><td>
+				<code>-cover &lt;file&gt;</code></td><td>
+				<br>
+				</td><td><body><x>নতুন আর্কাইভে কভার ছবি যুক্ত করে: বর্গাকারে কেটে 1024 x 1024 JPEG হিসেবে রাখা হয়।</x></body></td></tr><tr><td>
+				<code>-accept</code></td><td>
+				<br>
+				</td><td><body><x>জিজ্ঞাসা না করেই আর্কাইভের আইনি বিবৃতি গ্রহণ করে (স্ক্রিপ্টের জন্য)।</x></body></td></tr><tr><td><body><x><code>-inul</code> <code>-idq</code></x></body></td><td>
 				<code>-q</code></td><td><body><x>কোয়ায়েট: শুধু ত্রুটি প্রিন্ট করা হয়।</x></body></td></tr><tr><td><body><x><code>@listfile</code></x></body></td><td>
 				<br>
 
@@ -129,7 +138,8 @@
 				3</td><td><body><x>দূষিত আর্কাইভ বা CRC ত্রুটি</x></body></td><td><body><x>ক্ষতিগ্রস্ত বা কাটা আর্কাইভ, চেকসাম ব্যর্থ</x></body></td></tr><tr><td>
 				7</td><td><body><x>কমান্ড-লাইন ত্রুটি</x></body></td><td><body><x>অজানা অপশন, আর্কাইভের নাম নেই</x></body></td></tr><tr><td>
 				10</td><td><body><x>কিছুই মেলেনি</x></body></td><td><body><x>কোনো ফাইল নাম বা ওয়াইল্ডকার্ডের সাথে মেলেনি</x></body></td></tr><tr><td>
-				11</td><td><body><x>ভুল বা অনুপস্থিত পাসওয়ার্ড</x></body></td><td><body><x>ভুল পাসওয়ার্ড, বা একটি বিকৃত এনক্রিপ্টেড আর্কাইভ</x></body></td></tr></tbody></table>
+				11</td><td><body><x>ভুল বা অনুপস্থিত পাসওয়ার্ড</x></body></td><td><body><x>ভুল পাসওয়ার্ড, বা একটি বিকৃত এনক্রিপ্টেড আর্কাইভ</x></body></td></tr><tr><td>
+				12</td><td><body><x>শর্তাবলি গৃহীত হয়নি</x></body></td><td><body><x>আর্কাইভের আইনি বিবৃতি প্রত্যাখ্যাত হয়েছে, অথবা <code>-accept</code> দিয়ে গৃহীত হয়নি</x></body></td></tr></tbody></table>
 <p><br>
 <br>
 
@@ -220,7 +230,7 @@
 				8</td><td>
 				1</td><td><body><x>ভার্সন</x></body></td><td><body><x>3 (1 ও 2 এখনো পাঠযোগ্য)</x></body></td></tr><tr><td>
 				9</td><td>
-				1</td><td><body><x>ফ্ল্যাগ</x></body></td><td><body><x>বিট 0 = এনক্রিপ্টেড; অন্যান্য বিট অবশ্যই 0</x></body></td></tr><tr><td>
+				1</td><td><body><x>ফ্ল্যাগ</x></body></td><td><body><x>bit 0 = এনক্রিপ্টেড, bit 1 = আইনি বিবৃতি, bit 2 = কভার; বাকি bit 0 হতে হবে</x></body></td></tr><tr><td>
 				10</td><td>
 				1</td><td><body><x>পদ্ধতি</x></body></td><td><body><x>0 = store, 1 = Zstandard, 2 = মাল্টি-ইঞ্জিন ব্লক (5.6)</x></body></td></tr><tr><td>
 				11</td><td>
@@ -240,7 +250,10 @@
 <br>
 
 </p>
-<p><body><x>সম্পূর্ণ হেডারটি (12 বাইট, বা এনক্রিপ্টেড হলে 59 বাইট) পরে প্রতিটি এনক্রিপ্টেড চাংকের অ্যাসোসিয়েটেড ডেটা হিসেবে অথেন্টিকেট করা হয়, তাই শনাক্ত না হয়ে এটি পরিবর্তন করা যায় না।</x></body></p>
+<p><body><x>সম্পূর্ণ হেডার (12 বাইট, এনক্রিপ্টেড হলে 59 বাইট, এবং থাকলে আইনি বিবৃতি ও কভার) পরে প্রতিটি এনক্রিপ্টেড অংশের সংযুক্ত ডেটা হিসেবে যাচাই হয়, তাই ধরা না পড়ে তা বদলানো যায় না।</x></body></p>
+<p><body><x><b>আইনি বিবৃতি</b> (ফ্ল্যাগ bit 1)। নির্দিষ্ট ফিল্ডের পরে আসে 4 বাইটের দৈর্ঘ্য এবং UTF-8-এ বিবৃতি, সর্বোচ্চ 64 KB। এটি সাধারণ লেখায় থাকে যাতে পাসওয়ার্ড চাওয়ার আগে প্রোগ্রাম এটি দেখাতে পারে, এবং গৃহীত না হওয়া পর্যন্ত nikpak কিছুই তালিকাভুক্ত, পরীক্ষা, বের বা মুছতে রাজি হয় না: উইন্ডোতে <b>আমি সম্মত</b> দিয়ে, কনসোলে YES লিখে, অথবা <code>-accept</code> দিয়ে। যে রিডার bit 1 চেনে না সে আর্কাইভ প্রত্যাখ্যান করে, তাই পুরোনো সংস্করণ দিয়ে বিবৃতি এড়ানো যায় না।</x></body></p>
+<p><body><x><b>কভার</b> (ফ্ল্যাগ bit 2)। তারপর 4 বাইটের দৈর্ঘ্য এবং একটি JPEG বা PNG ছবি, সর্বোচ্চ 4 MB; nikpak যেকোনো ছবি থেকে এটি তৈরি করে, বর্গাকারে কেটে 1024 x 1024-এ। এটি পাসওয়ার্ড ছাড়াই পড়া যায় এবং unNik ও Nikkomander এটি দেখায়।</x></body></p>
+<p><body><x>দুটিই হেডারের অংশ, তাই এনক্রিপ্টেড আর্কাইভে প্রতিটি অংশের সঙ্গে যাচাই হয়: শর্তাবলি বা কভার বদলালে বা সরালে আর্কাইভ খোলে না। এগুলো ছাড়া আর্কাইভ আগের মতোই লেখা হয়।</x></body></p>
 <h3 class="se" id="5-2-entry-records"><body><x>5.2 এন্ট্রি রেকর্ড</x></body></h3>
 <p><body><x>(ডিক্রিপ্টেড, ডিকমপ্রেসড) স্ট্রিমের ভেতরে প্রতিটি এন্ট্রি একটি রেকর্ড। সব পূর্ণসংখ্যা লিটল এন্ডিয়ান।</x></body></p>
 <table class="tech-table"><thead><tr><th><body><x><b>টাইপ</b></x></body></th><th><body><x><b>বিন্যাস</b></x></body></th></tr></thead><tbody><tr><td><body><x><code>0</code> END</x></body></td><td><body><x><code>count:u64</code>। শেষ চিহ্নিত করে এবং এর আগে কতটি এন্ট্রি আছে তা বলে।</x></body></td></tr><tr><td><body><x><code>1</code> FILE</x></body></td><td><body><x><code>name_len:u16 name mtime:i64 mode:u32 size:u64 data[size] crc32:u32</code></x></body></td></tr><tr><td><body><x><code>2</code> DIR</x></body></td><td><body><x><code>name_len:u16 name mtime:i64 mode:u32</code></x></body></td></tr><tr><td><body><x><code>3</code> MEDIA</x></body></td><td><body><x><code>name_len:u16 name mtime:i64 mode:u32 size:u64 filter:u8 method:u8 params_len:u8 params framed_stream crc32:u32</code></x></body></td></tr></tbody></table>

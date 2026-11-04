@@ -5,6 +5,21 @@ The newest version is at the top. Format: version – date – summary, then the
 
 ---
 
+## 1.9.0 – 4 November 2026 – Cover pictures for archives
+
+### Added
+- **An archive can carry a cover picture.** Any picture (PNG, JPEG, WebP, BMP or GIF) is cropped square from its centre and stored in the header as a 1024 × 1024 JPEG. Like the legal statement it is readable without the password, and in an encrypted archive it is authenticated with every block: swapping it breaks the archive. A delete keeps it.
+- **In the NikPak window**: a **▣ Cover** pill beside **§ Legal** opens a box with the picture — click the frame to choose one, or drop it on the window — and **Attach to new archives**. The cover is kept in `cover.jpg` beside the settings.
+- **On the command line**: `nikpak a -cover art.png …`; `nikpak l` shows the cover's size.
+- **unNik** shows the cover beside the terms and the password, and as a thumbnail in the title bar; a click shows it large.
+- Library: `cover::from_picture`, `archive::cover_image()`; Nikkomander uses them for its pack box and Quick view.
+- Docs: the user guide (new "Terms and cover" section), the options and exit-code tables, and the technical guide's header format, in the ten languages; the Word and PDF technical guide.
+
+### Changed
+- New dependency: `image` 0.25 (already in the tree through the clipboard crate), for reading pictures and writing the cover.
+
+---
+
 ## 1.8.0 – 4 November 2026 – Legal statements in .nik archives
 
 ### Added

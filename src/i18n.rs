@@ -405,6 +405,15 @@ pub const KEYS: &[&str] = &[
     "This archive comes with a legal statement. Read it, then approve it to open the archive.",
     "I approve",
     "Write the terms first.",
+    "Cover",
+    "COVER",
+    "A picture for your archives",
+    "Any picture is cropped square and saved at 1024 × 1024. Click the frame to choose one, or drop it on the window.",
+    "Click to choose a picture",
+    "Choose a cover picture",
+    "Pictures",
+    "Remove",
+    "Choose a picture first.",
 ];
 
 // ---------------------------------------------------------------------------
@@ -649,6 +658,15 @@ const ES: &[(&str, &str)] = &[
     ("This archive comes with a legal statement. Read it, then approve it to open the archive.", "Este archivo incluye una declaración legal. Léela y apruébala para abrir el archivo."),
     ("I approve", "Acepto"),
     ("Write the terms first.", "Escribe primero las condiciones."),
+    ("Cover", "Portada"),
+    ("COVER", "PORTADA"),
+    ("A picture for your archives", "Una imagen para tus archivos"),
+    ("Any picture is cropped square and saved at 1024 × 1024. Click the frame to choose one, or drop it on the window.", "Cualquier imagen se recorta en cuadrado y se guarda a 1024 × 1024. Haz clic en el marco para elegirla o suéltala en la ventana."),
+    ("Click to choose a picture", "Haz clic para elegir una imagen"),
+    ("Choose a cover picture", "Elige una imagen de portada"),
+    ("Pictures", "Imágenes"),
+    ("Remove", "Quitar"),
+    ("Choose a picture first.", "Elige primero una imagen."),
 ];
 
 const FR: &[(&str, &str)] = &[
@@ -889,6 +907,15 @@ const FR: &[(&str, &str)] = &[
     ("This archive comes with a legal statement. Read it, then approve it to open the archive.", "Cette archive est accompagnée de mentions légales. Lisez-les, puis approuvez-les pour ouvrir l'archive."),
     ("I approve", "J'approuve"),
     ("Write the terms first.", "Rédigez d'abord les conditions."),
+    ("Cover", "Couverture"),
+    ("COVER", "COUVERTURE"),
+    ("A picture for your archives", "Une image pour vos archives"),
+    ("Any picture is cropped square and saved at 1024 × 1024. Click the frame to choose one, or drop it on the window.", "Toute image est recadrée en carré et enregistrée en 1024 × 1024. Cliquez sur le cadre pour en choisir une, ou déposez-la sur la fenêtre."),
+    ("Click to choose a picture", "Cliquez pour choisir une image"),
+    ("Choose a cover picture", "Choisir une image de couverture"),
+    ("Pictures", "Images"),
+    ("Remove", "Retirer"),
+    ("Choose a picture first.", "Choisissez d’abord une image."),
 ];
 
 const PT: &[(&str, &str)] = &[
@@ -1129,6 +1156,15 @@ const PT: &[(&str, &str)] = &[
     ("This archive comes with a legal statement. Read it, then approve it to open the archive.", "Este arquivo inclui uma declaração legal. Leia-a e aprove-a para abrir o arquivo."),
     ("I approve", "Aprovo"),
     ("Write the terms first.", "Escreva primeiro os termos."),
+    ("Cover", "Capa"),
+    ("COVER", "CAPA"),
+    ("A picture for your archives", "Uma imagem para os seus arquivos"),
+    ("Any picture is cropped square and saved at 1024 × 1024. Click the frame to choose one, or drop it on the window.", "Qualquer imagem é recortada em quadrado e guardada a 1024 × 1024. Clique no quadro para escolher uma, ou largue-a na janela."),
+    ("Click to choose a picture", "Clique para escolher uma imagem"),
+    ("Choose a cover picture", "Escolher uma imagem de capa"),
+    ("Pictures", "Imagens"),
+    ("Remove", "Remover"),
+    ("Choose a picture first.", "Escolha primeiro uma imagem."),
 ];
 
 const ID: &[(&str, &str)] = &[
@@ -1369,6 +1405,15 @@ const ID: &[(&str, &str)] = &[
     ("This archive comes with a legal statement. Read it, then approve it to open the archive.", "Arsip ini disertai pernyataan hukum. Bacalah, lalu setujui untuk membuka arsip."),
     ("I approve", "Saya setuju"),
     ("Write the terms first.", "Tulis ketentuannya terlebih dahulu."),
+    ("Cover", "Sampul"),
+    ("COVER", "SAMPUL"),
+    ("A picture for your archives", "Gambar untuk arsip Anda"),
+    ("Any picture is cropped square and saved at 1024 × 1024. Click the frame to choose one, or drop it on the window.", "Gambar apa pun dipotong persegi dan disimpan 1024 × 1024. Klik bingkai untuk memilih, atau seret ke jendela."),
+    ("Click to choose a picture", "Klik untuk memilih gambar"),
+    ("Choose a cover picture", "Pilih gambar sampul"),
+    ("Pictures", "Gambar"),
+    ("Remove", "Hapus"),
+    ("Choose a picture first.", "Pilih gambar terlebih dahulu."),
 ];
 
 const RU: &[(&str, &str)] = &[
@@ -1609,6 +1654,15 @@ const RU: &[(&str, &str)] = &[
     ("This archive comes with a legal statement. Read it, then approve it to open the archive.", "К этому архиву приложено юридическое заявление. Прочитайте его и примите, чтобы открыть архив."),
     ("I approve", "Я принимаю"),
     ("Write the terms first.", "Сначала напишите условия."),
+    ("Cover", "Обложка"),
+    ("COVER", "ОБЛОЖКА"),
+    ("A picture for your archives", "Картинка для ваших архивов"),
+    ("Any picture is cropped square and saved at 1024 × 1024. Click the frame to choose one, or drop it on the window.", "Любое изображение обрезается до квадрата и сохраняется в 1024 × 1024. Щёлкните рамку, чтобы выбрать, или перетащите его на окно."),
+    ("Click to choose a picture", "Щёлкните, чтобы выбрать изображение"),
+    ("Choose a cover picture", "Выберите изображение обложки"),
+    ("Pictures", "Изображения"),
+    ("Remove", "Убрать"),
+    ("Choose a picture first.", "Сначала выберите изображение."),
 ];
 
 const ZH: &[(&str, &str)] = &[
@@ -1849,6 +1903,15 @@ const ZH: &[(&str, &str)] = &[
     ("This archive comes with a legal statement. Read it, then approve it to open the archive.", "此压缩包附有法律声明。请阅读并同意后再打开压缩包。"),
     ("I approve", "我同意"),
     ("Write the terms first.", "请先填写条款。"),
+    ("Cover", "封面"),
+    ("COVER", "封面"),
+    ("A picture for your archives", "压缩包的封面图片"),
+    ("Any picture is cropped square and saved at 1024 × 1024. Click the frame to choose one, or drop it on the window.", "任何图片都会裁成正方形并保存为 1024 × 1024。点击方框选择图片，或拖放到窗口上。"),
+    ("Click to choose a picture", "点击选择图片"),
+    ("Choose a cover picture", "选择封面图片"),
+    ("Pictures", "图片"),
+    ("Remove", "移除"),
+    ("Choose a picture first.", "请先选择一张图片。"),
 ];
 
 const HI: &[(&str, &str)] = &[
@@ -2089,6 +2152,15 @@ const HI: &[(&str, &str)] = &[
     ("This archive comes with a legal statement. Read it, then approve it to open the archive.", "इस आर्काइव के साथ एक कानूनी कथन है। आर्काइव खोलने के लिए इसे पढ़ें और स्वीकार करें।"),
     ("I approve", "मैं स्वीकार करता हूँ"),
     ("Write the terms first.", "पहले शर्तें लिखें।"),
+    ("Cover", "कवर"),
+    ("COVER", "कवर"),
+    ("A picture for your archives", "आपके आर्काइव के लिए एक चित्र"),
+    ("Any picture is cropped square and saved at 1024 × 1024. Click the frame to choose one, or drop it on the window.", "कोई भी चित्र वर्गाकार काटकर 1024 × 1024 में सहेजा जाता है। चुनने के लिए फ़्रेम पर क्लिक करें, या उसे विंडो पर छोड़ें।"),
+    ("Click to choose a picture", "चित्र चुनने के लिए क्लिक करें"),
+    ("Choose a cover picture", "कवर चित्र चुनें"),
+    ("Pictures", "चित्र"),
+    ("Remove", "हटाएँ"),
+    ("Choose a picture first.", "पहले एक चित्र चुनें।"),
 ];
 
 const BN: &[(&str, &str)] = &[
@@ -2329,6 +2401,15 @@ const BN: &[(&str, &str)] = &[
     ("This archive comes with a legal statement. Read it, then approve it to open the archive.", "এই আর্কাইভের সঙ্গে একটি আইনি বিবৃতি আছে। আর্কাইভ খুলতে এটি পড়ে অনুমোদন করুন।"),
     ("I approve", "আমি সম্মত"),
     ("Write the terms first.", "আগে শর্তাবলি লিখুন।"),
+    ("Cover", "কভার"),
+    ("COVER", "কভার"),
+    ("A picture for your archives", "আপনার আর্কাইভের জন্য একটি ছবি"),
+    ("Any picture is cropped square and saved at 1024 × 1024. Click the frame to choose one, or drop it on the window.", "যেকোনো ছবি বর্গাকারে কেটে 1024 × 1024 আকারে সংরক্ষিত হয়। বেছে নিতে ফ্রেমে ক্লিক করুন, অথবা উইন্ডোতে ছেড়ে দিন।"),
+    ("Click to choose a picture", "ছবি বেছে নিতে ক্লিক করুন"),
+    ("Choose a cover picture", "কভার ছবি বেছে নিন"),
+    ("Pictures", "ছবি"),
+    ("Remove", "সরান"),
+    ("Choose a picture first.", "আগে একটি ছবি বেছে নিন।"),
 ];
 
 const AR: &[(&str, &str)] = &[
@@ -2569,6 +2650,15 @@ const AR: &[(&str, &str)] = &[
     ("This archive comes with a legal statement. Read it, then approve it to open the archive.", "يرافق هذا الأرشيف بيان قانوني. اقرأه ثم وافق عليه لفتح الأرشيف."),
     ("I approve", "أوافق"),
     ("Write the terms first.", "اكتب الشروط أولًا."),
+    ("Cover", "الغلاف"),
+    ("COVER", "الغلاف"),
+    ("A picture for your archives", "صورة لأرشيفاتك"),
+    ("Any picture is cropped square and saved at 1024 × 1024. Click the frame to choose one, or drop it on the window.", "تُقص أي صورة على شكل مربع وتُحفظ بحجم 1024 × 1024. انقر على الإطار لاختيار صورة أو أفلتها على النافذة."),
+    ("Click to choose a picture", "انقر لاختيار صورة"),
+    ("Choose a cover picture", "اختر صورة الغلاف"),
+    ("Pictures", "الصور"),
+    ("Remove", "إزالة"),
+    ("Choose a picture first.", "اختر صورة أولًا."),
 ];
 
 #[cfg(test)]

@@ -4,7 +4,7 @@
 //! offset  size  field
 //! 0       8     magic   89 4E 49 4B 0D 0A 1A 0A  ("\x89NIK\r\n\x1a\n")
 //! 8       1     version (3; 1 and 2 are still readable)
-//! 9       1     flags   bit0 = encrypted, bit1 = legal statement
+//! 9       1     flags   bit0 = encrypted, bit1 = legal statement, bit2 = cover
 //! 10      1     method  0 = store, 1 = zstd, 2 = blocks (see engine.rs)
 //! 11      1     reserved (0)
 //! -- only when encrypted --
@@ -21,6 +21,10 @@
 //!               cannot be changed or removed without breaking the archive.
 //!               A reader that does not know bit1 refuses the archive, so the
 //!               statement cannot be skipped by an older nikpak either.
+//! -- only when bit2 (cover) is set --
+//! +0      4     length of the picture in bytes (LE, at most cover::MAX_COVER_BYTES)
+//! +4      n     the cover: a JPEG (or PNG), 1024 x 1024 when nikpak made it.
+//!               Plaintext like the statement, and authenticated the same way.
 //! -- body --
 //! The "inner stream" (see archive.rs) optionally zstd-compressed, optionally
 //! cut into 64 KiB chunks, each sealed with XChaCha20-Poly1305 (STREAM/BE32).
@@ -36,6 +40,8 @@ pub const FLAG_ENCRYPTED: u8 = 1;
 pub const FLAG_LEGAL: u8 = 2;
 /// Longest legal statement accepted (bytes of UTF-8).
 pub const MAX_LEGAL_LEN: usize = 64 * 1024;
+/// The archive carries a cover picture.
+pub const FLAG_COVER: u8 = 4;
 pub const METHOD_STORE: u8 = 0;
 pub const METHOD_ZSTD: u8 = 1;
 pub const METHOD_BLOCKS: u8 = 2;
@@ -74,6 +80,8 @@ pub struct Header {
     pub nonce_prefix: [u8; NONCE_PREFIX_LEN],
     /// The legal statement shown (and accepted) before the archive is opened.
     pub legal: Option<String>,
+    /// The cover picture (JPEG or PNG bytes).
+    pub cover: Option<Vec<u8>>,
 }
 
 impl Header {
@@ -84,6 +92,9 @@ impl Header {
         let mut flags = if self.encrypted { FLAG_ENCRYPTED } else { 0 };
         if self.legal.is_some() {
             flags |= FLAG_LEGAL;
+        }
+        if self.cover.is_some() {
+            flags |= FLAG_COVER;
         }
         v.push(flags);
         v.push(self.method);
@@ -98,6 +109,10 @@ impl Header {
         if let Some(text) = &self.legal {
             v.extend_from_slice(&(text.len() as u32).to_le_bytes());
             v.extend_from_slice(text.as_bytes());
+        }
+        if let Some(pic) = &self.cover {
+            v.extend_from_slice(&(pic.len() as u32).to_le_bytes());
+            v.extend_from_slice(pic);
         }
         v
     }

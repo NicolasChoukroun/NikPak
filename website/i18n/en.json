@@ -502,6 +502,21 @@
     "Destination folder for x and e."
    ],
    [
+    "-legal &lt;file&gt;",
+    "",
+    "Attach the legal statement in a text file to the new archive; it must be accepted before the archive is opened."
+   ],
+   [
+    "-cover &lt;file&gt;",
+    "",
+    "Attach a cover picture to the new archive (cropped square, stored at 1024 × 1024)."
+   ],
+   [
+    "-accept",
+    "",
+    "Accept the archive's legal statement without asking (scripts)."
+   ],
+   [
     "-inul -idq",
     "-q",
     "Quiet: only errors are printed."
@@ -564,6 +579,11 @@
     "11",
     "Wrong or missing password",
     "Bad password, or a tampered encrypted archive"
+   ],
+   [
+    "12",
+    "Terms not accepted",
+    "The archive's legal statement was refused"
    ]
   ],
   "ex_t": "Examples",
@@ -577,7 +597,8 @@
    "list only the PDFs",
    "test (asks for the password)",
    "delete entries",
-   "which media filter wins?"
+   "which media filter wins?",
+   "with a cover and terms to accept"
   ],
   "tc_t": "Total Commander and other front-ends",
   "tc_p": "Because NikPak accepts RAR's command syntax, a program that can drive an external rar.exe can drive nikpak.exe. In Total Commander, register the extension <code>nik</code> as an additional packer and point the packer and unpacker commands to nikpak.exe. Use <code>-o+</code> or <code>-y</code> for unattended extraction. Options that RAR front-ends often send (<code>-s</code>, <code>-ma5</code>, <code>-md64m</code>, <code>-ibck</code>, <code>-rr</code> and similar) are accepted and ignored.",
@@ -604,7 +625,16 @@
    "The menu uses <code>nikpak --add</code> and <code>--add-here</code>, and <code>unNik --extract</code>, <code>--extract-here</code> and <code>--extract-to</code>."
   ],
   "menu_note": "A second setup, <code>unnik-&lt;version&gt;-setup.exe</code>, installs unNik alone — the free archive browser — for people who only receive .nik archives.",
-  "tech_sub": "The complete technical guide: architecture and the .nik format, the compression engine and the media codecs, the encryption design and quantum resistance, hardening, the full benchmarks, and the build, test and roadmap notes."
+  "tech_sub": "The complete technical guide: architecture and the .nik format, the compression engine and the media codecs, the encryption design and quantum resistance, hardening, the full benchmarks, and the build, test and roadmap notes.",
+  "terms_t": "Terms and cover",
+  "terms_p": "An archive can carry a legal statement (terms of use, a licence, a copyright notice) and a cover picture. Both are shown before anything else, without the password.",
+  "terms_list": [
+   "In the NikPak window, <b>§ Legal</b> beside Fast / Medium / Best opens a box to write the terms; <b>▣ Cover</b> opens one for the picture — click the frame to choose it, or drop it on the window. Any picture is cropped square and stored at 1024 × 1024. The pills stay lit while they apply to new archives.",
+   "On the command line: <code>-legal terms.txt</code> and <code>-cover art.png</code> when creating; <code>-accept</code> accepts the terms in scripts.",
+   "unNik shows the cover and the terms first: nothing is listed or extracted until you click <b>I approve</b>. The cover also sits in the title bar — click it to see it large.",
+   "Nikkomander does the same when it opens or unpacks the archive, and shows the cover in Quick view (<kbd>Ctrl</kbd>+<kbd>Q</kbd>)."
+  ],
+  "terms_note": "In an encrypted archive the terms and the cover are authenticated with the data: changing or removing them makes the archive fail to open. An older nikpak refuses such an archive instead of skipping the terms."
  },
  "buy": {
   "title": "Buy NikPak",

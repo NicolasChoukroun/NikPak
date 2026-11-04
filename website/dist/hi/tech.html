@@ -240,7 +240,16 @@
 				<code>-x<pattern></pattern></code></td><td>
 				<code>-x <pattern></pattern></code></td><td><body><x>फ़ाइलें बाहर करें; दोहराया जा सकता है।</x></body></td></tr><tr><td>
 				<code>-d <dir></dir></code></td><td>
-				<code>-d <dir></dir></code></td><td><body><x><code>x</code> और <code>e</code> के लिए गंतव्य फ़ोल्डर।</x></body></td></tr><tr><td><body><x><code>-inul</code> <code>-idq</code></x></body></td><td>
+				<code>-d <dir></dir></code></td><td><body><x><code>x</code> और <code>e</code> के लिए गंतव्य फ़ोल्डर।</x></body></td></tr><tr><td>
+				<code>-legal &lt;file&gt;</code></td><td>
+				<br>
+				</td><td><body><x>फ़ाइल में दिया कानूनी कथन (UTF-8, 64 KB तक) नए आर्काइव से जोड़ता है। आर्काइव खोलने से पहले इसे स्वीकार करना होगा।</x></body></td></tr><tr><td>
+				<code>-cover &lt;file&gt;</code></td><td>
+				<br>
+				</td><td><body><x>नए आर्काइव में कवर चित्र जोड़ता है: वर्गाकार काटकर 1024 x 1024 JPEG के रूप में रखा जाता है।</x></body></td></tr><tr><td>
+				<code>-accept</code></td><td>
+				<br>
+				</td><td><body><x>आर्काइव का कानूनी कथन बिना पूछे स्वीकार करता है (स्क्रिप्ट के लिए)।</x></body></td></tr><tr><td><body><x><code>-inul</code> <code>-idq</code></x></body></td><td>
 				<code>-q</code></td><td><body><x>शांत: केवल त्रुटियाँ छापी जाती हैं।</x></body></td></tr><tr><td><body><x><code>@listfile</code></x></body></td><td>
 				<br>
 
@@ -270,7 +279,8 @@
 				3</td><td><body><x>दूषित आर्काइव या CRC त्रुटि</x></body></td><td><body><x>क्षतिग्रस्त या काटा गया आर्काइव, चेकसम विफल</x></body></td></tr><tr><td>
 				7</td><td><body><x>कमांड-लाइन त्रुटि</x></body></td><td><body><x>अज्ञात विकल्प, आर्काइव नाम गायब</x></body></td></tr><tr><td>
 				10</td><td><body><x>कुछ मेल नहीं खाया</x></body></td><td><body><x>कोई फ़ाइल नामों या वाइल्डकार्ड से मेल नहीं खाई</x></body></td></tr><tr><td>
-				11</td><td><body><x>गलत या गायब पासवर्ड</x></body></td><td><body><x>गलत पासवर्ड, या छेड़छाड़ किया गया एन्क्रिप्टेड आर्काइव</x></body></td></tr></tbody></table>
+				11</td><td><body><x>गलत या गायब पासवर्ड</x></body></td><td><body><x>गलत पासवर्ड, या छेड़छाड़ किया गया एन्क्रिप्टेड आर्काइव</x></body></td></tr><tr><td>
+				12</td><td><body><x>शर्तें स्वीकार नहीं की गईं</x></body></td><td><body><x>आर्काइव का कानूनी कथन अस्वीकार किया गया, या <code>-accept</code> से स्वीकार नहीं किया गया</x></body></td></tr></tbody></table>
 <p><br>
 <br>
 
@@ -361,7 +371,7 @@
 				8</td><td>
 				1</td><td><body><x>संस्करण</x></body></td><td><body><x>3 (1 और 2 अभी भी पठनीय हैं)</x></body></td></tr><tr><td>
 				9</td><td>
-				1</td><td><body><x>फ़्लैग</x></body></td><td><body><x>बिट 0 = एन्क्रिप्टेड; अन्य बिट 0 होने चाहिए</x></body></td></tr><tr><td>
+				1</td><td><body><x>फ़्लैग</x></body></td><td><body><x>bit 0 = एन्क्रिप्टेड, bit 1 = कानूनी कथन, bit 2 = कवर; बाकी bits 0 होने चाहिए</x></body></td></tr><tr><td>
 				10</td><td>
 				1</td><td><body><x>विधि</x></body></td><td><body><x>0 = स्टोर, 1 = Zstandard, 2 = मल्टी-इंजन ब्लॉक (5.6)</x></body></td></tr><tr><td>
 				11</td><td>
@@ -381,7 +391,10 @@
 <br>
 
 </p>
-<p><body><x>पूरा हेडर (12 बाइट, या एन्क्रिप्टेड होने पर 59 बाइट) बाद में हर एन्क्रिप्टेड चंक के एसोसिएटेड डेटा के रूप में प्रमाणित किया जाता है, इसलिए इसे बिना पहचान के बदला नहीं जा सकता।</x></body></p>
+<p><body><x>पूरा हेडर (12 बाइट, एन्क्रिप्टेड होने पर 59 बाइट, और मौजूद होने पर कानूनी कथन व कवर) बाद में हर एन्क्रिप्टेड हिस्से के संबद्ध डेटा के रूप में प्रमाणित होता है, इसलिए उसे बिना पकड़े बदला नहीं जा सकता।</x></body></p>
+<p><body><x><b>कानूनी कथन</b> (फ़्लैग bit 1)। स्थिर फ़ील्ड के बाद 4 बाइट की लंबाई और UTF-8 में कथन आता है, अधिकतम 64 KB। यह सादे पाठ में होता है ताकि प्रोग्राम पासवर्ड पूछने से पहले इसे दिखा सके, और जब तक इसे स्वीकार न किया जाए nikpak कुछ भी सूचीबद्ध, जाँच, निकालने या हटाने से इनकार करता है: विंडो में <b>मैं स्वीकार करता हूँ</b> से, कंसोल में YES लिखकर, या <code>-accept</code> से। जो रीडर bit 1 नहीं जानता वह आर्काइव अस्वीकार करता है, इसलिए पुराने संस्करण से कथन को टाला नहीं जा सकता।</x></body></p>
+<p><body><x><b>कवर</b> (फ़्लैग bit 2)। फिर 4 बाइट की लंबाई और एक JPEG या PNG चित्र, अधिकतम 4 MB; nikpak इसे किसी भी चित्र से बनाता है, वर्गाकार काटकर 1024 x 1024 में। यह पासवर्ड के बिना पढ़ा जाता है और unNik व Nikkomander इसे दिखाते हैं।</x></body></p>
+<p><body><x>दोनों हेडर का हिस्सा हैं, इसलिए एन्क्रिप्टेड आर्काइव में ये हर हिस्से के साथ प्रमाणित होते हैं: शर्तों या कवर को बदलने या हटाने से आर्काइव नहीं खुलता। जिन आर्काइव में ये नहीं हैं वे पहले जैसे ही लिखे जाते हैं।</x></body></p>
 <h3 class="se" id="5-2-entry-records"><body><x>5.2 प्रविष्टि रिकॉर्ड</x></body></h3>
 <p><body><x>(डिक्रिप्टेड, डीकंप्रेस्ड) स्ट्रीम के अंदर हर प्रविष्टि एक रिकॉर्ड है। सभी पूर्णांक लिटिल एंडियन हैं।</x></body></p>
 <table class="tech-table"><thead><tr><th><body><x><b>प्रकार</b></x></body></th><th><body><x><b>लेआउट</b></x></body></th></tr></thead><tbody><tr><td><body><x><code>0</code> END</x></body></td><td><body><x><code>count:u64</code>। अंत को चिह्नित करता है और बताता है कि उससे पहले कितनी प्रविष्टियाँ हैं।</x></body></td></tr><tr><td><body><x><code>1</code> FILE</x></body></td><td><body><x><code>name_len:u16 name mtime:i64 mode:u32 size:u64 data[size] crc32:u32</code></x></body></td></tr><tr><td><body><x><code>2</code> DIR</x></body></td><td><body><x><code>name_len:u16 name mtime:i64 mode:u32</code></x></body></td></tr><tr><td><body><x><code>3</code> MEDIA</x></body></td><td><body><x><code>name_len:u16 name mtime:i64 mode:u32 size:u64 filter:u8 method:u8 params_len:u8 params framed_stream crc32:u32</code></x></body></td></tr></tbody></table>

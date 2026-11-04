@@ -502,6 +502,21 @@
     "Pasta de destino para x e e."
    ],
    [
+    "-legal &lt;file&gt;",
+    "",
+    "Anexa ao arquivo novo a declaração legal de um ficheiro de texto; tem de ser aceite antes de o abrir."
+   ],
+   [
+    "-cover &lt;file&gt;",
+    "",
+    "Anexa uma imagem de capa ao arquivo novo (recortada em quadrado, guardada a 1024 × 1024)."
+   ],
+   [
+    "-accept",
+    "",
+    "Aceita a declaração legal do arquivo sem perguntar (scripts)."
+   ],
+   [
     "-inul -idq",
     "-q",
     "Silencioso: só os erros são exibidos."
@@ -564,6 +579,11 @@
     "11",
     "Senha errada ou ausente",
     "Senha incorreta ou arquivo criptografado adulterado"
+   ],
+   [
+    "12",
+    "Termos não aceites",
+    "A declaração legal do arquivo foi recusada"
    ]
   ],
   "ex_t": "Exemplos",
@@ -577,7 +597,8 @@
    "listar só os PDFs",
    "testar (pede a senha)",
    "excluir entradas",
-   "qual filtro de mídia vence?"
+   "qual filtro de mídia vence?",
+   "com capa e termos a aceitar"
   ],
   "tc_t": "Total Commander e outras interfaces",
   "tc_p": "Como o NikPak aceita a sintaxe de comandos do RAR, um programa que controla um rar.exe externo pode controlar o nikpak.exe. No Total Commander, registre a extensão <code>nik</code> como compactador adicional e aponte os comandos de compactação e descompactação para o nikpak.exe. Use <code>-o+</code> ou <code>-y</code> para extração sem intervenção. As opções que interfaces do RAR costumam enviar (<code>-s</code>, <code>-ma5</code>, <code>-md64m</code>, <code>-ibck</code>, <code>-rr</code> e similares) são aceitas e ignoradas.",
@@ -604,7 +625,16 @@
    "O menu usa <code>nikpak --add</code> e <code>--add-here</code>, e <code>unNik --extract</code>, <code>--extract-here</code> e <code>--extract-to</code>."
   ],
   "menu_note": "Um segundo instalador, <code>unnik-&lt;version&gt;-setup.exe</code>, instala apenas o unNik — o navegador de arquivos gratuito — para quem só recebe arquivos .nik.",
-  "tech_sub": "O guia técnico completo: a arquitetura e o formato .nik, o motor de compressão e os codecs de mídia, o design de criptografia e a resistência quântica, o endurecimento, todos os benchmarks e as notas de compilação, teste e roteiro."
+  "tech_sub": "O guia técnico completo: a arquitetura e o formato .nik, o motor de compressão e os codecs de mídia, o design de criptografia e a resistência quântica, o endurecimento, todos os benchmarks e as notas de compilação, teste e roteiro.",
+  "terms_t": "Termos e capa",
+  "terms_p": "Um arquivo pode levar uma declaração legal (termos de utilização, uma licença, um aviso de direitos de autor) e uma imagem de capa. Ambas aparecem antes de tudo, sem a palavra-passe.",
+  "terms_list": [
+   "Na janela do NikPak, <b>§ Legal</b> ao lado de Rápido / Médio / Melhor abre uma caixa para escrever os termos; <b>▣ Capa</b> abre outra para a imagem — clique no quadro para a escolher, ou largue-a na janela. Qualquer imagem é recortada em quadrado e guardada a 1024 × 1024. Os botões ficam acesos enquanto se aplicam aos arquivos novos.",
+   "Na linha de comandos: <code>-legal termos.txt</code> e <code>-cover imagem.png</code> ao criar; <code>-accept</code> aceita os termos em scripts.",
+   "O unNik mostra primeiro a capa e os termos: nada é listado nem extraído até clicar em <b>Aprovo</b>. A capa também fica na barra de título — clique para a ver em grande.",
+   "O Nikkomander faz o mesmo ao abrir ou descomprimir o arquivo, e mostra a capa na vista rápida (<kbd>Ctrl</kbd>+<kbd>Q</kbd>)."
+  ],
+  "terms_note": "Num arquivo cifrado, os termos e a capa são autenticados com os dados: alterá-los ou removê-los impede o arquivo de abrir. Um nikpak mais antigo recusa esse arquivo em vez de ignorar os termos."
  },
  "buy": {
   "title": "Comprar o NikPak",

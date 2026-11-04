@@ -99,7 +99,16 @@
 				<code>-x<pattern></pattern></code></td><td>
 				<code>-x <pattern></pattern></code></td><td><body><x>Mengecualikan berkas; dapat diulang.</x></body></td></tr><tr><td>
 				<code>-d <dir></dir></code></td><td>
-				<code>-d <dir></dir></code></td><td><body><x>Folder tujuan untuk <code>x</code> dan <code>e</code>.</x></body></td></tr><tr><td><body><x><code>-inul</code> <code>-idq</code></x></body></td><td>
+				<code>-d <dir></dir></code></td><td><body><x>Folder tujuan untuk <code>x</code> dan <code>e</code>.</x></body></td></tr><tr><td>
+				<code>-legal &lt;file&gt;</code></td><td>
+				<br>
+				</td><td><body><x>Melampirkan pernyataan hukum dari berkas (UTF-8, hingga 64 KB) ke arsip baru. Pernyataan itu harus diterima sebelum arsip dibuka.</x></body></td></tr><tr><td>
+				<code>-cover &lt;file&gt;</code></td><td>
+				<br>
+				</td><td><body><x>Melampirkan gambar sampul ke arsip baru: dipotong persegi dan disimpan sebagai JPEG 1024 x 1024.</x></body></td></tr><tr><td>
+				<code>-accept</code></td><td>
+				<br>
+				</td><td><body><x>Menerima pernyataan hukum arsip tanpa bertanya (untuk skrip).</x></body></td></tr><tr><td><body><x><code>-inul</code> <code>-idq</code></x></body></td><td>
 				<code>-q</code></td><td><body><x>Senyap: hanya kesalahan yang dicetak.</x></body></td></tr><tr><td><body><x><code>@listfile</code></x></body></td><td>
 				<br>
 
@@ -129,7 +138,8 @@
 				3</td><td><body><x>Arsip rusak atau kesalahan CRC</x></body></td><td><body><x>Arsip rusak atau terpotong, checksum gagal</x></body></td></tr><tr><td>
 				7</td><td><body><x>Kesalahan baris perintah</x></body></td><td><body><x>Opsi tidak dikenal, nama arsip tidak ada</x></body></td></tr><tr><td>
 				10</td><td><body><x>Tidak ada yang cocok</x></body></td><td><body><x>Tidak ada berkas yang cocok dengan nama atau wildcard</x></body></td></tr><tr><td>
-				11</td><td><body><x>Kata sandi salah atau tidak ada</x></body></td><td><body><x>Kata sandi salah, atau arsip terenkripsi telah dirusak</x></body></td></tr></tbody></table>
+				11</td><td><body><x>Kata sandi salah atau tidak ada</x></body></td><td><body><x>Kata sandi salah, atau arsip terenkripsi telah dirusak</x></body></td></tr><tr><td>
+				12</td><td><body><x>Ketentuan tidak diterima</x></body></td><td><body><x>Pernyataan hukum arsip ditolak, atau tidak diterima dengan <code>-accept</code></x></body></td></tr></tbody></table>
 <p><br>
 <br>
 
@@ -220,7 +230,7 @@
 				8</td><td>
 				1</td><td><body><x>Versi</x></body></td><td><body><x>3 (1 dan 2 masih dapat dibaca)</x></body></td></tr><tr><td>
 				9</td><td>
-				1</td><td><body><x>Flags</x></body></td><td><body><x>bit 0 = terenkripsi; bit lain harus 0</x></body></td></tr><tr><td>
+				1</td><td><body><x>Flags</x></body></td><td><body><x>bit 0 = terenkripsi, bit 1 = pernyataan hukum, bit 2 = sampul; bit lain harus 0</x></body></td></tr><tr><td>
 				10</td><td>
 				1</td><td><body><x>Metode</x></body></td><td><body><x>0 = store, 1 = Zstandard, 2 = blok multi-mesin (5.6)</x></body></td></tr><tr><td>
 				11</td><td>
@@ -240,7 +250,10 @@
 <br>
 
 </p>
-<p><body><x>Header lengkap (12 byte, atau 59 byte saat terenkripsi) kemudian diautentikasi sebagai associated data dari setiap potongan terenkripsi, sehingga tidak dapat diubah tanpa terdeteksi.</x></body></p>
+<p><body><x>Header lengkap (12 byte, atau 59 byte bila terenkripsi, ditambah pernyataan hukum dan sampul bila ada) kemudian diautentikasi sebagai data terkait setiap potongan terenkripsi, sehingga tidak dapat diubah tanpa terdeteksi.</x></body></p>
+<p><body><x><b>Pernyataan hukum</b> (bit 1 flag). Setelah kolom tetap ada panjang 4 byte dan pernyataan dalam UTF-8, paling banyak 64 KB. Disimpan sebagai teks biasa agar program dapat menampilkannya sebelum meminta kata sandi, dan nikpak menolak menampilkan, menguji, mengekstrak, atau menghapus apa pun sampai pernyataan diterima: di jendela dengan <b>Saya setuju</b>, di konsol dengan mengetik YES, atau dengan <code>-accept</code>. Pembaca yang tidak mengenal bit 1 menolak arsip, sehingga pernyataan tidak dapat dilewati dengan versi lama.</x></body></p>
+<p><body><x><b>Sampul</b> (bit 2 flag). Lalu panjang 4 byte dan gambar JPEG atau PNG, paling banyak 4 MB; nikpak membuatnya dari gambar apa pun, dipotong persegi dan diskalakan ke 1024 x 1024. Sampul dibaca tanpa kata sandi dan ditampilkan oleh unNik dan Nikkomander.</x></body></p>
+<p><body><x>Keduanya bagian dari header, sehingga dalam arsip terenkripsi keduanya diautentikasi bersama setiap potongan: mengubah atau menghapus ketentuan atau sampul membuat arsip gagal dibuka. Arsip tanpa keduanya ditulis persis seperti sebelumnya.</x></body></p>
 <h3 class="se" id="5-2-entry-records"><body><x>5.2 Record entri</x></body></h3>
 <p><body><x>Di dalam aliran (terdekripsi, terdekompresi) setiap entri adalah sebuah record. Semua bilangan bulat little endian.</x></body></p>
 <table class="tech-table"><thead><tr><th><body><x><b>Jenis</b></x></body></th><th><body><x><b>Tata letak</b></x></body></th></tr></thead><tbody><tr><td><body><x><code>0</code> END</x></body></td><td><body><x><code>count:u64</code>. Menandai akhir dan menyatakan berapa banyak entri yang mendahuluinya.</x></body></td></tr><tr><td><body><x><code>1</code> FILE</x></body></td><td><body><x><code>name_len:u16 name mtime:i64 mode:u32 size:u64 data[size] crc32:u32</code></x></body></td></tr><tr><td><body><x><code>2</code> DIR</x></body></td><td><body><x><code>name_len:u16 name mtime:i64 mode:u32</code></x></body></td></tr><tr><td><body><x><code>3</code> MEDIA</x></body></td><td><body><x><code>name_len:u16 name mtime:i64 mode:u32 size:u64 filter:u8 method:u8 params_len:u8 params framed_stream crc32:u32</code></x></body></td></tr></tbody></table>

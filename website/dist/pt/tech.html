@@ -240,7 +240,16 @@
 				<code>-x<pattern></pattern></code></td><td>
 				<code>-x <pattern></pattern></code></td><td><body><x>Exclui arquivos; pode ser repetida.</x></body></td></tr><tr><td>
 				<code>-d <dir></dir></code></td><td>
-				<code>-d <dir></dir></code></td><td><body><x>Pasta de destino para <code>x</code> e <code>e</code>.</x></body></td></tr><tr><td><body><x><code>-inul</code> <code>-idq</code></x></body></td><td>
+				<code>-d <dir></dir></code></td><td><body><x>Pasta de destino para <code>x</code> e <code>e</code>.</x></body></td></tr><tr><td>
+				<code>-legal &lt;file&gt;</code></td><td>
+				<br>
+				</td><td><body><x>Anexa a declaração legal do ficheiro indicado (UTF-8, até 64 KB) a um arquivo novo. Tem de ser aceite antes de o arquivo ser aberto.</x></body></td></tr><tr><td>
+				<code>-cover &lt;file&gt;</code></td><td>
+				<br>
+				</td><td><body><x>Anexa uma imagem de capa a um arquivo novo: recortada em quadrado e guardada como JPEG de 1024 x 1024.</x></body></td></tr><tr><td>
+				<code>-accept</code></td><td>
+				<br>
+				</td><td><body><x>Aceita a declaração legal do arquivo sem perguntar (scripts).</x></body></td></tr><tr><td><body><x><code>-inul</code> <code>-idq</code></x></body></td><td>
 				<code>-q</code></td><td><body><x>Silencioso: apenas os erros são impressos.</x></body></td></tr><tr><td><body><x><code>@listfile</code></x></body></td><td>
 				<br>
 
@@ -270,7 +279,8 @@
 				3</td><td><body><x>Arquivo corrompido ou erro de CRC</x></body></td><td><body><x>Arquivo danificado ou truncado, soma de verificação falhou</x></body></td></tr><tr><td>
 				7</td><td><body><x>Erro de linha de comando</x></body></td><td><body><x>Opção desconhecida, nome do arquivo ausente</x></body></td></tr><tr><td>
 				10</td><td><body><x>Nada correspondeu</x></body></td><td><body><x>Nenhum arquivo correspondeu aos nomes ou curingas</x></body></td></tr><tr><td>
-				11</td><td><body><x>Senha errada ou ausente</x></body></td><td><body><x>Senha incorreta, ou um arquivo compactado criptografado adulterado</x></body></td></tr></tbody></table>
+				11</td><td><body><x>Senha errada ou ausente</x></body></td><td><body><x>Senha incorreta, ou um arquivo compactado criptografado adulterado</x></body></td></tr><tr><td>
+				12</td><td><body><x>Termos não aceites</x></body></td><td><body><x>A declaração legal do arquivo foi recusada, ou não foi aceite com <code>-accept</code></x></body></td></tr></tbody></table>
 <p><br>
 <br>
 
@@ -361,7 +371,7 @@
 				8</td><td>
 				1</td><td><body><x>Versão</x></body></td><td><body><x>3 (1 e 2 ainda são legíveis)</x></body></td></tr><tr><td>
 				9</td><td>
-				1</td><td><body><x>Flags</x></body></td><td><body><x>bit 0 = criptografado; os demais bits devem ser 0</x></body></td></tr><tr><td>
+				1</td><td><body><x>Flags</x></body></td><td><body><x>bit 0 = cifrado, bit 1 = declaração legal, bit 2 = capa; os outros bits têm de ser 0</x></body></td></tr><tr><td>
 				10</td><td>
 				1</td><td><body><x>Método</x></body></td><td><body><x>0 = armazenar, 1 = Zstandard, 2 = blocos multi-motor (5.6)</x></body></td></tr><tr><td>
 				11</td><td>
@@ -381,7 +391,10 @@
 <br>
 
 </p>
-<p><body><x>O cabeçalho completo (12 bytes, ou 59 bytes quando criptografado) é autenticado depois como dado associado de cada bloco criptografado, de modo que não pode ser alterado sem detecção.</x></body></p>
+<p><body><x>O cabeçalho completo (12 bytes, ou 59 bytes quando cifrado, mais a declaração legal e a capa quando existem) é depois autenticado como dado associado de cada bloco cifrado, por isso não pode ser alterado sem ser detetado.</x></body></p>
+<p><body><x><b>Declaração legal</b> (bit 1 das flags). A seguir aos campos fixos vêm um comprimento de 4 bytes e a declaração em UTF-8, no máximo 64 KB. Está em claro para que um programa a possa mostrar antes de pedir a palavra-passe, e o nikpak recusa listar, testar, extrair ou apagar seja o que for até ser aceite: numa janela com <b>Aprovo</b>, na consola escrevendo YES, ou com <code>-accept</code>. Um leitor que não conheça o bit 1 recusa o arquivo, por isso a declaração não pode ser contornada com uma versão antiga.</x></body></p>
+<p><body><x><b>Capa</b> (bit 2 das flags). Depois, um comprimento de 4 bytes e uma imagem JPEG ou PNG, no máximo 4 MB; o nikpak cria-a a partir de qualquer imagem, recortada em quadrado e redimensionada para 1024 x 1024. Lê-se sem a palavra-passe e é mostrada pelo unNik e pelo Nikkomander.</x></body></p>
+<p><body><x>Ambas fazem parte do cabeçalho: num arquivo cifrado são autenticadas com cada bloco, e alterar ou remover os termos ou a capa impede o arquivo de abrir. Os arquivos sem elas são escritos exatamente como antes.</x></body></p>
 <h3 class="se" id="5-2-entry-records"><body><x>5.2 Registros de entrada</x></body></h3>
 <p><body><x>Dentro do fluxo (descriptografado, descompactado), cada entrada é um registro. Todos os inteiros são little endian.</x></body></p>
 <table class="tech-table"><thead><tr><th><body><x><b>Tipo</b></x></body></th><th><body><x><b>Estrutura</b></x></body></th></tr></thead><tbody><tr><td><body><x><code>0</code> END</x></body></td><td><body><x><code>count:u64</code>. Marca o fim e informa quantas entradas o precedem.</x></body></td></tr><tr><td><body><x><code>1</code> FILE</x></body></td><td><body><x><code>name_len:u16 name mtime:i64 mode:u32 size:u64 data[size] crc32:u32</code></x></body></td></tr><tr><td><body><x><code>2</code> DIR</x></body></td><td><body><x><code>name_len:u16 name mtime:i64 mode:u32</code></x></body></td></tr><tr><td><body><x><code>3</code> MEDIA</x></body></td><td><body><x><code>name_len:u16 name mtime:i64 mode:u32 size:u64 filter:u8 method:u8 params_len:u8 params framed_stream crc32:u32</code></x></body></td></tr></tbody></table>

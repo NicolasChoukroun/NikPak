@@ -450,6 +450,18 @@ ends option parsing.</p>
 				Destination
 				folder for <code>x</code>
 				and <code>e</code>.</td></tr><tr><td>
+				<code>-legal &lt;file&gt;</code></td><td>
+				<br>
+				</td><td>
+				Attach the legal statement in the file (UTF-8, up to 64 KB) to a new archive. It must be accepted before the archive is opened.</td></tr><tr><td>
+				<code>-cover &lt;file&gt;</code></td><td>
+				<br>
+				</td><td>
+				Attach a cover picture to a new archive: cropped square and stored as a 1024 x 1024 JPEG.</td></tr><tr><td>
+				<code>-accept</code></td><td>
+				<br>
+				</td><td>
+				Accept the archive's legal statement without asking (scripts).</td></tr><tr><td>
 				<code>-inul</code>
 				<code>-idq</code></td><td>
 				<code>-q</code></td><td>
@@ -559,7 +571,10 @@ generates anything, because a generated password could not match.</p>
 				Wrong
 				or missing password</td><td>
 				Bad
-				password, or a tampered encrypted archive</td></tr></tbody></table>
+				password, or a tampered encrypted archive</td></tr><tr><td>
+				12</td><td>
+				Terms not accepted</td><td>
+				The archive's legal statement was refused, or not accepted with -accept</td></tr></tbody></table>
 <p><br>
 <br>
 
@@ -1162,8 +1177,7 @@ version 1 archives remain readable.</p>
 				9</td><td>
 				1</td><td>
 				Flags</td><td>
-				bit
-				0 = encrypted; other bits must be 0</td></tr><tr><td>
+				bit 0 = encrypted, bit 1 = legal statement, bit 2 = cover; other bits must be 0</td></tr><tr><td>
 				10</td><td>
 				1</td><td>
 				Method</td><td>
@@ -1206,10 +1220,10 @@ version 1 archives remain readable.</p>
 <br>
 
 </p>
-<p>The
-complete header (12 bytes, or 59 bytes when encrypted) is later
-authenticated as associated data of every encrypted chunk, so it
-cannot be altered without detection.</p>
+<p>The complete header (12 bytes, or 59 bytes when encrypted, plus the legal statement and the cover when they are present) is later authenticated as associated data of every encrypted chunk, so it cannot be altered without detection.</p>
+<p><b>Legal statement</b> (flag bit 1). After the fixed fields comes a 4-byte length and the statement in UTF-8, at most 64 KB. It is in plain text so a program can show it before asking for the password, and nikpak refuses to list, test, extract or delete anything until it has been accepted: in a window with <b>I approve</b>, on the console by typing YES, or with <code>-accept</code>. A reader that does not know bit 1 refuses the archive, so the statement cannot be skipped with an older version.</p>
+<p><b>Cover</b> (flag bit 2). Then a 4-byte length and a JPEG or PNG picture, at most 4 MB; nikpak makes it from any picture, cropped square and scaled to 1024 x 1024. It is read without the password and shown by unNik and Nikkomander.</p>
+<p>Both are part of the header, so in an encrypted archive they are authenticated with every chunk: changing or removing the terms or the cover makes the archive fail to open. Archives without them are written exactly as before.</p>
 <h3 class="se" id="5-2-entry-records">5.2 Entry records</h3>
 <p>Inside
 the (decrypted, decompressed) stream every entry is a record. All

@@ -517,6 +517,7 @@ pub fn create(o: &Options) -> Result<u8> {
         salt: crypto::random_bytes::<SALT_LEN>(),
         nonce_prefix: crypto::random_bytes::<NONCE_PREFIX_LEN>(),
         legal: checked_legal(o.legal.as_deref())?,
+        cover: checked_cover(o.cover.as_deref())?,
     };
     let header_bytes = header.to_bytes();
 
@@ -974,6 +975,8 @@ struct Opened {
     password: Option<zeroize::Zeroizing<String>>,
     /// the archive's legal statement (already accepted when we got here)
     legal: Option<String>,
+    /// the cover picture, kept to write the archive again (delete)
+    cover: Option<Vec<u8>>,
 }
 
 fn open_archive(o: &Options) -> Result<Opened> {
@@ -1004,7 +1007,7 @@ fn open_archive(o: &Options) -> Result<Opened> {
     }
     let flags = fixed[9];
     let method = fixed[10];
-    if flags & !(FLAG_ENCRYPTED | FLAG_LEGAL) != 0 || fixed[11] != 0 {
+    if flags & !(FLAG_ENCRYPTED | FLAG_LEGAL | FLAG_COVER) != 0 || fixed[11] != 0 {
         return Err(NikError::Fatal("Archive uses unknown features; please update nikpak.".into()));
     }
     if method > METHOD_BLOCKS || (method == METHOD_BLOCKS && fixed[8] < 3) {
@@ -1038,6 +1041,14 @@ fn open_archive(o: &Options) -> Result<Opened> {
     } else {
         None
     };
+    let cover = if flags & FLAG_COVER != 0 {
+        let pic = read_cover(&mut br)?;
+        header_bytes.extend_from_slice(&(pic.len() as u32).to_le_bytes());
+        header_bytes.extend_from_slice(&pic);
+        Some(pic)
+    } else {
+        None
+    };
     // **The legal statement comes first**: nothing is decrypted or read until it
     // has been accepted - in a window (accept_legal), with -accept, or here.
     if let Some(text) = &legal {
@@ -1064,7 +1075,7 @@ fn open_archive(o: &Options) -> Result<Opened> {
         METHOD_BLOCKS => Inner::Blocks(BlockReader::new(source)),
         _ => Inner::Store(source),
     };
-    Ok(Opened { inner, encrypted, method, password, legal })
+    Ok(Opened { inner, encrypted, method, password, legal, cover })
 }
 
 // ---------------------------------------------------------------------------
@@ -1123,6 +1134,59 @@ fn read_legal<R: Read>(r: &mut R) -> Result<String> {
     let mut b = vec![0u8; n];
     r.read_exact(&mut b).map_err(|_| NikError::Corrupt("Archive header is truncated.".into()))?;
     String::from_utf8(b).map_err(|_| NikError::Corrupt("The archive's legal statement is damaged.".into()))
+}
+
+/// Check a cover handed to `create`: a JPEG or PNG, not too large.
+fn checked_cover(pic: Option<&[u8]>) -> Result<Option<Vec<u8>>> {
+    let Some(pic) = pic.filter(|p| !p.is_empty()) else { return Ok(None) };
+    if crate::cover::kind(pic).is_none() {
+        return Err(NikError::Usage("The cover must be a JPEG or PNG picture.".into()));
+    }
+    if pic.len() > crate::cover::MAX_COVER_BYTES {
+        return Err(NikError::Usage("The cover picture is too large (at most 4 MB).".into()));
+    }
+    Ok(Some(pic.to_vec()))
+}
+
+fn read_cover<R: Read>(r: &mut R) -> Result<Vec<u8>> {
+    let mut n = [0u8; 4];
+    r.read_exact(&mut n).map_err(|_| NikError::Corrupt("Archive header is truncated.".into()))?;
+    let n = u32::from_le_bytes(n) as usize;
+    if n == 0 || n > crate::cover::MAX_COVER_BYTES {
+        return Err(NikError::Corrupt("The archive's cover is damaged.".into()));
+    }
+    let mut b = vec![0u8; n];
+    r.read_exact(&mut b).map_err(|_| NikError::Corrupt("Archive header is truncated.".into()))?;
+    if crate::cover::kind(&b).is_none() {
+        return Err(NikError::Corrupt("The archive's cover is damaged.".into()));
+    }
+    Ok(b)
+}
+
+/// The archive's cover picture (JPEG or PNG bytes), if it has one. Reads only the
+/// header, like [`legal_statement`]: no password, and no need to accept the terms
+/// first, so a window can show the cover beside them.
+pub fn cover_image(path: &Path) -> Result<Option<Vec<u8>>> {
+    let mut f = BufReader::new(
+        File::open(path).map_err(|e| NikError::Fatal(format!("Cannot open '{}': {e}", path.display())))?,
+    );
+    let mut fixed = [0u8; 12];
+    f.read_exact(&mut fixed)
+        .map_err(|_| NikError::Corrupt(format!("'{}' is not a valid .nik archive (file too short).", path.display())))?;
+    if fixed[..8] != MAGIC {
+        return Err(NikError::Corrupt(format!("'{}' is not a .nik archive.", path.display())));
+    }
+    if fixed[9] & FLAG_COVER == 0 {
+        return Ok(None);
+    }
+    if fixed[9] & FLAG_ENCRYPTED != 0 {
+        let mut ext = [0u8; 12 + SALT_LEN + NONCE_PREFIX_LEN];
+        f.read_exact(&mut ext).map_err(|_| NikError::Corrupt("Archive header is truncated.".into()))?;
+    }
+    if fixed[9] & FLAG_LEGAL != 0 {
+        read_legal(&mut f)?;
+    }
+    read_cover(&mut f).map(Some)
 }
 
 /// The archive's legal statement, if it has one. Reads only the header: no
@@ -1347,6 +1411,9 @@ pub fn list(o: &Options) -> Result<u8> {
             if op.encrypted { "   [encrypted]" } else { "" },
             if op.legal.is_some() { "   [legal statement accepted]" } else { "" }
         );
+        if let Some(c) = &op.cover {
+            outln!("Cover:   {} KB picture", c.len().div_ceil(1024));
+        }
         outln!();
         if verbose {
             outln!("{:<10} {:>14}  {:<16} {:<8}  Name", "Attr", "Size", "Date (UTC)", "CRC32");
@@ -1865,6 +1932,7 @@ pub fn delete(o: &Options, pick: Option<&Pick>) -> Result<u64> {
         nonce_prefix: crypto::random_bytes::<NONCE_PREFIX_LEN>(),
         // the legal statement travels with the archive: a delete never drops it
         legal: op.legal.clone(),
+        cover: op.cover.clone(),
     };
     let header_bytes = header.to_bytes();
     let mut tmp_name = archive.as_os_str().to_owned();
@@ -2006,6 +2074,8 @@ pub struct Index {
     pub archive_size: u64,
     /// the legal statement the archive carries (accepted before it was read)
     pub legal: Option<String>,
+    /// the cover picture (JPEG or PNG bytes)
+    pub cover: Option<Vec<u8>>,
 }
 
 /// Options for the window's operations (never asks anything on a console).
@@ -2025,6 +2095,7 @@ pub fn gui_options(archive: &Path, password: Option<&str>) -> Options {
         threads: 0,
         media: MediaMode::Auto,
         legal: None,
+        cover: None,
         // a window shows the statement itself and calls accept_legal
         accept_legal: false,
     }
@@ -2053,6 +2124,7 @@ pub fn read_index(path: &Path, password: Option<&str>) -> Result<Index> {
         method: op.method,
         archive_size: PROGRESS.total.load(Relaxed),
         legal: op.legal.clone(),
+        cover: op.cover.clone(),
         ..Default::default()
     };
     let mut last_block = 0u32;
@@ -2336,6 +2408,50 @@ mod tests {
             }
             let _ = fs::remove_dir_all(&dir);
         }
+    }
+
+    #[test]
+    fn a_cover_travels_with_the_archive_and_is_authenticated() {
+        let dir = std::env::temp_dir().join(format!("nikpak-cover-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(dir.join("a.txt"), "cover test").unwrap();
+        let img = image::RgbImage::from_fn(640, 480, |x, y| image::Rgb([(x % 256) as u8, (y % 256) as u8, 40]));
+        let mut png = std::io::Cursor::new(Vec::new());
+        img.write_to(&mut png, image::ImageFormat::Png).unwrap();
+        let pic = crate::cover::from_picture(png.get_ref()).unwrap();
+        for pw in [None, Some("password123")] {
+            let arc = dir.join(format!("c{}.nik", pw.is_some()));
+            let mut o = gui_options(&arc, pw);
+            o.command = Command::Add;
+            o.level = Level::Zstd(3);
+            o.overwrite = Overwrite::All;
+            o.password = pw.map_or(PwdSpec::None, |p| PwdSpec::Given(p.into()));
+            o.files = vec![dir.join("a.txt").display().to_string()];
+            o.ep = EpMode::Names;
+            o.cover = Some(pic.clone());
+            o.legal = Some("Terms.".into());
+            create(&o).unwrap();
+            // read without the password and before the terms are accepted
+            assert_eq!(cover_image(&arc).unwrap().as_deref(), Some(pic.as_slice()));
+            assert_eq!(legal_statement(&arc).unwrap().as_deref(), Some("Terms."));
+            accept_legal(&arc, "Terms.");
+            let idx = read_index(&arc, pw).unwrap();
+            assert_eq!(idx.cover.as_deref(), Some(pic.as_slice()));
+            // a delete keeps it
+            let pick = Pick { names: ["a.txt".to_string()].into_iter().collect(), strip: String::new() };
+            delete(&gui_options(&arc, pw), Some(&pick)).unwrap();
+            assert_eq!(cover_image(&arc).unwrap().as_deref(), Some(pic.as_slice()));
+            // an encrypted archive whose cover was swapped no longer opens
+            if pw.is_some() {
+                let mut bytes = fs::read(&arc).unwrap();
+                let at = bytes.windows(pic.len().min(64)).position(|w| w == &pic[..pic.len().min(64)]).unwrap();
+                bytes[at + 40] ^= 0x55;
+                fs::write(&arc, &bytes).unwrap();
+                assert!(read_index(&arc, pw).is_err());
+            }
+        }
+        let _ = fs::remove_dir_all(&dir);
     }
 
     #[test]

@@ -996,6 +996,8 @@ enum Overlay {
     Password { path: PathBuf, password: String, error: Option<String> },
     /// the archive's legal statement: read it and click "I approve" to open it
     Legal { path: PathBuf, password: Option<String>, text: String },
+    /// the archive's cover, large (a click on the thumbnail in the title bar)
+    Cover,
     Extract(ExtractDlg),
     Delete(Vec<usize>),
     Viewer(Box<Viewer>),
@@ -1040,6 +1042,8 @@ struct App {
     quick: Option<Quick>,
     /// the archives still to extract (multiple selection)
     queue: VecDeque<PathBuf>,
+    /// the cover of the archive on screen (or being opened), decoded once
+    cover: Option<(PathBuf, Option<egui::TextureHandle>)>,
 }
 
 /// What the right-click menu asked unNik to do.
@@ -1083,6 +1087,7 @@ impl App {
             was_hover: false,
             quick: None,
             queue: VecDeque::new(),
+            cover: None,
         };
         if let Some((mode, archives)) = quick {
             app.quick = Some(mode);
@@ -1096,6 +1101,22 @@ impl App {
             app.overlay = Overlay::About;
         }
         app
+    }
+
+    /// The cover of `path` as a texture (read from the header the first time; no
+    /// password and no approval needed to show it).
+    fn cover_for(&mut self, ctx: &egui::Context, path: &Path) -> Option<egui::TextureHandle> {
+        if let Some((p, tex)) = &self.cover {
+            if p == path {
+                return tex.clone();
+            }
+        }
+        let tex = archive::cover_image(path)
+            .ok()
+            .flatten()
+            .and_then(|b| crate::gui::cover_texture(ctx, "unnik-cover", &b));
+        self.cover = Some((path.to_path_buf(), tex.clone()));
+        tex
     }
 
     // ---- actions ------------------------------------------------------------
@@ -2277,6 +2298,9 @@ impl App {
         let quiet = matches!(self.overlay, Overlay::None) && self.menu.is_none() && self.job.is_none() && !self.lang_open;
         let search_focus = std::mem::take(&mut self.search_focus);
         let busy = self.job.is_some();
+        let cover_path = self.browser.as_ref().map(|b| b.path.clone());
+        let cover_tex = cover_path.and_then(|p| self.cover_for(ctx, &p));
+        let mut show_cover = false;
         let b = self.browser.as_mut().unwrap();
         b.refresh_rows();
 
@@ -2295,8 +2319,19 @@ impl App {
         p.add(PathShape::line(vec![ic + Vec2::new(0.0, 6.0), ic + Vec2::new(0.0, -6.5)], Stroke::new(2.0_f32, TEXT())));
         p.add(PathShape::line(vec![ic + Vec2::new(-4.5, -2.0), ic + Vec2::new(0.0, -6.5), ic + Vec2::new(4.5, -2.0)], Stroke::new(2.0_f32, TEXT())));
         let lr = glow_text(&p, Pos2::new(panel.left() + 88.0, panel.top() + TITLE_H / 2.0), "unNik", FontId::new(21.0, family("display")), TEXT(), alpha(ACCENT(), 6), 1.5);
-        let x0 = lr.right() + 22.0;
+        let mut x0 = lr.right() + 22.0;
         p.line_segment([Pos2::new(x0 - 11.0, ic.y - 13.0), Pos2::new(x0 - 11.0, ic.y + 13.0)], Stroke::new(1.0_f32, alpha(ACCENT_SOFT(), 50)));
+        // the archive's cover, small, before its name: a click shows it large
+        if let Some(tex) = &cover_tex {
+            let side = (TITLE_H - 14.0).max(24.0);
+            let r = Rect::from_min_size(Pos2::new(x0, ic.y - side / 2.0), Vec2::splat(side));
+            crate::gui::paint_cover(&p, r, Some(tex), "");
+            let cr = ui.interact(r, egui::Id::new("title-cover"), Sense::click()).on_hover_cursor(egui::CursorIcon::PointingHand);
+            if cr.clicked() && quiet {
+                show_cover = true;
+            }
+            x0 += side + 10.0;
+        }
         let (files, dirs) = (b.nodes[0].files, b.nodes[0].dirs);
         let orig = b.nodes[0].size;
         let packed = b.index.archive_size;
@@ -2925,6 +2960,10 @@ impl App {
             about = false;
         }
         let _ = about;
+        if show_cover {
+            self.overlay = Overlay::Cover;
+            sfx::play(Sfx::Pop);
+        }
     }
 }
 
@@ -3044,6 +3083,12 @@ impl App {
         let mut run_delete: Option<Vec<usize>> = None;
         let mut open_with: Option<(PathBuf, String)> = None;
         let mut approved: Option<(PathBuf, Option<String>)> = None;
+        let cover_path = match &self.overlay {
+            Overlay::Legal { path, .. } | Overlay::Password { path, .. } => Some(path.clone()),
+            Overlay::Cover => self.browser.as_ref().map(|b| b.path.clone()),
+            _ => None,
+        };
+        let cover_tex = cover_path.and_then(|p| self.cover_for(ctx, &p));
         let pw_focus = std::mem::take(&mut self.pw_focus);
         let find_focus = std::mem::take(&mut self.viewer_find_focus);
         egui::Area::new(egui::Id::new("overlay")).order(egui::Order::Foreground).fixed_pos(panel.min).show(ctx, |ui| {
@@ -3144,6 +3189,15 @@ impl App {
                     let ng = elide(&p, &name, FontId::new(13.0, family("ui-light")), c.width() - 60.0);
                     ng.paint(&p, Pos2::new(cx - ng.size().x / 2.0, c.top() + 86.0), TEXT_DIM());
                     let mut y = c.top() + 112.0;
+                    // the archive's cover, when it has one, above the terms
+                    if let Some(tex) = &cover_tex {
+                        let side = (c.bottom() - 84.0 - y - 150.0).clamp(0.0, 120.0);
+                        if side >= 60.0 {
+                            let r = Rect::from_min_size(Pos2::new(cx - side / 2.0, y), Vec2::splat(side));
+                            crate::gui::paint_cover(&p, r, Some(tex), "");
+                            y += side + 10.0;
+                        }
+                    }
                     y += wrapped(&p, Pos2::new(c.left() + 30.0, y), c.width() - 60.0,
                         t("This archive comes with a legal statement. Read it, then approve it to open the archive."), 12.5, TEXT_DIM());
                     y += 8.0;
@@ -3168,8 +3222,29 @@ impl App {
                         next = Some(Overlay::None);
                     }
                 }
+                Overlay::Cover => {
+                    let side = (panel.height() - 150.0).min(panel.width() - 80.0).clamp(160.0, 560.0);
+                    let c = Rect::from_center_size(panel.center(), Vec2::new(side + 60.0, side + 130.0));
+                    card(&p, c);
+                    glow_text(&p, Pos2::new(cx, c.top() + 30.0), t("COVER"), FontId::new(11.0, family("ui")), ACCENT_SOFT(), alpha(ACCENT(), 5), 3.0);
+                    let r = Rect::from_min_size(Pos2::new(cx - side / 2.0, c.top() + 50.0), Vec2::splat(side));
+                    crate::gui::paint_cover(&p, r, cover_tex.as_ref(), "");
+                    let close = Rect::from_center_size(Pos2::new(cx, c.bottom() - 40.0), Vec2::new(160.0, 44.0));
+                    if pill_button(ui, &p, close, t("Close"), true, "cover-close") || card_close(ui, &p, c, "cover-x") || ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+                        next = Some(Overlay::None);
+                    }
+                }
                 Overlay::Password { path, password, error } => {
-                    let c = Rect::from_center_size(panel.center(), Vec2::new(392.0, 330.0));
+                    // with a cover, the card grows to show it between the name and the field
+                    let extra = if cover_tex.is_some() { 136.0 } else { 0.0 };
+                    let c = Rect::from_center_size(panel.center(), Vec2::new(392.0, 330.0 + extra));
+                    if let Some(tex) = &cover_tex {
+                        let r = Rect::from_min_size(Pos2::new(cx - 60.0, c.top() + 156.0), Vec2::splat(120.0));
+                        card(&p, c);
+                        crate::gui::paint_cover(&p, r, Some(tex), "");
+                    } else {
+                        card(&p, c);
+                    }
                     card(&p, c);
                     glow_text(&p, Pos2::new(cx, c.top() + 34.0), t("ENCRYPTED ARCHIVE"), FontId::new(11.0, family("ui")), ACCENT_SOFT(), alpha(ACCENT(), 5), 3.0);
                     glyph(&p, Pos2::new(cx, c.top() + 74.0), Ic::Lock, OK_GREEN(), 30.0);
@@ -3177,7 +3252,7 @@ impl App {
                     let name = path.file_name().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default();
                     let ng = elide(&p, &name, FontId::new(13.0, family("ui-light")), c.width() - 60.0);
                     ng.paint(&p, Pos2::new(cx - ng.size().x / 2.0, c.top() + 134.0), TEXT_DIM());
-                    let fr = Rect::from_min_size(Pos2::new(c.left() + 30.0, c.top() + 166.0), Vec2::new(c.width() - 60.0, 38.0));
+                    let fr = Rect::from_min_size(Pos2::new(c.left() + 30.0, c.top() + 166.0 + extra), Vec2::new(c.width() - 60.0, 38.0));
                     let resp = field(ui, &p, fr, password, "Password", "pw-field", true);
                     if pw_focus {
                         resp.request_focus();

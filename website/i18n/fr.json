@@ -502,6 +502,21 @@
     "Dossier de destination pour x et e."
    ],
    [
+    "-legal &lt;file&gt;",
+    "",
+    "Joindre à la nouvelle archive la déclaration légale d’un fichier texte ; elle doit être acceptée avant l’ouverture."
+   ],
+   [
+    "-cover &lt;file&gt;",
+    "",
+    "Joindre une image de couverture à la nouvelle archive (recadrée en carré, stockée en 1024 × 1024)."
+   ],
+   [
+    "-accept",
+    "",
+    "Accepter la déclaration légale de l’archive sans demander (scripts)."
+   ],
+   [
     "-inul -idq",
     "-q",
     "Silencieux : seules les erreurs sont affichées."
@@ -564,6 +579,11 @@
     "11",
     "Mot de passe erroné ou manquant",
     "Mauvais mot de passe, ou archive chiffrée altérée"
+   ],
+   [
+    "12",
+    "Conditions non acceptées",
+    "La déclaration légale de l’archive a été refusée"
    ]
   ],
   "ex_t": "Exemples",
@@ -577,7 +597,8 @@
    "lister seulement les PDF",
    "tester (demande le mot de passe)",
    "supprimer des entrées",
-   "quel filtre média gagne ?"
+   "quel filtre média gagne ?",
+   "avec une couverture et des conditions à accepter"
   ],
   "tc_t": "Total Commander et autres interfaces",
   "tc_p": "Comme NikPak accepte la syntaxe de commande de RAR, un programme capable de piloter un rar.exe externe peut piloter nikpak.exe. Dans Total Commander, déclarez l'extension <code>nik</code> comme compresseur supplémentaire et faites pointer les commandes de compression et de décompression vers nikpak.exe. Utilisez <code>-o+</code> ou <code>-y</code> pour une extraction sans surveillance. Les options souvent envoyées par les interfaces RAR (<code>-s</code>, <code>-ma5</code>, <code>-md64m</code>, <code>-ibck</code>, <code>-rr</code> et autres) sont acceptées et ignorées.",
@@ -604,7 +625,16 @@
    "Le menu utilise <code>nikpak --add</code> et <code>--add-here</code>, ainsi que <code>unNik --extract</code>, <code>--extract-here</code> et <code>--extract-to</code>."
   ],
   "menu_note": "Un second programme d’installation, <code>unnik-&lt;version&gt;-setup.exe</code>, installe unNik seul — le navigateur d’archives gratuit — pour ceux qui ne reçoivent que des archives .nik.",
-  "tech_sub": "Le guide technique complet : l'architecture et le format .nik, le moteur de compression et les codecs multimédia, la conception du chiffrement et la résistance quantique, le durcissement, tous les benchmarks, et les notes de compilation, de test et de feuille de route."
+  "tech_sub": "Le guide technique complet : l'architecture et le format .nik, le moteur de compression et les codecs multimédia, la conception du chiffrement et la résistance quantique, le durcissement, tous les benchmarks, et les notes de compilation, de test et de feuille de route.",
+  "terms_t": "Conditions et couverture",
+  "terms_p": "Une archive peut porter une déclaration légale (conditions d’utilisation, licence, mention de copyright) et une image de couverture. Les deux s’affichent avant tout le reste, sans le mot de passe.",
+  "terms_list": [
+   "Dans la fenêtre de NikPak, <b>§ Mentions</b> à côté de Rapide / Moyen / Meilleur ouvre une boîte pour rédiger les conditions ; <b>▣ Couverture</b> en ouvre une pour l’image — cliquez sur le cadre pour la choisir, ou déposez-la sur la fenêtre. Toute image est recadrée en carré et stockée en 1024 × 1024. Les pastilles restent allumées tant qu’elles s’appliquent aux nouvelles archives.",
+   "En ligne de commande : <code>-legal conditions.txt</code> et <code>-cover image.png</code> à la création ; <code>-accept</code> accepte les conditions dans les scripts.",
+   "unNik affiche d’abord la couverture et les conditions : rien n’est listé ni extrait tant que vous n’avez pas cliqué sur <b>J’approuve</b>. La couverture figure aussi dans la barre de titre — cliquez dessus pour l’agrandir.",
+   "Nikkomander fait de même quand il ouvre ou décompresse l’archive, et montre la couverture dans la vue rapide (<kbd>Ctrl</kbd>+<kbd>Q</kbd>)."
+  ],
+  "terms_note": "Dans une archive chiffrée, les conditions et la couverture sont authentifiées avec les données : les modifier ou les retirer empêche l’archive de s’ouvrir. Un nikpak plus ancien refuse une telle archive au lieu d’ignorer les conditions."
  },
  "buy": {
   "title": "Acheter NikPak",

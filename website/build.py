@@ -68,6 +68,8 @@ GENERAL = [  # tool, size, %, creation s, extraction s, is nikpak
 
 # ---- Changelog (CHANGELOG.md, newest first): version, date, one-line summary ----
 CHANGELOG = [
+    ("1.9.0", "4 November 2026", "Cover pictures for archives: chosen in the window or with -cover, shown by unNik and Nikkomander."),
+    ("1.8.0", "4 November 2026", "Legal statements: an archive can carry terms that must be approved before it is opened."),
     ("1.7.0", "31 October 2026", "34 operating-system skins (Windows, macOS, Ubuntu) for 89 in all, and an update screen at launch."),
     ("1.6.3", "30 October 2026", "Fast, Medium and Best compression in the window, with live size and time estimates."),
     ("1.6.2", "24 October 2026", "The fourteen painted skins step behind the interface, so the window stays readable."),
@@ -685,6 +687,7 @@ EXAMPLES = [
     "nikpak t secret.nik",
     "nikpak d backup.nik Temp *.bak",
     "nikpak mt song.wav tracker.mod photo.bmp",
+    "nikpak a -cover art.png -legal terms.txt pack.nik Bank\\",
 ]
 
 
@@ -708,6 +711,7 @@ def page_guide(L):
         ("nikpak", g("win_t"), f'{ol_steps(L.raw("guide.win_steps"))}<div class="shots" style="margin:26px 0"><img class="shot" src="../assets/img/nikpak-drop.webp" alt="" width="500" height="560" loading="lazy"><img class="shot" src="../assets/img/nikpak-compress.webp" alt="" width="500" height="560" loading="lazy"></div><h3>{esc(g("win_more_t"))}</h3>{ul(L.raw("guide.win_more"))}<div class="note">{g("admin_note")}</div>'),
         ("skins", g("skins_t"), f'<p>{esc(g("skins_p"))}</p>{ol_steps(L.raw("guide.skins_steps"))}<div class="shots wide" style="margin:22px 0"><img class="shot" src="../assets/img/skins-menu.webp" alt="" loading="lazy"><img class="shot" src="../assets/img/skins-menu-bright.webp" alt="" loading="lazy"></div><div class="note">{g("skins_note")}</div><p><a class="btn" href="skins.html">{esc(L("home.skins_link"))}</a></p>'),
         ("unnik", g("unnik_t"), f'<p>{esc(g("unnik_p"))}</p><figure style="margin:20px 0"><img class="shot" src="../assets/img/unnik-pair.webp" alt="unNik" width="1393" height="560" loading="lazy"></figure>{ul(L.raw("guide.unnik_list"))}<h3>{esc(g("keys_t"))}</h3><div class="table-wrap"><table><thead><tr><th>{esc(g("keys_col_key"))}</th><th>{esc(g("keys_col_action"))}</th></tr></thead><tbody>{keys}</tbody></table></div>'),
+        ("terms", g("terms_t"), f'<p>{esc(g("terms_p"))}</p>{ul(L.raw("guide.terms_list"))}<div class="note">{esc(g("terms_note"))}</div>'),
         ("menu", g("menu_t"), f'<p>{esc(g("menu_p"))}</p>{ul(L.raw("guide.menu_list"))}<div class="note">{g("menu_note")}</div>'),
         ("register", g("reg_t"), f'{ol_steps(L.raw("guide.reg_steps"))}<div class="shots" style="margin:22px 0"><img class="shot" src="../assets/img/nikpak-reminder.webp" alt="" width="500" height="560" loading="lazy"><img class="shot" src="../assets/img/nikpak-register.webp" alt="" width="500" height="560" loading="lazy"></div><p>{g("reg_p")}</p><pre>nikpak register "Jane Doe" jane@example.com NPK1-...\nnikpak license\nnikpak unregister</pre>'),
         ("cli", g("cli_t"), f'<p>{g("cli_p")}</p><h3>{esc(g("cmd_t"))}</h3><div class="table-wrap"><table><thead><tr><th>{esc(g("col_cmd"))}</th><th>{esc(g("col_meaning"))}</th></tr></thead><tbody>{cmds}</tbody></table></div><h3>{esc(g("opt_t"))}</h3><div class="table-wrap"><table><thead><tr><th>{esc(g("col_rar"))}</th><th>{esc(g("col_zip"))}</th><th>{esc(g("col_meaning"))}</th></tr></thead><tbody>{opts}</tbody></table></div><h3>{esc(g("ex_t"))}</h3><pre>{ex}</pre>'),

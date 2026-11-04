@@ -243,6 +243,59 @@ fn load_legal_text() -> String {
     legal_file().and_then(|f| std::fs::read_to_string(f).ok()).unwrap_or_default()
 }
 
+fn cover_file() -> Option<PathBuf> {
+    settings_file().and_then(|f| f.parent().map(|d| d.join("cover.jpg")))
+}
+
+fn load_cover() -> Option<Vec<u8>> {
+    cover_file().and_then(|f| std::fs::read(f).ok()).filter(|b| crate::cover::kind(b).is_some())
+}
+
+fn save_cover(on: bool, pic: Option<&[u8]>) {
+    write_setting("cover", if on { "1" } else { "0" });
+    let Some(f) = cover_file() else { return };
+    match pic {
+        Some(b) => {
+            if let Some(dir) = f.parent() {
+                let _ = std::fs::create_dir_all(dir);
+            }
+            let _ = std::fs::write(f, b);
+        }
+        None => {
+            let _ = std::fs::remove_file(f);
+        }
+    }
+}
+
+/// A cover's texture for the window (decode once, keep the handle).
+pub(crate) fn cover_texture(ctx: &egui::Context, id: &str, pic: &[u8]) -> Option<egui::TextureHandle> {
+    let (w, h, px) = crate::cover::rgba(pic)?;
+    let img = egui::ColorImage::from_rgba_unmultiplied([w as usize, h as usize], &px);
+    Some(ctx.load_texture(id.to_string(), img, egui::TextureOptions::LINEAR))
+}
+
+/// A square cover frame: the picture, or a hint when there is none.
+pub(crate) fn paint_cover(p: &egui::Painter, r: Rect, tex: Option<&egui::TextureHandle>, hint: &str) {
+    p.rect_filled(r, rr(10), alpha(skin::c().field, 190));
+    match tex {
+        Some(t) => {
+            p.image(t.id(), r.shrink(1.0), Rect::from_min_max(Pos2::ZERO, Pos2::new(1.0, 1.0)), Color32::WHITE);
+        }
+        None => {
+            wrapped(p, Pos2::new(r.left() + 12.0, r.center().y - 16.0), r.width() - 24.0, hint, 12.0, TEXT_DIM());
+        }
+    }
+    p.rect_stroke(r, rr(10), Stroke::new(1.0_f32, alpha(ACCENT_SOFT(), 90)), egui::StrokeKind::Inside);
+}
+
+/// The picture files a cover can be made from.
+pub(crate) fn is_picture(p: &Path) -> bool {
+    p.extension()
+        .and_then(|x| x.to_str())
+        .map(|x| matches!(x.to_ascii_lowercase().as_str(), "png" | "jpg" | "jpeg" | "webp" | "bmp" | "gif"))
+        .unwrap_or(false)
+}
+
 fn save_legal(on: bool, text: &str) {
     write_setting("legal", if on { "1" } else { "0" });
     if let Some(f) = legal_file() {
@@ -555,6 +608,8 @@ enum Modal {
     Update(crate::update::UpdateInfo),
     /// the legal statement attached to new archives (the "Legal" pill)
     Legal { text: String, on: bool, error: Option<String> },
+    /// the cover picture attached to new archives (the "Cover" pill)
+    Cover { pic: Option<Vec<u8>>, on: bool, error: Option<String>, tex: Option<egui::TextureHandle> },
 }
 
 struct App {
@@ -586,6 +641,10 @@ struct App {
     legal_on: bool,
     /// the legal statement (kept in legal.txt beside the settings)
     legal_text: String,
+    /// attach the cover below to every new archive
+    cover_on: bool,
+    /// the cover (a 1024 x 1024 JPEG, kept in cover.jpg beside the settings)
+    cover: Option<Vec<u8>>,
 }
 
 impl App {
@@ -622,6 +681,8 @@ impl App {
             update_shown: false,
             legal_on: read_setting("legal").as_deref() == Some("1"),
             legal_text: load_legal_text(),
+            cover_on: read_setting("cover").as_deref() == Some("1"),
+            cover: load_cover(),
         };
         // Test hooks (screenshots)
         match std::env::var("NIKPAK_GUI_MODAL").as_deref() {
@@ -724,6 +785,8 @@ impl App {
             // the terms are attached when the "Legal" pill is on
             legal: if self.legal_on && !self.legal_text.trim().is_empty() { Some(self.legal_text.clone()) } else { None },
             accept_legal: false,
+            // and the cover when the "Cover" pill is on
+            cover: if self.cover_on { self.cover.clone() } else { None },
         };
         PROGRESS.cancel.store(false, Relaxed);
         PROGRESS.done.store(0, Relaxed);
@@ -1852,6 +1915,77 @@ impl App {
                             next = Some(Modal::None);
                         }
                     }
+                    Modal::Cover { pic, on, error, tex } => {
+                        let c = Rect::from_center_size(Pos2::new(cx, panel.center().y), Vec2::new(420.0, (H - 24.0).min(500.0)));
+                        card(&p, c);
+                        glow_text(&p, Pos2::new(cx, c.top() + 32.0), t("COVER"), FontId::new(11.0, family("ui")), ACCENT_SOFT(), alpha(ACCENT(), 5), 3.0);
+                        glow_text(&p, Pos2::new(cx, c.top() + 64.0), t("A picture for your archives"), FontId::new(21.0, family("display")), TEXT(), alpha(ACCENT(), 6), 1.0);
+                        let mut y = c.top() + 90.0;
+                        y += wrapped(&p, Pos2::new(c.left() + 28.0, y), c.width() - 56.0,
+                            t("Any picture is cropped square and saved at 1024 × 1024. Click the frame to choose one, or drop it on the window."), 12.5, TEXT_DIM());
+                        y += 10.0;
+                        if pic.is_some() && tex.is_none() {
+                            *tex = pic.as_deref().and_then(|b| cover_texture(ctx, "cover-edit", b));
+                        }
+                        let side = (c.bottom() - 138.0 - y).clamp(120.0, 220.0);
+                        let frame = Rect::from_min_size(Pos2::new(cx - side / 2.0, y), Vec2::splat(side));
+                        paint_cover(&p, frame, tex.as_ref(), t("Click to choose a picture"));
+                        let fr = ui.interact(frame, egui::Id::new("cover-frame"), Sense::click()).on_hover_cursor(egui::CursorIcon::PointingHand);
+                        if fr.clicked() {
+                            let chosen = rfd::FileDialog::new()
+                                .set_title(t("Choose a cover picture"))
+                                .add_filter(t("Pictures"), &["png", "jpg", "jpeg", "webp", "bmp", "gif"])
+                                .pick_file();
+                            if let Some(f) = chosen {
+                                match crate::cover::from_file(&f) {
+                                    Ok(b) => {
+                                        *pic = Some(b);
+                                        *tex = None;
+                                        *error = None;
+                                        *on = true;
+                                    }
+                                    Err(e) => *error = Some(e),
+                                }
+                            }
+                        }
+                        let bottom = frame.bottom();
+                        let sw = Rect::from_min_size(Pos2::new(c.left() + 28.0, bottom + 14.0), Vec2::new(34.0, 18.0));
+                        let swr = ui.interact(sw.union(Rect::from_min_size(sw.right_top(), Vec2::new(c.width() - 190.0, 18.0))), egui::Id::new("cover-on"), Sense::click())
+                            .on_hover_cursor(egui::CursorIcon::PointingHand);
+                        if swr.clicked() {
+                            *on = !*on;
+                        }
+                        p.rect_filled(sw, rr(9), if *on { skin::c().accent_btn() } else { alpha(skin::c().field, 220) });
+                        let knob = if *on { Pos2::new(sw.right() - 9.0, sw.center().y) } else { Pos2::new(sw.left() + 9.0, sw.center().y) };
+                        p.circle_filled(knob, 6.5, if *on { ACCENT_FG() } else { TEXT_DIM() });
+                        text_fit(&p, Pos2::new(sw.right() + 10.0, sw.center().y), Align2::LEFT_CENTER, t("Attach to new archives"), FontId::new(13.0, family("ui")), TEXT(), c.width() - 200.0);
+                        if pic.is_some() {
+                            let rm = Rect::from_min_size(Pos2::new(c.right() - 28.0 - 96.0, bottom + 8.0), Vec2::new(96.0, 30.0));
+                            if pill_button(ui, &p, rm, t("Remove"), false, "cover-remove") {
+                                *pic = None;
+                                *tex = None;
+                            }
+                        }
+                        if let Some(e) = error.as_ref() {
+                            text_fit(&p, Pos2::new(cx, bottom + 52.0), Align2::CENTER_CENTER, e.as_str(), FontId::new(12.5, family("ui")), ERR_RED(), c.width() - 56.0);
+                        }
+                        let no = Rect::from_min_size(Pos2::new(c.left() + 28.0, c.bottom() - 66.0), Vec2::new(170.0, 44.0));
+                        let yes = Rect::from_min_size(Pos2::new(c.right() - 28.0 - 170.0, c.bottom() - 66.0), Vec2::new(170.0, 44.0));
+                        if pill_button(ui, &p, no, t("Cancel"), false, "cover-cancel") || ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+                            next = Some(Modal::None);
+                        }
+                        if pill_button(ui, &p, yes, t("Save"), true, "cover-save") {
+                            if *on && pic.is_none() {
+                                *error = Some(t("Choose a picture first.").to_string());
+                            } else {
+                                save_cover(*on, pic.as_deref());
+                                self.cover_on = *on && pic.is_some();
+                                self.cover = pic.clone();
+                                sfx::play(Sfx::Click);
+                                next = Some(Modal::None);
+                            }
+                        }
+                    }
                     Modal::Legal { text: terms, on, error } => {
                         let c = Rect::from_center_size(Pos2::new(cx, panel.center().y), Vec2::new(420.0, (H - 24.0).min(500.0)));
                         card(&p, c);
@@ -2046,7 +2180,21 @@ impl eframe::App for App {
             sfx::play(Sfx::Hover);
         }
         self.was_hover = files_over;
-        if !dropped.is_empty() && matches!(self.modal, Modal::None) {
+        if let Modal::Cover { pic, tex, error, on } = &mut self.modal {
+            // the cover box is open: a dropped picture becomes the cover
+            if let Some(f) = dropped.iter().find(|f| is_picture(f)) {
+                match crate::cover::from_file(f) {
+                    Ok(b) => {
+                        *pic = Some(b);
+                        *tex = None;
+                        *error = None;
+                        *on = true;
+                        sfx::play(Sfx::Click);
+                    }
+                    Err(e) => *error = Some(e),
+                }
+            }
+        } else if !dropped.is_empty() && matches!(self.modal, Modal::None) {
             self.chooser = false;
             self.start_job(dropped);
         }
@@ -2167,12 +2315,14 @@ impl eframe::App for App {
             let lvl_txts: Vec<Txt> = LEVELS.iter().map(|(k, _)| lay(&p, t(*k), lvl_font.clone())).collect();
             let lvl_sep = 6.0;
             let legal_w = lay(&p, &format!("§ {}", t("Legal")), lvl_font.clone()).size().x + 20.0;
+            let cover_w = lay(&p, &format!("▣ {}", t("Cover")), lvl_font.clone()).size().x + 20.0;
+            let extra_w = legal_w + lvl_sep + cover_w;
             let lvl_w: f32 = lvl_txts.iter().map(|g| g.size().x + 20.0).sum::<f32>() + lvl_sep * (LEVELS.len() - 1) as f32;
             let lvl_y = lr.bottom() + 20.0;
             // the row (levels + the Legal pill) stays centred as a whole; right-to-left
             // languages put the pill first
-            let row_x = panel.center().x - (lvl_w + lvl_sep * 2.0 + legal_w) / 2.0;
-            let mut lvl_x = if i18n::current().rtl() { row_x + legal_w + lvl_sep * 2.0 } else { row_x };
+            let row_x = panel.center().x - (lvl_w + lvl_sep * 2.0 + extra_w) / 2.0;
+            let mut lvl_x = if i18n::current().rtl() { row_x + extra_w + lvl_sep * 2.0 } else { row_x };
             // right-to-left languages read the pills right-to-left
             let lvl_order: Vec<usize> = if i18n::current().rtl() {
                 (0..LEVELS.len()).rev().collect()
@@ -2201,9 +2351,11 @@ impl eframe::App for App {
             }
             // the "Legal" pill closes the row (opposite end for right-to-left): lit
             // while new archives carry the terms; a click opens the terms box
+            let rtl = i18n::current().rtl();
+            let extras_x = if rtl { row_x } else { lvl_x + lvl_sep };
             {
                 let w = legal_w;
-                let x = if i18n::current().rtl() { row_x } else { lvl_x + lvl_sep };
+                let x = if rtl { extras_x + cover_w + lvl_sep } else { extras_x };
                 let rect = Rect::from_min_size(Pos2::new(x, lvl_y - 9.0), Vec2::new(w, 18.0));
                 let resp = ui.interact(rect, egui::Id::new("legal-pill"), Sense::click()).on_hover_cursor(egui::CursorIcon::PointingHand);
                 let hover = resp.hovered() && !busy_now;
@@ -2216,6 +2368,25 @@ impl eframe::App for App {
                 if resp.clicked() && !busy_now && matches!(self.modal, Modal::None) {
                     sfx::play(Sfx::Click);
                     self.modal = Modal::Legal { text: self.legal_text.clone(), on: self.legal_on || self.legal_text.trim().is_empty(), error: None };
+                }
+            }
+            // the "Cover" pill: lit while new archives carry the cover
+            {
+                let w = cover_w;
+                let x = if rtl { extras_x } else { extras_x + legal_w + lvl_sep };
+                let rect = Rect::from_min_size(Pos2::new(x, lvl_y - 9.0), Vec2::new(w, 18.0));
+                let resp = ui.interact(rect, egui::Id::new("cover-pill"), Sense::click()).on_hover_cursor(egui::CursorIcon::PointingHand);
+                let hover = resp.hovered() && !busy_now;
+                if hover {
+                    p.rect_filled(rect, rr(9), alpha(ACCENT(), 34));
+                }
+                let lit = self.cover_on && self.cover.is_some();
+                let col = if lit { ACCENT_SOFT() } else if hover { TEXT() } else { TEXT_DIM() };
+                p.rect_stroke(rect, rr(9), Stroke::new(1.0_f32, alpha(col, if lit { 220 } else { 90 })), egui::StrokeKind::Inside);
+                text_fit(&p, rect.center(), Align2::CENTER_CENTER, &format!("▣ {}", t("Cover")), lvl_font.clone(), col, w - 10.0);
+                if resp.clicked() && !busy_now && matches!(self.modal, Modal::None) {
+                    sfx::play(Sfx::Click);
+                    self.modal = Modal::Cover { pic: self.cover.clone(), on: self.cover_on || self.cover.is_none(), error: None, tex: None };
                 }
             }
 

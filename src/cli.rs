@@ -89,6 +89,8 @@ pub struct Options {
     pub legal: Option<String>,
     /// -accept: accept the archive's legal statement without asking
     pub accept_legal: bool,
+    /// a: the cover picture (JPEG/PNG bytes, already made square by cover.rs)
+    pub cover: Option<Vec<u8>>,
 }
 
 pub enum Parsed {
@@ -159,6 +161,7 @@ pub fn parse(args: &[String]) -> Result<Parsed> {
     let mut media = MediaMode::Auto;
     let mut legal: Option<String> = None;
     let mut accept_legal = false;
+    let mut cover: Option<Vec<u8>> = None;
     let mut only_positional = false;
 
     let mut i = 0;
@@ -217,6 +220,16 @@ pub fn parse(args: &[String]) -> Result<Parsed> {
                     i += 1;
                 }
                 None => return usage_err("Option -legal needs a text file argument."),
+            }
+            continue;
+        }
+        if a == "-cover" {
+            match args.get(i) {
+                Some(f) => {
+                    cover = Some(crate::cover::from_file(std::path::Path::new(f)).map_err(NikError::Usage)?);
+                    i += 1;
+                }
+                None => return usage_err("Option -cover needs a picture file argument."),
             }
             continue;
         }
@@ -384,6 +397,7 @@ pub fn parse(args: &[String]) -> Result<Parsed> {
             media,
             legal: None,
             accept_legal,
+            cover: None,
         })));
     }
     if positional.is_empty() {
@@ -432,6 +446,9 @@ pub fn parse(args: &[String]) -> Result<Parsed> {
     if legal.is_some() && command != Command::Add {
         return usage_err("-legal attaches a statement to a new archive: use it with 'a'.");
     }
+    if cover.is_some() && command != Command::Add {
+        return usage_err("-cover attaches a picture to a new archive: use it with 'a'.");
+    }
     if command == Command::Add && dest.is_some() {
         return usage_err("A destination directory only makes sense when extracting.");
     }
@@ -451,6 +468,7 @@ pub fn parse(args: &[String]) -> Result<Parsed> {
         media,
         legal,
         accept_legal,
+        cover,
     })))
 }
 
@@ -520,6 +538,9 @@ OPTIONS (RAR style)                              (zip equivalent)
                  to the new archive. Whoever opens it - nikpak, unNik,
                  Nikkomander - must read and accept it before anything is
                  listed or extracted. It cannot be removed from the archive.
+  -cover <file>  Attach a cover picture (PNG, JPEG, WebP, BMP or GIF) to the new
+                 archive. It is cropped square from its centre and stored as a
+                 1024 x 1024 JPEG; unNik and Nikkomander show it.
   -accept        Accept the archive's legal statement without asking (scripts).
                  Without it, nikpak shows the statement and asks YES or NO.
   -inul, -idq, -q  Quiet: print only errors
@@ -537,6 +558,7 @@ EXAMPLES
   nikpak a -p secret.nik Taxes2026\                  encrypted, asks for password
   nikpak a -pMyLongPassw0rd secret.nik file.pdf      encrypted, password on the command line
   nikpak a -p -legal terms.txt sounds.nik Bank\      encrypted, with terms to accept
+  nikpak a -cover art.png -legal terms.txt pack.nik Bank\   with a cover and terms
   nikpak x backup.nik C:\Restore\                    extract with paths
   nikpak x backup.nik Docs/report.pdf                extract ONE file (with its path)
   nikpak e backup.nik Docs/report.pdf -d C:\Out      extract one file, without its path
