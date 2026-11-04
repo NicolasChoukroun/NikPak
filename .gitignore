@@ -2,3 +2,5 @@
 /dist
 /binaries
 /keys/
+# what the FTP upload last sent (scripts/ftp-changed.ps1)
+.ftp-state.json

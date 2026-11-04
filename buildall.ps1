@@ -200,6 +200,9 @@ $FtpUploads = @(
 
 # upload this many files at once, each on its own FTP connection
 $FtpWorkers = 10
+# upload only what changed: skip the files the server already has (same size, same date)
+. (Join-Path $PSScriptRoot 'scripts\ftp-changed.ps1')
+$FtpStatePath = Join-Path $PSScriptRoot '.ftp-state.json'
 
 function New-FtpRequest([string]$url, $creds, [string]$method) {
     $req = [System.Net.WebRequest]::Create($url)
@@ -279,6 +282,12 @@ if (-not $NoUpload) {
             [pscustomobject]@{ FullName = $f.FullName; Rel = $rel; Size = $f.Length; Url = "$ftpUrl/$rel" }
         })
 
+        $plan = Select-FtpChanged -Entries $entries -LocalProperty FullName -UrlProperty Url -Credential $creds -StatePath $FtpStatePath -Workers $FtpWorkers
+        $entries = @($plan.Upload)
+        $fileCount = $entries.Count
+        $totalBytes = [long]0
+        if ($fileCount -gt 0) { $totalBytes = [long](($entries | Measure-Object -Property Size -Sum).Sum) }
+        $okRel = New-Object 'System.Collections.Generic.HashSet[string]'
         $sync = [hashtable]::Synchronized(@{ bytesSent = [long]0 })
         $chunk = 256 * 1024
 
@@ -342,7 +351,7 @@ if (-not $NoUpload) {
             try {
                 $out = $j.ps.EndInvoke($j.handle)
                 foreach ($r in $out) {
-                    if ($r.ok) { $total++ } else { $errors += "$($r.rel) : $($r.err)" }
+                    if ($r.ok) { $total++; [void]$okRel.Add($r.rel) } else { $errors += "$($r.rel) : $($r.err)" }
                 }
             } catch {
                 $errors += "$($j.rel) : $($_.Exception.Message)"
@@ -350,6 +359,7 @@ if (-not $NoUpload) {
             $j.ps.Dispose()
         }
         $pool.Close(); $pool.Dispose()
+        Save-FtpState -Plan $plan -Uploaded @($entries | Where-Object { $okRel.Contains($_.Rel) })
 
         $msg = "{0} files uploaded" -f $total
         if ($errors.Count) { $msg += ", $($errors.Count) FAILED" }

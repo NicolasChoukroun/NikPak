@@ -88,6 +88,9 @@ $FtpBasePath = '/http/NikPak.nikkoid.com'
 
 # upload this many files at once, each on its own FTP connection
 $FtpWorkers = 10
+# upload only what changed: skip the files the server already has (same size, same date)
+. (Join-Path $PSScriptRoot 'scripts\ftp-changed.ps1')
+$FtpStatePath = Join-Path $PSScriptRoot '.ftp-state.json'
 
 function Get-FtpUrl([string]$remotePath) {
     $encoded = (($remotePath.Trim('/').Split('/') | ForEach-Object { [System.Uri]::EscapeDataString($_) }) -join '/')
@@ -160,6 +163,12 @@ $entries = @(foreach ($f in $files) {
     [pscustomobject]@{ FullName = $f.FullName; Rel = $rel; Size = $f.Length; Url = "$ftpUrl/$rel" }
 })
 
+$plan = Select-FtpChanged -Entries $entries -LocalProperty FullName -UrlProperty Url -Credential $creds -StatePath $FtpStatePath -Workers $FtpWorkers
+$entries = @($plan.Upload)
+$fileCount = $entries.Count
+$totalBytes = [long]0
+if ($fileCount -gt 0) { $totalBytes = [long](($entries | Measure-Object -Property Size -Sum).Sum) }
+$okRel = New-Object 'System.Collections.Generic.HashSet[string]'
 $sync = [hashtable]::Synchronized(@{ bytesSent = [long]0 })
 $chunk = 256 * 1024
 
@@ -223,7 +232,7 @@ foreach ($j in $jobs) {
     try {
         $out = $j.ps.EndInvoke($j.handle)
         foreach ($r in $out) {
-            if ($r.ok) { $total++ } else { $errors += "$($r.rel) : $($r.err)" }
+            if ($r.ok) { $total++; [void]$okRel.Add($r.rel) } else { $errors += "$($r.rel) : $($r.err)" }
         }
     } catch {
         $errors += "$($j.rel) : $($_.Exception.Message)"
@@ -231,6 +240,7 @@ foreach ($j in $jobs) {
     $j.ps.Dispose()
 }
 $pool.Close(); $pool.Dispose()
+Save-FtpState -Plan $plan -Uploaded @($entries | Where-Object { $okRel.Contains($_.Rel) })
 
 $msg = "{0} files uploaded" -f $total
 if ($errors.Count) { $msg += ", $($errors.Count) FAILED" }
