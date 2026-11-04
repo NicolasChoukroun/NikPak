@@ -395,6 +395,16 @@ pub const KEYS: &[&str] = &[
     "Could not import the skin: {}",
     "{} skins",
     "Apply Skin",
+    "Legal",
+    "LEGAL STATEMENT",
+    "Terms for your archives",
+    "Whoever opens an archive made with these terms must read them and click I approve before anything is listed or extracted.",
+    "Attach to new archives",
+    "Save",
+    "Read and accept the terms",
+    "This archive comes with a legal statement. Read it, then approve it to open the archive.",
+    "I approve",
+    "Write the terms first.",
 ];
 
 // ---------------------------------------------------------------------------
@@ -629,6 +639,16 @@ const ES: &[(&str, &str)] = &[
     ("Could not import the skin: {}", "No se pudo importar el aspecto: {}"),
     ("{} skins", "{} aspectos"),
     ("Apply Skin", "Aplicar aspecto"),
+    ("Legal", "Legal"),
+    ("LEGAL STATEMENT", "DECLARACIÓN LEGAL"),
+    ("Terms for your archives", "Condiciones de tus archivos"),
+    ("Whoever opens an archive made with these terms must read them and click I approve before anything is listed or extracted.", "Quien abra un archivo creado con estas condiciones debe leerlas y pulsar Acepto antes de listar o extraer nada."),
+    ("Attach to new archives", "Adjuntar a los nuevos archivos"),
+    ("Save", "Guardar"),
+    ("Read and accept the terms", "Lee y acepta las condiciones"),
+    ("This archive comes with a legal statement. Read it, then approve it to open the archive.", "Este archivo incluye una declaración legal. Léela y apruébala para abrir el archivo."),
+    ("I approve", "Acepto"),
+    ("Write the terms first.", "Escribe primero las condiciones."),
 ];
 
 const FR: &[(&str, &str)] = &[
@@ -859,6 +879,16 @@ const FR: &[(&str, &str)] = &[
     ("Could not import the skin: {}", "Impossible d'importer le thème : {}"),
     ("{} skins", "{} thèmes"),
     ("Apply Skin", "Appliquer le thème"),
+    ("Legal", "Mentions"),
+    ("LEGAL STATEMENT", "MENTIONS LÉGALES"),
+    ("Terms for your archives", "Conditions de vos archives"),
+    ("Whoever opens an archive made with these terms must read them and click I approve before anything is listed or extracted.", "Quiconque ouvre une archive créée avec ces conditions doit les lire et cliquer sur J'approuve avant que quoi que ce soit soit listé ou extrait."),
+    ("Attach to new archives", "Joindre aux nouvelles archives"),
+    ("Save", "Enregistrer"),
+    ("Read and accept the terms", "Lire et accepter les conditions"),
+    ("This archive comes with a legal statement. Read it, then approve it to open the archive.", "Cette archive est accompagnée de mentions légales. Lisez-les, puis approuvez-les pour ouvrir l'archive."),
+    ("I approve", "J'approuve"),
+    ("Write the terms first.", "Rédigez d'abord les conditions."),
 ];
 
 const PT: &[(&str, &str)] = &[
@@ -1089,6 +1119,16 @@ const PT: &[(&str, &str)] = &[
     ("Could not import the skin: {}", "Não foi possível importar o tema: {}"),
     ("{} skins", "{} temas"),
     ("Apply Skin", "Aplicar tema"),
+    ("Legal", "Legal"),
+    ("LEGAL STATEMENT", "DECLARAÇÃO LEGAL"),
+    ("Terms for your archives", "Termos dos seus arquivos"),
+    ("Whoever opens an archive made with these terms must read them and click I approve before anything is listed or extracted.", "Quem abrir um arquivo criado com estes termos tem de os ler e clicar em Aprovo antes de listar ou extrair qualquer coisa."),
+    ("Attach to new archives", "Anexar aos novos arquivos"),
+    ("Save", "Guardar"),
+    ("Read and accept the terms", "Leia e aceite os termos"),
+    ("This archive comes with a legal statement. Read it, then approve it to open the archive.", "Este arquivo inclui uma declaração legal. Leia-a e aprove-a para abrir o arquivo."),
+    ("I approve", "Aprovo"),
+    ("Write the terms first.", "Escreva primeiro os termos."),
 ];
 
 const ID: &[(&str, &str)] = &[
@@ -1319,6 +1359,16 @@ const ID: &[(&str, &str)] = &[
     ("Could not import the skin: {}", "Skin tidak dapat diimpor: {}"),
     ("{} skins", "{} skin"),
     ("Apply Skin", "Terapkan skin"),
+    ("Legal", "Legal"),
+    ("LEGAL STATEMENT", "PERNYATAAN HUKUM"),
+    ("Terms for your archives", "Ketentuan arsip Anda"),
+    ("Whoever opens an archive made with these terms must read them and click I approve before anything is listed or extracted.", "Siapa pun yang membuka arsip dengan ketentuan ini harus membacanya dan mengeklik Saya setuju sebelum apa pun didaftar atau diekstrak."),
+    ("Attach to new archives", "Lampirkan ke arsip baru"),
+    ("Save", "Simpan"),
+    ("Read and accept the terms", "Baca dan terima ketentuannya"),
+    ("This archive comes with a legal statement. Read it, then approve it to open the archive.", "Arsip ini disertai pernyataan hukum. Bacalah, lalu setujui untuk membuka arsip."),
+    ("I approve", "Saya setuju"),
+    ("Write the terms first.", "Tulis ketentuannya terlebih dahulu."),
 ];
 
 const RU: &[(&str, &str)] = &[
@@ -1549,6 +1599,16 @@ const RU: &[(&str, &str)] = &[
     ("Could not import the skin: {}", "Не удалось импортировать скин: {}"),
     ("{} skins", "Скинов: {}"),
     ("Apply Skin", "Применить скин"),
+    ("Legal", "Условия"),
+    ("LEGAL STATEMENT", "ЮРИДИЧЕСКОЕ ЗАЯВЛЕНИЕ"),
+    ("Terms for your archives", "Условия для ваших архивов"),
+    ("Whoever opens an archive made with these terms must read them and click I approve before anything is listed or extracted.", "Тот, кто открывает архив с этими условиями, должен прочитать их и нажать «Я принимаю», прежде чем что-либо будет показано или извлечено."),
+    ("Attach to new archives", "Прикладывать к новым архивам"),
+    ("Save", "Сохранить"),
+    ("Read and accept the terms", "Прочитайте и примите условия"),
+    ("This archive comes with a legal statement. Read it, then approve it to open the archive.", "К этому архиву приложено юридическое заявление. Прочитайте его и примите, чтобы открыть архив."),
+    ("I approve", "Я принимаю"),
+    ("Write the terms first.", "Сначала напишите условия."),
 ];
 
 const ZH: &[(&str, &str)] = &[
@@ -1779,6 +1839,16 @@ const ZH: &[(&str, &str)] = &[
     ("Could not import the skin: {}", "无法导入皮肤：{}"),
     ("{} skins", "{} 款皮肤"),
     ("Apply Skin", "应用皮肤"),
+    ("Legal", "法律"),
+    ("LEGAL STATEMENT", "法律声明"),
+    ("Terms for your archives", "压缩包的使用条款"),
+    ("Whoever opens an archive made with these terms must read them and click I approve before anything is listed or extracted.", "打开带有这些条款的压缩包的人必须先阅读并点击“我同意”，然后才能列出或解压任何内容。"),
+    ("Attach to new archives", "附加到新的压缩包"),
+    ("Save", "保存"),
+    ("Read and accept the terms", "阅读并接受条款"),
+    ("This archive comes with a legal statement. Read it, then approve it to open the archive.", "此压缩包附有法律声明。请阅读并同意后再打开压缩包。"),
+    ("I approve", "我同意"),
+    ("Write the terms first.", "请先填写条款。"),
 ];
 
 const HI: &[(&str, &str)] = &[
@@ -2009,6 +2079,16 @@ const HI: &[(&str, &str)] = &[
     ("Could not import the skin: {}", "स्किन आयात नहीं हो सकी: {}"),
     ("{} skins", "{} स्किन"),
     ("Apply Skin", "स्किन लागू करें"),
+    ("Legal", "कानूनी"),
+    ("LEGAL STATEMENT", "कानूनी कथन"),
+    ("Terms for your archives", "आपके आर्काइव की शर्तें"),
+    ("Whoever opens an archive made with these terms must read them and click I approve before anything is listed or extracted.", "इन शर्तों वाला आर्काइव खोलने वाले को कुछ भी सूचीबद्ध या निकालने से पहले इन्हें पढ़कर मैं स्वीकार करता हूँ पर क्लिक करना होगा।"),
+    ("Attach to new archives", "नए आर्काइव में जोड़ें"),
+    ("Save", "सहेजें"),
+    ("Read and accept the terms", "शर्तें पढ़ें और स्वीकार करें"),
+    ("This archive comes with a legal statement. Read it, then approve it to open the archive.", "इस आर्काइव के साथ एक कानूनी कथन है। आर्काइव खोलने के लिए इसे पढ़ें और स्वीकार करें।"),
+    ("I approve", "मैं स्वीकार करता हूँ"),
+    ("Write the terms first.", "पहले शर्तें लिखें।"),
 ];
 
 const BN: &[(&str, &str)] = &[
@@ -2239,6 +2319,16 @@ const BN: &[(&str, &str)] = &[
     ("Could not import the skin: {}", "স্কিন আমদানি করা যায়নি: {}"),
     ("{} skins", "{}টি স্কিন"),
     ("Apply Skin", "স্কিন প্রয়োগ করুন"),
+    ("Legal", "আইনি"),
+    ("LEGAL STATEMENT", "আইনি বিবৃতি"),
+    ("Terms for your archives", "আপনার আর্কাইভের শর্তাবলি"),
+    ("Whoever opens an archive made with these terms must read them and click I approve before anything is listed or extracted.", "এই শর্তাবলি সহ কোনো আর্কাইভ যিনি খুলবেন, কিছু তালিকাভুক্ত বা বের করার আগে তাঁকে এগুলো পড়ে আমি সম্মত ক্লিক করতে হবে।"),
+    ("Attach to new archives", "নতুন আর্কাইভে যুক্ত করুন"),
+    ("Save", "সংরক্ষণ"),
+    ("Read and accept the terms", "শর্তাবলি পড়ুন ও গ্রহণ করুন"),
+    ("This archive comes with a legal statement. Read it, then approve it to open the archive.", "এই আর্কাইভের সঙ্গে একটি আইনি বিবৃতি আছে। আর্কাইভ খুলতে এটি পড়ে অনুমোদন করুন।"),
+    ("I approve", "আমি সম্মত"),
+    ("Write the terms first.", "আগে শর্তাবলি লিখুন।"),
 ];
 
 const AR: &[(&str, &str)] = &[
@@ -2469,6 +2559,16 @@ const AR: &[(&str, &str)] = &[
     ("Could not import the skin: {}", "تعذّر استيراد السمة: {}"),
     ("{} skins", "{} سمة"),
     ("Apply Skin", "تطبيق السمة"),
+    ("Legal", "قانوني"),
+    ("LEGAL STATEMENT", "بيان قانوني"),
+    ("Terms for your archives", "شروط أرشيفاتك"),
+    ("Whoever opens an archive made with these terms must read them and click I approve before anything is listed or extracted.", "يجب على من يفتح أرشيفًا يحمل هذه الشروط أن يقرأها وينقر على أوافق قبل عرض أي شيء أو استخراجه."),
+    ("Attach to new archives", "إرفاق بالأرشيفات الجديدة"),
+    ("Save", "حفظ"),
+    ("Read and accept the terms", "اقرأ الشروط ووافق عليها"),
+    ("This archive comes with a legal statement. Read it, then approve it to open the archive.", "يرافق هذا الأرشيف بيان قانوني. اقرأه ثم وافق عليه لفتح الأرشيف."),
+    ("I approve", "أوافق"),
+    ("Write the terms first.", "اكتب الشروط أولًا."),
 ];
 
 #[cfg(test)]

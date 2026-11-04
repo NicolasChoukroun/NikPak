@@ -234,6 +234,25 @@ pub(crate) fn save_destination(dest: &str) {
     write_setting("destination", dest.trim());
 }
 
+/// The legal statement lives in its own file (it has several lines), beside the settings.
+fn legal_file() -> Option<PathBuf> {
+    settings_file().and_then(|f| f.parent().map(|d| d.join("legal.txt")))
+}
+
+fn load_legal_text() -> String {
+    legal_file().and_then(|f| std::fs::read_to_string(f).ok()).unwrap_or_default()
+}
+
+fn save_legal(on: bool, text: &str) {
+    write_setting("legal", if on { "1" } else { "0" });
+    if let Some(f) = legal_file() {
+        if let Some(dir) = f.parent() {
+            let _ = std::fs::create_dir_all(dir);
+        }
+        let _ = std::fs::write(f, text);
+    }
+}
+
 /// Saved choice, else the language of the operating system, else English.
 /// NIKPAK_GUI_LANG overrides both (screenshots).
 pub(crate) fn load_language() -> Lang {
@@ -534,6 +553,8 @@ enum Modal {
     About,
     /// a newer release on the web site: shown once, at launch
     Update(crate::update::UpdateInfo),
+    /// the legal statement attached to new archives (the "Legal" pill)
+    Legal { text: String, on: bool, error: Option<String> },
 }
 
 struct App {
@@ -561,6 +582,10 @@ struct App {
     update_rx: Option<crate::update::Answer>,
     /// the update screen was shown once: this launch is done asking
     update_shown: bool,
+    /// attach the legal statement below to every new archive
+    legal_on: bool,
+    /// the legal statement (kept in legal.txt beside the settings)
+    legal_text: String,
 }
 
 impl App {
@@ -595,6 +620,8 @@ impl App {
             // the check runs in the background; the window opens immediately
             update_rx: if std::env::var_os("NIKPAK_GUI_NO_UPDATE").is_some() { None } else { Some(crate::update::check_in_background()) },
             update_shown: false,
+            legal_on: read_setting("legal").as_deref() == Some("1"),
+            legal_text: load_legal_text(),
         };
         // Test hooks (screenshots)
         match std::env::var("NIKPAK_GUI_MODAL").as_deref() {
@@ -602,6 +629,7 @@ impl App {
             Ok("nag-left") => app.modal = Modal::Nag { register_left: true },
             Ok("nag-right") => app.modal = Modal::Nag { register_left: false },
             Ok("about") => app.modal = Modal::About,
+            Ok("legal") => app.modal = Modal::Legal { text: app.legal_text.clone(), on: true, error: None },
             _ => {}
         }
         if std::env::var_os("NIKPAK_GUI_CHOOSER").is_some() {
@@ -693,6 +721,9 @@ impl App {
             excludes: Vec::new(),
             threads: 0,
             media: MediaMode::Auto,
+            // the terms are attached when the "Legal" pill is on
+            legal: if self.legal_on && !self.legal_text.trim().is_empty() { Some(self.legal_text.clone()) } else { None },
+            accept_legal: false,
         };
         PROGRESS.cancel.store(false, Relaxed);
         PROGRESS.done.store(0, Relaxed);
@@ -1821,6 +1852,65 @@ impl App {
                             next = Some(Modal::None);
                         }
                     }
+                    Modal::Legal { text: terms, on, error } => {
+                        let c = Rect::from_center_size(Pos2::new(cx, panel.center().y), Vec2::new(420.0, (H - 24.0).min(500.0)));
+                        card(&p, c);
+                        glow_text(&p, Pos2::new(cx, c.top() + 32.0), t("LEGAL STATEMENT"), FontId::new(11.0, family("ui")), ACCENT_SOFT(), alpha(ACCENT(), 5), 3.0);
+                        glow_text(&p, Pos2::new(cx, c.top() + 64.0), t("Terms for your archives"), FontId::new(21.0, family("display")), TEXT(), alpha(ACCENT(), 6), 1.0);
+                        let mut y = c.top() + 90.0;
+                        y += wrapped(&p, Pos2::new(c.left() + 28.0, y), c.width() - 56.0,
+                            t("Whoever opens an archive made with these terms must read them and click I approve before anything is listed or extracted."), 12.5, TEXT_DIM());
+                        y += 10.0;
+                        // the terms: a scrolling multi-line field
+                        let bottom = c.bottom() - 128.0;
+                        let f = Rect::from_min_max(Pos2::new(c.left() + 28.0, y), Pos2::new(c.right() - 28.0, bottom));
+                        p.rect_filled(f, rr(10), alpha(skin::c().field, 190));
+                        p.rect_stroke(f, rr(10), Stroke::new(1.0_f32, alpha(ACCENT_SOFT(), 70)), egui::StrokeKind::Inside);
+                        ui.scope_builder(egui::UiBuilder::new().max_rect(f.shrink(4.0)), |ui| {
+                            egui::ScrollArea::vertical().id_salt("legal-scroll").auto_shrink([false, false]).show(ui, |ui| {
+                                ui.add(
+                                    egui::TextEdit::multiline(terms)
+                                        .id(egui::Id::new("legal-text"))
+                                        .font(FontId::new(12.5, family("ui-light")))
+                                        .text_color(TEXT())
+                                        .frame(false)
+                                        .desired_width(f.width() - 24.0)
+                                        .desired_rows(8)
+                                        .margin(egui::Margin::symmetric(8, 6)),
+                                );
+                            });
+                        });
+                        // "Attach to new archives": a round switch with its label
+                        let sw = Rect::from_min_size(Pos2::new(c.left() + 28.0, bottom + 14.0), Vec2::new(34.0, 18.0));
+                        let swr = ui.interact(sw.union(Rect::from_min_size(sw.right_top(), Vec2::new(c.width() - 100.0, 18.0))), egui::Id::new("legal-on"), Sense::click())
+                            .on_hover_cursor(egui::CursorIcon::PointingHand);
+                        if swr.clicked() {
+                            *on = !*on;
+                        }
+                        p.rect_filled(sw, rr(9), if *on { skin::c().accent_btn() } else { alpha(skin::c().field, 220) });
+                        let knob = if *on { Pos2::new(sw.right() - 9.0, sw.center().y) } else { Pos2::new(sw.left() + 9.0, sw.center().y) };
+                        p.circle_filled(knob, 6.5, if *on { ACCENT_FG() } else { TEXT_DIM() });
+                        text_fit(&p, Pos2::new(sw.right() + 10.0, sw.center().y), Align2::LEFT_CENTER, t("Attach to new archives"), FontId::new(13.0, family("ui")), TEXT(), c.width() - 110.0);
+                        if let Some(e) = error.as_ref() {
+                            text_fit(&p, Pos2::new(cx, bottom + 48.0), Align2::CENTER_CENTER, e.as_str(), FontId::new(12.5, family("ui")), ERR_RED(), c.width() - 56.0);
+                        }
+                        let no = Rect::from_min_size(Pos2::new(c.left() + 28.0, c.bottom() - 66.0), Vec2::new(170.0, 44.0));
+                        let yes = Rect::from_min_size(Pos2::new(c.right() - 28.0 - 170.0, c.bottom() - 66.0), Vec2::new(170.0, 44.0));
+                        if pill_button(ui, &p, no, t("Cancel"), false, "legal-cancel") || ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+                            next = Some(Modal::None);
+                        }
+                        if pill_button(ui, &p, yes, t("Save"), true, "legal-save") {
+                            if *on && terms.trim().is_empty() {
+                                *error = Some(t("Write the terms first.").to_string());
+                            } else {
+                                save_legal(*on, terms);
+                                self.legal_on = *on;
+                                self.legal_text = terms.clone();
+                                sfx::play(Sfx::Click);
+                                next = Some(Modal::None);
+                            }
+                        }
+                    }
                     Modal::Register { name, email, key, error, done } => {
                         let c = Rect::from_center_size(Pos2::new(cx, panel.center().y), Vec2::new(392.0, 516.0));
                         card(&p, c);
@@ -2076,9 +2166,13 @@ impl eframe::App for App {
             let lvl_font = FontId::new(11.5, family("ui"));
             let lvl_txts: Vec<Txt> = LEVELS.iter().map(|(k, _)| lay(&p, t(*k), lvl_font.clone())).collect();
             let lvl_sep = 6.0;
+            let legal_w = lay(&p, &format!("§ {}", t("Legal")), lvl_font.clone()).size().x + 20.0;
             let lvl_w: f32 = lvl_txts.iter().map(|g| g.size().x + 20.0).sum::<f32>() + lvl_sep * (LEVELS.len() - 1) as f32;
             let lvl_y = lr.bottom() + 20.0;
-            let mut lvl_x = panel.center().x - lvl_w / 2.0;
+            // the row (levels + the Legal pill) stays centred as a whole; right-to-left
+            // languages put the pill first
+            let row_x = panel.center().x - (lvl_w + lvl_sep * 2.0 + legal_w) / 2.0;
+            let mut lvl_x = if i18n::current().rtl() { row_x + legal_w + lvl_sep * 2.0 } else { row_x };
             // right-to-left languages read the pills right-to-left
             let lvl_order: Vec<usize> = if i18n::current().rtl() {
                 (0..LEVELS.len()).rev().collect()
@@ -2104,6 +2198,25 @@ impl eframe::App for App {
                     self.level = lv;
                 }
                 lvl_x += w + lvl_sep;
+            }
+            // the "Legal" pill closes the row (opposite end for right-to-left): lit
+            // while new archives carry the terms; a click opens the terms box
+            {
+                let w = legal_w;
+                let x = if i18n::current().rtl() { row_x } else { lvl_x + lvl_sep };
+                let rect = Rect::from_min_size(Pos2::new(x, lvl_y - 9.0), Vec2::new(w, 18.0));
+                let resp = ui.interact(rect, egui::Id::new("legal-pill"), Sense::click()).on_hover_cursor(egui::CursorIcon::PointingHand);
+                let hover = resp.hovered() && !busy_now;
+                if hover {
+                    p.rect_filled(rect, rr(9), alpha(ACCENT(), 34));
+                }
+                let col = if self.legal_on { ACCENT_SOFT() } else if hover { TEXT() } else { TEXT_DIM() };
+                p.rect_stroke(rect, rr(9), Stroke::new(1.0_f32, alpha(col, if self.legal_on { 220 } else { 90 })), egui::StrokeKind::Inside);
+                text_fit(&p, rect.center(), Align2::CENTER_CENTER, &format!("§ {}", t("Legal")), lvl_font.clone(), col, w - 10.0);
+                if resp.clicked() && !busy_now && matches!(self.modal, Modal::None) {
+                    sfx::play(Sfx::Click);
+                    self.modal = Modal::Legal { text: self.legal_text.clone(), on: self.legal_on || self.legal_text.trim().is_empty(), error: None };
+                }
             }
 
             // ---- centre ------------------------------------------------------------

@@ -85,6 +85,10 @@ pub struct Options {
     pub excludes: Vec<String>,
     pub threads: usize,
     pub media: MediaMode,
+    /// a: the legal statement to attach (shown and accepted before extraction)
+    pub legal: Option<String>,
+    /// -accept: accept the archive's legal statement without asking
+    pub accept_legal: bool,
 }
 
 pub enum Parsed {
@@ -153,6 +157,8 @@ pub fn parse(args: &[String]) -> Result<Parsed> {
     let mut excludes: Vec<String> = Vec::new();
     let mut threads = 0usize;
     let mut media = MediaMode::Auto;
+    let mut legal: Option<String> = None;
+    let mut accept_legal = false;
     let mut only_positional = false;
 
     let mut i = 0;
@@ -196,6 +202,26 @@ pub fn parse(args: &[String]) -> Result<Parsed> {
         }
         if let Some(p) = a.strip_prefix("-p") {
             password = PwdSpec::Given(p.to_string());
+            continue;
+        }
+
+        // ---- legal statement ------------------------------------------------
+        if a == "-legal" {
+            match args.get(i) {
+                Some(f) => {
+                    let bytes = std::fs::read(f)
+                        .map_err(|e| NikError::Usage(format!("Cannot read the legal statement '{f}': {e}")))?;
+                    let text = String::from_utf8(bytes)
+                        .map_err(|_| NikError::Usage(format!("The legal statement '{f}' is not UTF-8 text.")))?;
+                    legal = Some(text.trim_start_matches('\u{feff}').to_string());
+                    i += 1;
+                }
+                None => return usage_err("Option -legal needs a text file argument."),
+            }
+            continue;
+        }
+        if a == "-accept" {
+            accept_legal = true;
             continue;
         }
 
@@ -356,6 +382,8 @@ pub fn parse(args: &[String]) -> Result<Parsed> {
             excludes,
             threads,
             media,
+            legal: None,
+            accept_legal,
         })));
     }
     if positional.is_empty() {
@@ -401,6 +429,9 @@ pub fn parse(args: &[String]) -> Result<Parsed> {
             "Name the files or folders to delete.\nUsage: nikpak d <archive.nik> <name|folder|wildcard>...",
         );
     }
+    if legal.is_some() && command != Command::Add {
+        return usage_err("-legal attaches a statement to a new archive: use it with 'a'.");
+    }
     if command == Command::Add && dest.is_some() {
         return usage_err("A destination directory only makes sense when extracting.");
     }
@@ -418,6 +449,8 @@ pub fn parse(args: &[String]) -> Result<Parsed> {
         excludes,
         threads,
         media,
+        legal,
+        accept_legal,
     })))
 }
 
@@ -483,6 +516,12 @@ OPTIONS (RAR style)                              (zip equivalent)
   -d <dir>       Extract into <dir> (or give a path ending in \ or / ).
                  For folders with spaces prefer -d "C:\My Folder" - a quoted path
                  ending in a backslash is mis-parsed by Windows.
+  -legal <file>  Attach the legal statement in <file> (UTF-8 text, up to 64 KB)
+                 to the new archive. Whoever opens it - nikpak, unNik,
+                 Nikkomander - must read and accept it before anything is
+                 listed or extracted. It cannot be removed from the archive.
+  -accept        Accept the archive's legal statement without asking (scripts).
+                 Without it, nikpak shows the statement and asks YES or NO.
   -inul, -idq, -q  Quiet: print only errors
   -h, -help, -?  Show this help
   -V, -version   Show the version
@@ -497,6 +536,7 @@ EXAMPLES
   nikpak a -m5 -mt8 big.nik Projects\                maximum compression, 8 threads
   nikpak a -p secret.nik Taxes2026\                  encrypted, asks for password
   nikpak a -pMyLongPassw0rd secret.nik file.pdf      encrypted, password on the command line
+  nikpak a -p -legal terms.txt sounds.nik Bank\      encrypted, with terms to accept
   nikpak x backup.nik C:\Restore\                    extract with paths
   nikpak x backup.nik Docs/report.pdf                extract ONE file (with its path)
   nikpak e backup.nik Docs/report.pdf -d C:\Out      extract one file, without its path
@@ -519,6 +559,7 @@ EXIT CODES
   0 success      1 warning (some files skipped)   2 fatal error
   3 corrupt archive / CRC error                   7 bad command line
   10 no files matched                             11 wrong or missing password
+  12 the legal statement was not accepted
 
 MEDIA FILES (WAV, AIFF, MOD, BMP)
   nikpak looks at the CONTENT of every file (not its extension). For uncompressed

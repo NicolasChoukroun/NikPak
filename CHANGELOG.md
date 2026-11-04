@@ -5,6 +5,20 @@ The newest version is at the top. Format: version – date – summary, then the
 
 ---
 
+## 1.8.0 – 4 November 2026 – Legal statements in .nik archives
+
+### Added
+- **An archive can carry a legal statement** (terms of use, a licence, a copyright notice). Whoever opens it – unNik, nikpak on the command line, Nikkomander – must read it and click **I approve** before anything is listed, viewed or extracted. Cancel stops there; nothing is read.
+- **In the NikPak window**: a **§ Legal** pill beside Fast / Medium / Best opens a box to write the terms and switch **Attach to new archives** on or off. The pill is lit while it is on. The terms are kept in `legal.txt` beside the settings.
+- **On the command line**: `nikpak a -legal terms.txt bank.nik Folder\` attaches the text in `terms.txt` (UTF-8, up to 64 KB). Opening such an archive in a console shows the terms and asks YES or NO; `-accept` accepts them without asking (for scripts). A refusal ends with exit code 12.
+- The statement sits in the archive header, in plain text, so it can be read before the password is asked. In an encrypted archive it is authenticated with every block: it cannot be changed or removed without the archive failing to open. A delete keeps it.
+
+### Compatibility
+- Archives without a statement are written exactly as before (version 3) and open in every nikpak.
+- Archives with one use a new header flag. Older nikpak, unNik and Nikkomander refuse them ("please update"), so the terms cannot be skipped by using an old copy.
+
+---
+
 ## 1.7.0 – 31 October 2026 – 34 operating-system skins, and an update screen
 
 ### Added

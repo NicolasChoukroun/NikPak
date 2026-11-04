@@ -14,6 +14,8 @@ pub enum NikError {
     Password(String),
     /// Nothing matched (exit 10)
     NoFiles(String),
+    /// The archive's legal statement has not been accepted (exit 12)
+    Legal(String),
 }
 
 impl NikError {
@@ -24,6 +26,7 @@ impl NikError {
             NikError::Corrupt(_) => 3,
             NikError::Password(_) => 11,
             NikError::NoFiles(_) => 10,
+            NikError::Legal(_) => 12,
         }
     }
 }
@@ -35,7 +38,8 @@ impl fmt::Display for NikError {
             | NikError::Fatal(m)
             | NikError::Corrupt(m)
             | NikError::Password(m)
-            | NikError::NoFiles(m) => write!(f, "{m}"),
+            | NikError::NoFiles(m)
+            | NikError::Legal(m) => write!(f, "{m}"),
         }
     }
 }

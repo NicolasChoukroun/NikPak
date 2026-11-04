@@ -516,6 +516,7 @@ pub fn create(o: &Options) -> Result<u8> {
         kdf_lanes: KDF_LANES,
         salt: crypto::random_bytes::<SALT_LEN>(),
         nonce_prefix: crypto::random_bytes::<NONCE_PREFIX_LEN>(),
+        legal: checked_legal(o.legal.as_deref())?,
     };
     let header_bytes = header.to_bytes();
 
@@ -971,6 +972,8 @@ struct Opened {
     method: u8,
     /// kept to write the archive again (delete)
     password: Option<zeroize::Zeroizing<String>>,
+    /// the archive's legal statement (already accepted when we got here)
+    legal: Option<String>,
 }
 
 fn open_archive(o: &Options) -> Result<Opened> {
@@ -1001,7 +1004,7 @@ fn open_archive(o: &Options) -> Result<Opened> {
     }
     let flags = fixed[9];
     let method = fixed[10];
-    if flags & !FLAG_ENCRYPTED != 0 || fixed[11] != 0 {
+    if flags & !(FLAG_ENCRYPTED | FLAG_LEGAL) != 0 || fixed[11] != 0 {
         return Err(NikError::Fatal("Archive uses unknown features; please update nikpak.".into()));
     }
     if method > METHOD_BLOCKS || (method == METHOD_BLOCKS && fixed[8] < 3) {
@@ -1009,8 +1012,10 @@ fn open_archive(o: &Options) -> Result<Opened> {
     }
     let encrypted = flags & FLAG_ENCRYPTED != 0;
 
-    let mut password = None;
-    let source = if encrypted {
+    // the whole header, as the writer bound it to every encrypted chunk
+    let mut header_bytes = fixed.to_vec();
+    let mut kdf = None;
+    if encrypted {
         let mut ext = [0u8; 12 + SALT_LEN + NONCE_PREFIX_LEN];
         br.read_exact(&mut ext)
             .map_err(|_| NikError::Corrupt("Archive header is truncated.".into()))?;
@@ -1022,10 +1027,25 @@ fn open_archive(o: &Options) -> Result<Opened> {
         salt.copy_from_slice(&ext[12..12 + SALT_LEN]);
         let mut nonce = [0u8; NONCE_PREFIX_LEN];
         nonce.copy_from_slice(&ext[12 + SALT_LEN..]);
-
-        let mut header_bytes = fixed.to_vec();
         header_bytes.extend_from_slice(&ext);
+        kdf = Some((mem, time, lanes, salt, nonce));
+    }
+    let legal = if flags & FLAG_LEGAL != 0 {
+        let text = read_legal(&mut br)?;
+        header_bytes.extend_from_slice(&(text.len() as u32).to_le_bytes());
+        header_bytes.extend_from_slice(text.as_bytes());
+        Some(text)
+    } else {
+        None
+    };
+    // **The legal statement comes first**: nothing is decrypted or read until it
+    // has been accepted - in a window (accept_legal), with -accept, or here.
+    if let Some(text) = &legal {
+        require_legal(path, text, o)?;
+    }
 
+    let mut password = None;
+    let source = if let Some((mem, time, lanes, salt, nonce)) = kdf {
         let pw = password_for_open(&o.password)?;
         if !o.quiet {
             outln!("Deriving decryption key (Argon2id)...");
@@ -1044,7 +1064,122 @@ fn open_archive(o: &Options) -> Result<Opened> {
         METHOD_BLOCKS => Inner::Blocks(BlockReader::new(source)),
         _ => Inner::Store(source),
     };
-    Ok(Opened { inner, encrypted, method, password })
+    Ok(Opened { inner, encrypted, method, password, legal })
+}
+
+// ---------------------------------------------------------------------------
+// Legal statement
+// ---------------------------------------------------------------------------
+
+/// Statements accepted in this process: (archive, the exact text accepted).
+/// A window asks once, then every operation on that archive goes through; a
+/// statement that changed is asked again.
+static ACCEPTED: std::sync::Mutex<Vec<(PathBuf, String)>> = std::sync::Mutex::new(Vec::new());
+
+fn accept_key(path: &Path) -> PathBuf {
+    fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf())
+}
+
+/// Record that the user accepted `text`, the legal statement of `path`.
+/// Call it after the user said "I approve"; later opens of that archive pass.
+pub fn accept_legal(path: &Path, text: &str) {
+    let key = accept_key(path);
+    if let Ok(mut v) = ACCEPTED.lock() {
+        v.retain(|(p, _)| *p != key);
+        v.push((key, text.to_string()));
+    }
+}
+
+/// Was `text`, the legal statement of `path`, accepted in this process?
+pub fn legal_is_accepted(path: &Path, text: &str) -> bool {
+    legal_accepted(path, text)
+}
+
+fn legal_accepted(path: &Path, text: &str) -> bool {
+    let key = accept_key(path);
+    ACCEPTED.lock().map(|v| v.iter().any(|(p, t)| *p == key && t == text)).unwrap_or(false)
+}
+
+/// Normalise the statement to attach: trimmed, `None` when empty, refused when long.
+fn checked_legal(text: Option<&str>) -> Result<Option<String>> {
+    let Some(t) = text.map(str::trim).filter(|t| !t.is_empty()) else { return Ok(None) };
+    let t = t.replace("\r\n", "\n");
+    if t.len() > MAX_LEGAL_LEN {
+        return Err(NikError::Usage(format!(
+            "The legal statement is too long ({} bytes; at most {MAX_LEGAL_LEN}).",
+            t.len()
+        )));
+    }
+    Ok(Some(t))
+}
+
+fn read_legal<R: Read>(r: &mut R) -> Result<String> {
+    let mut n = [0u8; 4];
+    r.read_exact(&mut n).map_err(|_| NikError::Corrupt("Archive header is truncated.".into()))?;
+    let n = u32::from_le_bytes(n) as usize;
+    if n == 0 || n > MAX_LEGAL_LEN {
+        return Err(NikError::Corrupt("The archive's legal statement is damaged.".into()));
+    }
+    let mut b = vec![0u8; n];
+    r.read_exact(&mut b).map_err(|_| NikError::Corrupt("Archive header is truncated.".into()))?;
+    String::from_utf8(b).map_err(|_| NikError::Corrupt("The archive's legal statement is damaged.".into()))
+}
+
+/// The archive's legal statement, if it has one. Reads only the header: no
+/// password is needed, so a window can show it before asking for one.
+pub fn legal_statement(path: &Path) -> Result<Option<String>> {
+    let mut f = BufReader::new(
+        File::open(path).map_err(|e| NikError::Fatal(format!("Cannot open '{}': {e}", path.display())))?,
+    );
+    let mut fixed = [0u8; 12];
+    f.read_exact(&mut fixed)
+        .map_err(|_| NikError::Corrupt(format!("'{}' is not a valid .nik archive (file too short).", path.display())))?;
+    if fixed[..8] != MAGIC {
+        return Err(NikError::Corrupt(format!("'{}' is not a .nik archive.", path.display())));
+    }
+    if fixed[9] & FLAG_LEGAL == 0 {
+        return Ok(None);
+    }
+    if fixed[9] & FLAG_ENCRYPTED != 0 {
+        let mut ext = [0u8; 12 + SALT_LEN + NONCE_PREFIX_LEN];
+        f.read_exact(&mut ext).map_err(|_| NikError::Corrupt("Archive header is truncated.".into()))?;
+    }
+    read_legal(&mut f).map(Some)
+}
+
+/// Stop unless the statement was accepted. On a console (not -q) it is shown
+/// and asked; a window must call [`accept_legal`] first.
+fn require_legal(path: &Path, text: &str, o: &Options) -> Result<()> {
+    if o.accept_legal || legal_accepted(path, text) {
+        return Ok(());
+    }
+    use std::io::IsTerminal;
+    if !o.quiet && io::stdin().is_terminal() {
+        eprintln!("\nThis archive comes with a legal statement:\n");
+        eprintln!("{text}\n");
+        loop {
+            eprint!("Do you accept it? Type YES to accept, NO to stop: ");
+            let _ = io::stderr().flush();
+            let mut s = String::new();
+            if io::stdin().read_line(&mut s).unwrap_or(0) == 0 {
+                break;
+            }
+            match s.trim().to_ascii_lowercase().as_str() {
+                "yes" | "y" => {
+                    accept_legal(path, text);
+                    return Ok(());
+                }
+                "no" | "n" | "" => break,
+                _ => continue,
+            }
+        }
+        return Err(NikError::Legal("The legal statement was not accepted; nothing was done.".into()));
+    }
+    Err(NikError::Legal(
+        "This archive carries a legal statement that must be accepted before it is opened.\n\
+         Run the command in a console to read it, or add -accept to accept it."
+            .into(),
+    ))
 }
 
 // ---------------------------------------------------------------------------
@@ -1206,7 +1341,12 @@ pub fn list(o: &Options) -> Result<u8> {
     let mut matched = 0u64;
 
     if !bare {
-        outln!("Archive: {}{}", o.archive, if op.encrypted { "   [encrypted]" } else { "" });
+        outln!(
+            "Archive: {}{}{}",
+            o.archive,
+            if op.encrypted { "   [encrypted]" } else { "" },
+            if op.legal.is_some() { "   [legal statement accepted]" } else { "" }
+        );
         outln!();
         if verbose {
             outln!("{:<10} {:>14}  {:<16} {:<8}  Name", "Attr", "Size", "Date (UTC)", "CRC32");
@@ -1723,6 +1863,8 @@ pub fn delete(o: &Options, pick: Option<&Pick>) -> Result<u64> {
         kdf_lanes: KDF_LANES,
         salt: crypto::random_bytes::<SALT_LEN>(),
         nonce_prefix: crypto::random_bytes::<NONCE_PREFIX_LEN>(),
+        // the legal statement travels with the archive: a delete never drops it
+        legal: op.legal.clone(),
     };
     let header_bytes = header.to_bytes();
     let mut tmp_name = archive.as_os_str().to_owned();
@@ -1862,6 +2004,8 @@ pub struct Index {
     /// the engines of the -m5 blocks ("LZMA2, 64 MiB dictionary" ...)
     pub engines: Vec<String>,
     pub archive_size: u64,
+    /// the legal statement the archive carries (accepted before it was read)
+    pub legal: Option<String>,
 }
 
 /// Options for the window's operations (never asks anything on a console).
@@ -1880,6 +2024,9 @@ pub fn gui_options(archive: &Path, password: Option<&str>) -> Options {
         excludes: Vec::new(),
         threads: 0,
         media: MediaMode::Auto,
+        legal: None,
+        // a window shows the statement itself and calls accept_legal
+        accept_legal: false,
     }
 }
 
@@ -1901,7 +2048,13 @@ pub fn read_index(path: &Path, password: Option<&str>) -> Result<Index> {
     let o = gui_options(path, password);
     let mut op = open_archive(&o)?;
     let mut buf = vec![0u8; IO_BUF];
-    let mut idx = Index { encrypted: op.encrypted, method: op.method, archive_size: PROGRESS.total.load(Relaxed), ..Default::default() };
+    let mut idx = Index {
+        encrypted: op.encrypted,
+        method: op.method,
+        archive_size: PROGRESS.total.load(Relaxed),
+        legal: op.legal.clone(),
+        ..Default::default()
+    };
     let mut last_block = 0u32;
     loop {
         check_cancel()?;
@@ -2122,6 +2275,88 @@ mod tests {
             assert!(read_index(&arc, pw).unwrap().entries.is_empty());
             let _ = fs::remove_dir_all(&dir);
         }
+    }
+
+    #[test]
+    fn a_legal_statement_must_be_accepted_and_cannot_be_changed() {
+        const TERMS: &str = "These sounds are licensed to one user.\nNo resale.";
+        for pw in [None, Some("password123")] {
+            let dir = std::env::temp_dir().join(format!("nikpak-legal-{}-{}", std::process::id(), pw.is_some()));
+            let _ = fs::remove_dir_all(&dir);
+            fs::create_dir_all(dir.join("src")).unwrap();
+            fs::write(dir.join("src/a.txt"), "alpha\n".repeat(100)).unwrap();
+            let arc = dir.join("t.nik");
+            let mut o = gui_options(&arc, pw);
+            o.command = Command::Add;
+            o.level = Level::Zstd(3);
+            o.overwrite = Overwrite::All;
+            o.password = pw.map_or(PwdSpec::None, |p| PwdSpec::Given(p.into()));
+            o.files = vec![dir.join("src/a.txt").display().to_string()];
+            o.ep = EpMode::Names;
+            o.legal = Some(format!("  {TERMS}\r\n"));
+            create(&o).unwrap();
+
+            // readable without the password, trimmed
+            assert_eq!(legal_statement(&arc).unwrap().as_deref(), Some(TERMS));
+            assert_eq!(peek(&arc).unwrap(), pw.is_some());
+            // refused until accepted, by every path
+            assert!(matches!(read_index(&arc, pw), Err(NikError::Legal(_))));
+            assert!(matches!(read_entry(&arc, pw, "a.txt", 10), Err(NikError::Legal(_))));
+            let mut x = gui_options(&arc, pw);
+            x.dest = Some(dir.join("out"));
+            assert!(matches!(extract(&x), Err(NikError::Legal(_))));
+            assert!(!dir.join("out/a.txt").exists());
+            // -accept lets one operation through; accept_legal lets them all
+            x.accept_legal = true;
+            extract(&x).unwrap();
+            assert!(dir.join("out/a.txt").exists());
+            accept_legal(&arc, TERMS);
+            let idx = read_index(&arc, pw).unwrap();
+            assert_eq!(idx.legal.as_deref(), Some(TERMS));
+            assert_eq!(idx.entries.len(), 1);
+
+            // a delete keeps the statement
+            let pick = Pick { names: ["a.txt".to_string()].into_iter().collect(), strip: String::new() };
+            delete(&gui_options(&arc, pw), Some(&pick)).unwrap();
+            assert_eq!(legal_statement(&arc).unwrap().as_deref(), Some(TERMS));
+
+            // changing the statement on disk: asked again; and, encrypted, the archive no longer opens
+            let mut bytes = fs::read(&arc).unwrap();
+            let at = bytes.windows(4).position(|w| w == b"No r").unwrap();
+            bytes[at] = b'n';
+            fs::write(&arc, &bytes).unwrap();
+            let changed = legal_statement(&arc).unwrap().unwrap();
+            assert!(matches!(read_index(&arc, pw), Err(NikError::Legal(_))));
+            accept_legal(&arc, &changed);
+            let r = read_index(&arc, pw);
+            if pw.is_some() {
+                assert!(r.is_err(), "a changed statement must break an encrypted archive");
+            } else {
+                r.unwrap();
+            }
+            let _ = fs::remove_dir_all(&dir);
+        }
+    }
+
+    #[test]
+    fn an_empty_statement_is_not_attached() {
+        let dir = std::env::temp_dir().join(format!("nikpak-legal-empty-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(dir.join("a.txt"), "x").unwrap();
+        let arc = dir.join("t.nik");
+        let mut o = gui_options(&arc, None);
+        o.command = Command::Add;
+        o.overwrite = Overwrite::All;
+        o.password = PwdSpec::None;
+        o.files = vec![dir.join("a.txt").display().to_string()];
+        o.legal = Some("   \n ".into());
+        create(&o).unwrap();
+        assert_eq!(legal_statement(&arc).unwrap(), None);
+        // and the header is the plain version-3 one, readable by older nikpak
+        assert_eq!(fs::read(&arc).unwrap()[9], 0);
+        read_index(&arc, None).unwrap();
+        let _ = fs::remove_dir_all(&dir);
     }
 
     #[test]

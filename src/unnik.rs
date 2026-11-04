@@ -994,6 +994,8 @@ struct ExtractDlg {
 enum Overlay {
     None,
     Password { path: PathBuf, password: String, error: Option<String> },
+    /// the archive's legal statement: read it and click "I approve" to open it
+    Legal { path: PathBuf, password: Option<String>, text: String },
     Extract(ExtractDlg),
     Delete(Vec<usize>),
     Viewer(Box<Viewer>),
@@ -1101,6 +1103,20 @@ impl App {
     fn open(&mut self, path: PathBuf, password: Option<String>) {
         if self.job.is_some() {
             return;
+        }
+        // **The legal statement comes first**, before the password and before any
+        // reading: the library refuses to open the archive until it is approved.
+        match archive::legal_statement(&path) {
+            Err(e) => {
+                self.fail(t("Cannot open the archive"), e.to_string());
+                return;
+            }
+            Ok(Some(text)) if !archive::legal_is_accepted(&path, &text) => {
+                self.overlay = Overlay::Legal { path, password, text };
+                sfx::play(Sfx::Pop);
+                return;
+            }
+            Ok(_) => {}
         }
         match archive::peek(&path) {
             Err(e) => self.fail(t("Cannot open the archive"), e.to_string()),
@@ -3027,6 +3043,7 @@ impl App {
         let mut run_extract: Option<ExtractDlg> = None;
         let mut run_delete: Option<Vec<usize>> = None;
         let mut open_with: Option<(PathBuf, String)> = None;
+        let mut approved: Option<(PathBuf, Option<String>)> = None;
         let pw_focus = std::mem::take(&mut self.pw_focus);
         let find_focus = std::mem::take(&mut self.viewer_find_focus);
         egui::Area::new(egui::Id::new("overlay")).order(egui::Order::Foreground).fixed_pos(panel.min).show(ctx, |ui| {
@@ -3115,6 +3132,39 @@ impl App {
                         next = Some(Overlay::None);
                     }
                     if pill_button(ui, &p, close, t("Close"), false, "nikpak-missing-close") || card_close(ui, &p, c, "nikpak-missing-x") {
+                        next = Some(Overlay::None);
+                    }
+                }
+                Overlay::Legal { path, password, text: terms } => {
+                    let c = Rect::from_center_size(panel.center(), Vec2::new(430.0, (panel.height() - 24.0).min(520.0)));
+                    card(&p, c);
+                    glow_text(&p, Pos2::new(cx, c.top() + 34.0), t("LEGAL STATEMENT"), FontId::new(11.0, family("ui")), ACCENT_SOFT(), alpha(ACCENT(), 5), 3.0);
+                    text_fit(&p, Pos2::new(cx, c.top() + 66.0), Align2::CENTER_CENTER, t("Read and accept the terms"), FontId::new(21.0, family("display")), TEXT(), c.width() - 40.0);
+                    let name = path.file_name().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default();
+                    let ng = elide(&p, &name, FontId::new(13.0, family("ui-light")), c.width() - 60.0);
+                    ng.paint(&p, Pos2::new(cx - ng.size().x / 2.0, c.top() + 86.0), TEXT_DIM());
+                    let mut y = c.top() + 112.0;
+                    y += wrapped(&p, Pos2::new(c.left() + 30.0, y), c.width() - 60.0,
+                        t("This archive comes with a legal statement. Read it, then approve it to open the archive."), 12.5, TEXT_DIM());
+                    y += 8.0;
+                    // the statement itself, read-only, scrolling when it is long
+                    let f = Rect::from_min_max(Pos2::new(c.left() + 30.0, y), Pos2::new(c.right() - 30.0, c.bottom() - 84.0));
+                    p.rect_filled(f, rr(10), alpha(crate::skin::c().field, 190));
+                    p.rect_stroke(f, rr(10), Stroke::new(1.0_f32, alpha(ACCENT_SOFT(), 70)), egui::StrokeKind::Inside);
+                    ui.scope_builder(egui::UiBuilder::new().max_rect(f.shrink(10.0)), |ui| {
+                        egui::ScrollArea::vertical().id_salt("legal-read").auto_shrink([false, false]).show(ui, |ui| {
+                            ui.add(egui::Label::new(egui::RichText::new(terms.as_str()).font(FontId::new(12.5, family("ui-light"))).color(TEXT())).wrap());
+                        });
+                    });
+                    let cancel = Rect::from_min_size(Pos2::new(c.left() + 30.0, c.bottom() - 70.0), Vec2::new(170.0, 44.0));
+                    let okr = Rect::from_min_size(Pos2::new(c.right() - 30.0 - 170.0, c.bottom() - 70.0), Vec2::new(170.0, 44.0));
+                    if pill_button(ui, &p, okr, t("I approve"), true, "legal-ok") {
+                        archive::accept_legal(path, terms);
+                        approved = Some((path.clone(), password.clone()));
+                        next = Some(Overlay::None);
+                    }
+                    if pill_button(ui, &p, cancel, t("Cancel"), false, "legal-cancel") || card_close(ui, &p, c, "legal-x") {
+                        self.queue.clear();
                         next = Some(Overlay::None);
                     }
                 }
@@ -3255,6 +3305,9 @@ impl App {
         }
         if let Some((path, pw)) = open_with {
             self.open(path, Some(pw));
+        }
+        if let Some((path, pw)) = approved {
+            self.open(path, pw);
         }
     }
 
