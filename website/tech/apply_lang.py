@@ -2,7 +2,7 @@
 """Apply a per-language translation (tech/tr-<lang>.json: english_text -> translated marker)
 onto tech-body.html, writing tech-body.<lang>.html ."""
 import re, sys, json
-from lxml import etree
+from lxml import etree, html as lxml_html
 
 KINDS = ('h2','h3','h4','p','li','th','td','figcaption')
 
@@ -15,14 +15,25 @@ def inner_html(el):
     return ''.join(parts)
 
 def set_inner_html(el, html):
+    """Replace the element's children with a small HTML fragment.
+
+    The fragment is parsed by libxml2's *fragment* parser, not by wrapping it in
+    <x>…</x> and calling the document parser: that one always builds a full
+    <html><body> tree, so `<x>` landed inside a <body> and every translated
+    element came out as `<body><x>…</x></body>` (490 of them per language).
+    """
     for c in list(el):
         el.remove(c)
     el.text = None
-    if html:
-        frag = etree.fromstring('<x>' + html + '</x>', parser=etree.HTMLParser(recover=True))
-        el.text = frag.text
-        for c in list(frag):
-            el.append(c)
+    if not html:
+        return
+    nodes = lxml_html.fragments_fromstring(html, parser=etree.HTMLParser(recover=True))
+    if not nodes:
+        return
+    if isinstance(nodes[0], str):
+        el.text = nodes.pop(0)
+    for c in nodes:
+        el.append(c)
 
 def marker_to_html(m):
     m = m.replace('&','&amp;').replace('<','&lt;').replace('>','&gt;')

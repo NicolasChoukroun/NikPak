@@ -20,10 +20,11 @@
 use crate::archive::{self, Entry, Index, Pick, PROGRESS};
 use crate::error::NikError;
 use crate::gui::{
-    alpha, card, card_close, family, font_definitions, glow_text, gradient_panel, human, icon_button, lang_button,
-    lang_menu, lay, lay_fit, logo, open_link, pill_button, progress_arc, radial_glow, read_setting,
-    social_buttons, spaced, spaced_fit, text, text_fit, tip, wrapped, write_setting, arc_points, label_pos, Txt,
-    ACCENT, ACCENT_FG, ACCENT_SOFT, COPYRIGHT, WARN, hi, rad, rr, DISTRIBUTOR, ERR_RED, OK_GREEN, RADIUS, TEXT, TEXT_DIM, TRACK,
+    alpha, card, card_close, ease, family, font_definitions, glow_text, gradient_panel, human, human_secs, icon_button,
+    lang_button, lang_menu, lay, lay_fit, logo, open_link, pill_button, progress_arc, radial_glow, read_setting,
+    remaining_secs, social_buttons, spaced, spaced_fit, text, text_fit, tip, wrapped, write_setting, arc_points, label_pos,
+    Txt, ACCENT, ACCENT_FG, ACCENT_SOFT, COPYRIGHT, WARN, hi, rad, rr, DISTRIBUTOR, ERR_RED, OK_GREEN, RADIUS, TEXT, TEXT_DIM,
+    TRACK, WORK_REPAINT,
 };
 use crate::i18n::{self, t, tf};
 use crate::sfx::{self, Sfx};
@@ -548,6 +549,8 @@ enum Output {
     Temp { file: PathBuf, notepad: bool },
     Text { name: String, size: u64, data: Vec<u8>, more: bool },
     Tested,
+    /// a self-extracting archive unpacked itself into `dest`
+    SfxDone { dest: PathBuf, warnings: Vec<String> },
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -991,6 +994,19 @@ struct ExtractDlg {
     show: bool,
 }
 
+/// The Open Package box: a dropped `.nik` package (not an archive), shown with
+/// its cover, name, description and EULA before its password is asked for.
+struct PackageOpen {
+    path: PathBuf,
+    info: crate::package::PackageInfo,
+    password: String,
+    approved: bool,
+    dest: String,
+    error: Option<String>,
+    job: Option<JoinHandle<Result<(PathBuf, u64), String>>>,
+    done: Option<(PathBuf, u64)>,
+}
+
 enum Overlay {
     None,
     Password { path: PathBuf, password: String, error: Option<String> },
@@ -1002,6 +1018,14 @@ enum Overlay {
     Delete(Vec<usize>),
     Viewer(Box<Viewer>),
     Message { title: String, body: String, ok: bool },
+    /// **A Nikkosynth soundbank**, which is a `.nik` and not an archive: its readable
+    /// header (name, author, terms, cover, patch count) and a line saying where it
+    /// opens. See `soundbank.rs`. The path is kept so the cover can be cached the way
+    /// an archive's is.
+    Soundbank { path: PathBuf, info: Box<crate::soundbank::Info> },
+    /// A NikPak package (a `.nik` that is not an archive): its cover, name,
+    /// description, EULA and the password box. See `package.rs`.
+    Package(Box<PackageOpen>),
     About,
     /// NikPak is not next to unNik: explain that it is shareware and where to
     /// find it, with a button to open the website.
@@ -1028,6 +1052,8 @@ struct App {
     start: Instant,
     shown: f32,
     big: bool,
+    /// the zoom the window was last fitted to (Ctrl + / - change it)
+    zoom: f32,
     elevated: bool,
     search_focus: bool,
     viewer_find_focus: bool,
@@ -1044,6 +1070,65 @@ struct App {
     queue: VecDeque<PathBuf>,
     /// the cover of the archive on screen (or being opened), decoded once
     cover: Option<(PathBuf, Option<egui::TextureHandle>)>,
+    /// this program was started as a self-extracting .exe: show its box
+    sfx: Option<SfxBox>,
+}
+
+/// The window of a **self-extracting archive**: the small box that appears when
+/// someone double-clicks a `photos.exe` made by nikpak. `photos.exe` is unNik
+/// with the archive appended, so this program already has the unpacker in it:
+/// the box asks where to unpack and does it, with no installation and no
+/// NikPak on the machine.
+struct SfxBox {
+    /// the .exe itself (the archive lives inside it)
+    path: PathBuf,
+    /// the .exe's file name, shown as the title
+    name: String,
+    /// bytes of the archive, all volumes together
+    size: u64,
+    /// how many volumes the archive is made of (1 = all of it in the .exe)
+    volumes: u32,
+    encrypted: bool,
+    /// the legal statement, which has to be approved before extracting
+    legal: Option<String>,
+    approved: bool,
+    password: String,
+    dest: String,
+    error: Option<String>,
+    /// where the files went, once they are out
+    done: Option<PathBuf>,
+}
+
+impl SfxBox {
+    /// Read what the box needs from the executable (the header, no password).
+    fn load(path: PathBuf) -> SfxBox {
+        let name = path.file_name().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default();
+        let volume = crate::split::volume_count(&path);
+        let size = crate::split::Chain::open(&path).map(|c| c.total()).unwrap_or(0);
+        let legal = archive::legal_statement(&path).ok().flatten();
+        let dest = path
+            .parent()
+            .map(|d| d.to_path_buf())
+            .unwrap_or_default()
+            .join(path.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_else(|| "archive".into()));
+        let (encrypted, error) = match archive::peek(&path) {
+            Ok(e) => (e, None),
+            Err(e) => (false, Some(e.to_string())),
+        };
+        SfxBox {
+            path,
+            name,
+            size,
+            volumes: volume,
+            encrypted,
+            approved: legal.is_none(),
+            legal,
+            password: String::new(),
+            dest: dest.display().to_string(),
+            error,
+            done: None,
+        }
+    }
 }
 
 /// What the right-click menu asked unNik to do.
@@ -1062,7 +1147,7 @@ fn start_args(b: &Option<Browser>) -> Vec<String> {
 }
 
 impl App {
-    fn new(cc: &eframe::CreationContext<'_>, arg: Option<PathBuf>, quick: Option<(Quick, Vec<PathBuf>)>) -> Self {
+    fn new(cc: &eframe::CreationContext<'_>, arg: Option<PathBuf>, quick: Option<(Quick, Vec<PathBuf>)>, sfx: Option<PathBuf>) -> Self {
         install_fonts(&cc.egui_ctx);
         crate::skin::sync_style(&cc.egui_ctx);
         clean_temp();
@@ -1078,6 +1163,7 @@ impl App {
             start: Instant::now(),
             shown: 0.0,
             big: false,
+            zoom: 1.0,
             elevated: crate::gui::is_elevated() && std::env::var_os("NIKPAK_GUI_CAPTURE").is_none(),
             search_focus: false,
             viewer_find_focus: false,
@@ -1088,6 +1174,7 @@ impl App {
             quick: None,
             queue: VecDeque::new(),
             cover: None,
+            sfx: sfx.map(SfxBox::load),
         };
         if let Some((mode, archives)) = quick {
             app.quick = Some(mode);
@@ -1111,10 +1198,15 @@ impl App {
                 return tex.clone();
             }
         }
-        let tex = archive::cover_image(path)
-            .ok()
-            .flatten()
-            .and_then(|b| crate::gui::cover_texture(ctx, "unnik-cover", &b));
+        // A Nikkosynth soundbank has no archive header to read a cover from, so its own
+        // header is asked instead — the picture is plaintext there, which is why the
+        // card can show it before any password.
+        let pic = match archive::cover_image(path).ok().flatten() {
+            Some(b) => Some(b),
+            None => crate::soundbank::read_info(path).ok().and_then(|i| i.cover)
+                .or_else(|| crate::package::read_info(path).ok().and_then(|i| i.cover)),
+        };
+        let tex = pic.and_then(|b| crate::gui::cover_texture(ctx, "unnik-cover", &b));
         self.cover = Some((path.to_path_buf(), tex.clone()));
         tex
     }
@@ -1123,6 +1215,49 @@ impl App {
 
     fn open(&mut self, path: PathBuf, password: Option<String>) {
         if self.job.is_some() {
+            return;
+        }
+        // **Any volume of a split set opens the whole archive.** `photos.n01` is
+        // not an archive by itself (the bytes continue in the others), so the
+        // first volume is opened in its place: the set then behaves exactly like
+        // a one-file `.nik` - listing, viewing and extracting all read `photos.nik`
+        // and follow `.n01`, `.n02` … by themselves (split.rs).
+        let path = crate::split::first_volume(&path);
+        // **A Nikkosynth soundbank is a `.nik` too.** It is not an archive and there is
+        // nothing here to extract — its contents are encrypted on purpose — so it gets
+        // its own card with what the format does expose, instead of "not a .nik
+        // archive (bad signature)". (A player who just exported a bank is exactly the
+        // person who will try to open it here.)
+        if crate::soundbank::is_soundbank(&path) {
+            match crate::soundbank::read_info(&path) {
+                Ok(info) => {
+                    self.overlay = Overlay::Soundbank { path, info: Box::new(info) };
+                    sfx::play(Sfx::Pop);
+                }
+                Err(e) => self.fail(t("Cannot open the archive"), e.to_string()),
+            }
+            return;
+        }
+        // A NikPak package is a `.nik` too, and not an archive: its own box shows
+        // the cover, name, description and EULA before the password is asked for.
+        if crate::package::is_package(&path) {
+            match crate::package::read_info(&path) {
+                Ok(info) => {
+                    let approved = info.eula.is_none();
+                    self.overlay = Overlay::Package(Box::new(PackageOpen {
+                        path,
+                        info,
+                        password: String::new(),
+                        approved,
+                        dest: crate::gui::load_package_dest(),
+                        error: None,
+                        job: None,
+                        done: None,
+                    }));
+                    sfx::play(Sfx::Pop);
+                }
+                Err(e) => self.fail(t("Cannot open the package"), e.to_string()),
+            }
             return;
         }
         // **The legal statement comes first**, before the password and before any
@@ -1336,24 +1471,48 @@ impl App {
     }
 
     fn resize(&mut self, ctx: &egui::Context, big: bool) {
-        if self.big == big {
+        // **The zoom (Ctrl + / Ctrl - / Ctrl 0) resizes the window too.** The
+        // contents are drawn in points - the drop window is exactly 500 x 560
+        // of them - and the size asked for here is in points too: the backend
+        // turns points into pixels with `pixels_per_point`, which already
+        // holds the zoom. Asking again when the zoom changes is therefore what
+        // makes the window grow with it; otherwise only the drawing grew and
+        // the rest of the interface was cut off. `zoom` remembers the factor in
+        // force, so the re-fit happens even when the layout (big) did not move.
+        let base = if big { BIG } else { SMALL };
+        if !big {
+            // the drop window has a fixed layout: a zoom that cannot fit on
+            // this screen is capped, so every item stays visible
+            crate::gui::cap_zoom_to_screen(ctx, base);
+        }
+        let z = ctx.zoom_factor();
+        let layout_changed = self.big != big;
+        if !layout_changed && (self.zoom - z).abs() < 0.001 {
             return;
         }
         self.big = big;
-        let size = if big { BIG } else { SMALL };
+        self.zoom = z;
+        let size = base;
         let (outer, monitor) = ctx.input(|i| (i.viewport().outer_rect, i.viewport().monitor_size));
         ctx.send_viewport_cmd(egui::ViewportCommand::Maximized(false));
         ctx.send_viewport_cmd(egui::ViewportCommand::Resizable(big));
-        ctx.send_viewport_cmd(egui::ViewportCommand::MinInnerSize(if big { BIG_MIN } else { SMALL }));
         let size = match monitor {
             Some(m) if big => Vec2::new(size.x.min(m.x - 40.0), size.y.min(m.y - 60.0)),
             _ => size,
         };
+        // the browser's minimum must not be larger than the window finally
+        // asked for (at a big zoom on a small screen the clamp above wins)
+        let min = if big { Vec2::new(BIG_MIN.x.min(size.x), BIG_MIN.y.min(size.y)) } else { SMALL };
+        ctx.send_viewport_cmd(egui::ViewportCommand::MinInnerSize(min));
         ctx.send_viewport_cmd(egui::ViewportCommand::InnerSize(size));
-        if let Some(o) = outer {
-            let mut pos = o.center() - size / 2.0;
-            pos.y = pos.y.max(o.top().min(40.0).max(0.0));
-            ctx.send_viewport_cmd(egui::ViewportCommand::OuterPosition(pos.max(Pos2::ZERO)));
+        // a new layout (drop window <-> browser) keeps the window centred; a
+        // change of the zoom only makes it grow in place, from its corner
+        if layout_changed {
+            if let Some(o) = outer {
+                let mut pos = o.center() - size / 2.0;
+                pos.y = pos.y.max(o.top().min(40.0).max(0.0));
+                ctx.send_viewport_cmd(egui::ViewportCommand::OuterPosition(pos.max(Pos2::ZERO)));
+            }
         }
     }
 
@@ -1373,6 +1532,8 @@ impl App {
             Ok(Output::Temp { .. }) => None,
             Ok(Output::Text { .. }) => Some(Sfx::Pop),
             Ok(Output::Tested) => Some(Sfx::Success),
+            Ok(Output::SfxDone { warnings, .. }) if warnings.is_empty() => Some(Sfx::Success),
+            Ok(Output::SfxDone { .. }) => Some(Sfx::Error),
             Err(_) if cancelled => Some(Sfx::Cancel),
             Err(_) => Some(Sfx::Error),
         };
@@ -1435,6 +1596,21 @@ impl App {
                         body.push_str(&format!("\n… (+{})", warnings.len() - 8));
                     }
                     self.overlay = Overlay::Message { title: t("Extracted, with warnings").into(), body, ok: false };
+                }
+            }
+            Ok(Output::SfxDone { dest, warnings }) => {
+                if let Some(s) = &mut self.sfx {
+                    if warnings.is_empty() {
+                        s.done = Some(dest.clone());
+                        s.error = None;
+                        open_folder(&dest);
+                    } else {
+                        let mut body = warnings.iter().take(8).cloned().collect::<Vec<_>>().join("\n");
+                        if warnings.len() > 8 {
+                            body.push_str(&format!("\n… (+{})", warnings.len() - 8));
+                        }
+                        self.overlay = Overlay::Message { title: t("Extracted, with warnings").into(), body, ok: false };
+                    }
                 }
             }
             Ok(Output::Temp { file, notepad }) => {
@@ -1856,6 +2032,10 @@ impl eframe::App for App {
 
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         self.poll(ctx);
+        // Ctrl + / Ctrl - / Ctrl 0 change the zoom: the window follows it (see
+        // resize). It returns at once when neither the layout nor the zoom moved.
+        let big = self.big;
+        self.resize(ctx, big);
         crate::gui::follow_language(ctx);
         crate::skin::sync_style(ctx);
         let parent: &eframe::Frame = frame;
@@ -1868,7 +2048,9 @@ impl eframe::App for App {
         }
         self.was_hover = files_over;
         if let Some(first) = dropped.first() {
-            if self.job.is_none() && matches!(self.overlay, Overlay::None | Overlay::Message { .. }) {
+            // a self-extracting archive's box does one thing: it is not a
+            // place to drop other archives on
+            if self.sfx.is_none() && self.job.is_none() && matches!(self.overlay, Overlay::None | Overlay::Message { .. }) {
                 let nik = dropped.iter().find(|p| p.extension().is_some_and(|e| e.eq_ignore_ascii_case("nik"))).cloned();
                 match nik.or_else(|| archive::peek(first).ok().map(|_| first.clone())) {
                     Some(p) => {
@@ -1891,6 +2073,8 @@ impl eframe::App for App {
             panel_rect = panel;
             if self.browsing() {
                 self.draw_browser(ui, ctx, panel, maximized, &mut acts);
+            } else if self.sfx.is_some() {
+                self.draw_sfx(ui, ctx, panel);
             } else {
                 self.draw_idle(ui, ctx, panel, parent, &mut acts);
             }
@@ -1908,7 +2092,9 @@ impl eframe::App for App {
         }
         self.run(ctx, parent, acts);
         if self.job.is_some() {
-            ctx.request_repaint_after(Duration::from_millis(16));
+            // opening, extracting or testing: one picture a second, so the work
+            // gets the CPU (see gui::WORK_REPAINT)
+            ctx.request_repaint_after(WORK_REPAINT);
         } else {
             ctx.request_repaint_after(Duration::from_millis(if self.browsing() { 250 } else { 33 }));
         }
@@ -2153,14 +2339,22 @@ impl App {
             let total = PROGRESS.total.load(Relaxed).max(1);
             let done = PROGRESS.done.load(Relaxed).min(total);
             let target = (done as f32 / total as f32 * 99.0).min(99.0);
-            self.shown += (target - self.shown) * 0.18;
+            ease(&mut self.shown, target, ctx.input(|i| i.unstable_dt));
             p.circle_stroke(ring_c, r, Stroke::new(9.0_f32, TRACK()));
             progress_arc(&p, ring_c, r, self.shown / 100.0, ACCENT());
             big_percent(&p, ring_c, self.shown);
             let verb = if job.work == Work::Extract { t("EXTRACTING") } else { t("OPENING") };
             glow_text(&p, Pos2::new(ring_c.x, status_y), verb, FontId::new(12.0, family("ui")), ACCENT_SOFT(), alpha(ACCENT(), 5), 3.0);
             text_fit(&p, Pos2::new(ring_c.x, status_y + 21.0), Align2::CENTER_CENTER, &job.label, FontId::new(14.0, family("ui-light")), TEXT(), panel.width() - 60.0);
-            text(&p, Pos2::new(ring_c.x, status_y + 39.0), Align2::CENTER_CENTER, format!("{}  ·  {:.0} s", tf("{} of {}", &[&human(done), &human(total)]), job.started.elapsed().as_secs_f32()), FontId::new(12.0, family("ui-light")), TEXT_DIM());
+            // bytes done, elapsed, and - once there is progress to extrapolate
+            // from - the time left to finish
+            let secs = job.started.elapsed().as_secs_f32();
+            let status = if done > 0 && total > done {
+                format!("{}  ·  {:.0} s  ·  {}", tf("{} of {}", &[&human(done), &human(total)]), secs, tf("{} left", &[&human_secs(remaining_secs(done, total, secs))]))
+            } else {
+                format!("{}  ·  {:.0} s", tf("{} of {}", &[&human(done), &human(total)]), secs)
+            };
+            text(&p, Pos2::new(ring_c.x, status_y + 39.0), Align2::CENTER_CENTER, status, FontId::new(12.0, family("ui-light")), TEXT_DIM());
             let cancel = Rect::from_center_size(Pos2::new(ring_c.x, status_y + 68.0), Vec2::new(140.0, 32.0));
             if !PROGRESS.cancel.load(Relaxed) && (pill_button(ui, &p, cancel, t("Cancel"), false, "cancel-open") || ui.input(|i| i.key_pressed(egui::Key::Escape))) {
                 sfx::play(Sfx::Cancel);
@@ -2271,6 +2465,203 @@ impl App {
             self.lang_open = !self.lang_open;
         }
     }
+}
+
+// ---------------------------------------------------------------------------
+// The self-extracting archive's window
+// ---------------------------------------------------------------------------
+
+impl App {
+    /// Unpack everything from the archive inside this .exe.
+    fn sfx_extract(&mut self) {
+        let Some(s) = &self.sfx else { return };
+        if self.job.is_some() || !s.approved || s.dest.trim().is_empty() {
+            return;
+        }
+        let dest = PathBuf::from(s.dest.trim());
+        let mut o = archive::gui_options(&s.path, Some(&s.password));
+        o.command = crate::cli::Command::ExtractFull;
+        o.dest = Some(dest.clone());
+        o.overwrite = match read_setting("unnik_exists").as_deref() {
+            Some("overwrite") => crate::cli::Overwrite::All,
+            Some("skip") => crate::cli::Overwrite::Skip,
+            _ => crate::cli::Overwrite::Rename,
+        };
+        let label = s.name.clone();
+        self.set_job(spawn(Work::Extract, label, move || {
+            archive::extract(&o).map(|_| Output::SfxDone {
+                dest,
+                warnings: archive::WARNINGS.lock().map(|w| w.clone()).unwrap_or_default(),
+            })
+        }));
+    }
+
+    /// The 500 x 560 box of a self-extracting archive: what it is, where the
+    /// files should go, its password, its terms, and one Extract button.
+    fn draw_sfx(&mut self, ui: &mut egui::Ui, ctx: &egui::Context, panel: Rect) {
+        let p = ui.painter().clone();
+        crate::skin::paint_background(ui.ctx(), &p, panel, rad(RADIUS));
+        radial_glow(&p, Pos2::new(panel.center().x, panel.top() + 300.0), 210.0, alpha(ACCENT(), 30));
+        p.rect_stroke(panel, rr(RADIUS as u8), Stroke::new(1.0_f32, alpha(ACCENT_SOFT(), 46)), egui::StrokeKind::Inside);
+
+        // ---- title bar ------------------------------------------------------
+        let bar = Rect::from_min_size(panel.min, Vec2::new(panel.width(), 110.0));
+        let drag = ui.interact(bar, egui::Id::new("titlebar"), Sense::click_and_drag());
+        if drag.drag_started() {
+            ctx.send_viewport_cmd(egui::ViewportCommand::StartDrag);
+        }
+        let close = Rect::from_center_size(Pos2::new(panel.right() - 26.0, panel.top() + 26.0), Vec2::splat(26.0));
+        if crate::gui::window_buttons(ui, &p, ctx, close, "About unNik") && matches!(self.overlay, Overlay::None) {
+            self.overlay = Overlay::About;
+            sfx::play(Sfx::Pop);
+        }
+        let g = spaced_fit(&p, t("SELF-EXTRACTING ARCHIVE"), FontId::new(9.5, family("ui")), ACCENT_SOFT(), 1.2, 300.0);
+        g.paint(&p, label_pos(&g, Pos2::new(panel.left() + 22.0, panel.top() + 19.0)), ACCENT_SOFT());
+
+        let (name, size, volumes, encrypted, busy) = match &self.sfx {
+            Some(s) => (s.name.clone(), s.size, s.volumes, s.encrypted, self.job.is_some()),
+            None => return,
+        };
+        // for the time-to-completion estimate while it unpacks (the job's clock)
+        let elapsed = self.job.as_ref().map(|j| j.started.elapsed().as_secs_f32()).unwrap_or(0.0);
+        logo(&p, Pos2::new(panel.center().x, panel.top() + 56.0), &name, 26.0);
+        let sub = if volumes > 1 {
+            format!("{}  ·  {} {}", human(size), volumes, t("volumes"))
+        } else {
+            human(size)
+        };
+        text_fit(&p, Pos2::new(panel.center().x, panel.top() + 86.0), Align2::CENTER_CENTER, sub, FontId::new(12.0, family("ui-light")), TEXT_DIM(), panel.width() - 40.0);
+
+        let cx = panel.center().x;
+        let mut act_extract = false;
+        let mut act_browse = false;
+        let mut act_open = false;
+        {
+            let Some(s) = self.sfx.as_mut() else { return };
+            let done = s.done.clone();
+            let approved = s.approved;
+            let terms = if approved { None } else { s.legal.clone() };
+            // ---- where to -----------------------------------------------------
+            let cap_y = panel.top() + 118.0;
+            small_label(&p, Pos2::new(panel.left() + 28.0, cap_y), t("EXTRACT TO"));
+            let f = Rect::from_min_max(Pos2::new(panel.left() + 24.0, cap_y + 18.0), Pos2::new(panel.right() - 140.0, cap_y + 54.0));
+            let browse = Rect::from_min_max(Pos2::new(panel.right() - 130.0, cap_y + 18.0), Pos2::new(panel.right() - 24.0, cap_y + 54.0));
+            field(ui, &p, f, &mut s.dest, "Destination folder", "sfx-dest", false);
+            let b = ui.interact(browse, egui::Id::new("sfx-browse"), Sense::click()).on_hover_cursor(egui::CursorIcon::PointingHand);
+            let on = b.hovered() && !busy && done.is_none();
+            p.rect_filled(browse, rr(10), alpha(ACCENT(), if on { 70 } else { 34 }));
+            p.rect_stroke(browse, rr(10), Stroke::new(1.0_f32, alpha(ACCENT_SOFT(), 120)), egui::StrokeKind::Inside);
+            text_fit(&p, browse.center(), Align2::CENTER_CENTER, t("Browse"), FontId::new(13.0, family("ui")), if on { TEXT() } else { TEXT_DIM() }, browse.width() - 10.0);
+            if b.clicked() && !busy {
+                act_browse = true;
+            }
+            // ---- the password -------------------------------------------------
+            let mut y = cap_y + 66.0;
+            if encrypted {
+                small_label(&p, Pos2::new(panel.left() + 28.0, y), t("PASSWORD"));
+                let pf = Rect::from_min_max(Pos2::new(panel.left() + 24.0, y + 18.0), Pos2::new(panel.right() - 24.0, y + 54.0));
+                field(ui, &p, pf, &mut s.password, "Password", "sfx-password", true);
+                y += 66.0;
+            }
+            // ---- the terms ----------------------------------------------------
+            // Shown instead of the Extract button: nothing is unpacked until
+            // they are approved. The box fills the room that is left, so a
+            // password field above it cannot push it into the buttons.
+            let terms_ok = terms.is_none();
+            if let Some(text) = &terms {
+                small_label(&p, Pos2::new(panel.left() + 28.0, y), t("TERMS"));
+                let tf = Rect::from_min_max(
+                    Pos2::new(panel.left() + 24.0, y + 18.0),
+                    Pos2::new(panel.right() - 24.0, panel.bottom() - 124.0),
+                );
+                p.rect_filled(tf, rr(10), alpha(crate::skin::c().field, 190));
+                p.rect_stroke(tf, rr(10), Stroke::new(1.0_f32, alpha(ACCENT_SOFT(), 70)), egui::StrokeKind::Inside);
+                ui.scope_builder(egui::UiBuilder::new().max_rect(tf.shrink(6.0)), |ui| {
+                    egui::ScrollArea::vertical().id_salt("sfx-terms").auto_shrink([false, false]).show(ui, |ui| {
+                        ui.add(egui::Label::new(egui::RichText::new(text).font(FontId::new(12.0, family("ui-light"))).color(TEXT())).wrap());
+                    });
+                });
+                let ok = Rect::from_center_size(Pos2::new(cx, panel.bottom() - 62.0), Vec2::new(220.0, 44.0));
+                if pill_button(ui, &p, ok, t("I approve"), true, "sfx-approve") {
+                    sfx::play(Sfx::Click);
+                    s.approved = true;
+                }
+            }
+            // ---- progress, done, or the Extract button -------------------------
+            if let Some(dest) = done.filter(|_| terms_ok) {
+                let c = Pos2::new(cx, panel.top() + 330.0);
+                p.circle_stroke(c, 40.0, Stroke::new(3.0_f32, OK_GREEN()));
+                p.add(PathShape::line(
+                    vec![c + Vec2::new(-18.0, 0.0), c + Vec2::new(-5.0, 13.0), c + Vec2::new(19.0, -14.0)],
+                    Stroke::new(3.0_f32, OK_GREEN()),
+                ));
+                glow_text(&p, Pos2::new(cx, panel.top() + 396.0), t("DONE"), FontId::new(12.0, family("ui")), OK_GREEN(), alpha(OK_GREEN(), 5), 3.0);
+                text_fit(&p, Pos2::new(cx, panel.top() + 418.0), Align2::CENTER_CENTER, dest.display().to_string(), FontId::new(12.0, family("ui-light")), TEXT_DIM(), panel.width() - 40.0);
+                let open = Rect::from_center_size(Pos2::new(cx, panel.top() + 462.0), Vec2::new(170.0, 40.0));
+                if pill_button(ui, &p, open, t("Open folder"), true, "sfx-open") {
+                    act_open = true;
+                }
+            } else if busy {
+                let c = Pos2::new(cx, panel.top() + 320.0);
+                let total = PROGRESS.total.load(Relaxed).max(1);
+                let done = PROGRESS.done.load(Relaxed).min(total);
+                let target = (done as f32 / total as f32 * 99.0).min(99.0);
+                ease(&mut self.shown, target, ctx.input(|i| i.unstable_dt));
+                p.circle_stroke(c, 62.0, Stroke::new(8.0_f32, TRACK()));
+                progress_arc(&p, c, 62.0, self.shown / 100.0, ACCENT());
+                big_percent_small(&p, c, self.shown);
+                glow_text(&p, Pos2::new(cx, panel.top() + 408.0), t("EXTRACTING"), FontId::new(12.0, family("ui")), ACCENT_SOFT(), alpha(ACCENT(), 5), 3.0);
+                if done > 0 && total > done {
+                    text(&p, Pos2::new(cx, panel.top() + 432.0), Align2::CENTER_CENTER, tf("{} left", &[&human_secs(remaining_secs(done, total, elapsed))]), FontId::new(12.0, family("ui-light")), TEXT_DIM());
+                }
+                let cancel = Rect::from_center_size(Pos2::new(cx, panel.top() + 462.0), Vec2::new(140.0, 36.0));
+                if pill_button(ui, &p, cancel, t("Cancel"), false, "sfx-cancel") {
+                    sfx::play(Sfx::Cancel);
+                    PROGRESS.cancel.store(true, Relaxed);
+                }
+            } else if terms_ok {
+                let go = Rect::from_center_size(Pos2::new(cx, panel.top() + 322.0), Vec2::new(240.0, 52.0));
+                let ready = !s.dest.trim().is_empty() && (!encrypted || !s.password.is_empty());
+                if pill_button(ui, &p, go, t("Extract"), ready, "sfx-go") && ready {
+                    act_extract = true;
+                }
+                if let Some(e) = &s.error {
+                    let short: String = e.lines().next().unwrap_or("").chars().take(80).collect();
+                    text_fit(&p, Pos2::new(cx, panel.top() + 372.0), Align2::CENTER_CENTER, short, FontId::new(12.0, family("ui-light")), ERR_RED(), panel.width() - 40.0);
+                }
+                if encrypted && s.password.is_empty() {
+                    text_fit(&p, Pos2::new(cx, panel.top() + 396.0), Align2::CENTER_CENTER, t("This archive is encrypted: type its password."), FontId::new(11.5, family("ui-light")), TEXT_DIM(), panel.width() - 40.0);
+                }
+            }
+        }
+        if act_browse {
+            if let Some(dir) = rfd::FileDialog::new().set_title(t("Where should the files be extracted?")).pick_folder() {
+                if let Some(s) = self.sfx.as_mut() {
+                    s.dest = dir.display().to_string();
+                }
+            }
+        }
+        if act_open {
+            if let Some(dest) = self.sfx.as_ref().and_then(|s| s.done.clone()) {
+                open_folder(&dest);
+            }
+        }
+        if act_extract {
+            sfx::play(Sfx::Start);
+            self.sfx_extract();
+        }
+    }
+}
+
+/// The percentage in the middle of the small ring.
+fn big_percent_small(p: &egui::Painter, c: Pos2, shown: f32) {
+    let num = p.layout_no_wrap(format!("{}", shown.round() as u32), FontId::new(38.0, family("display-light")), TEXT());
+    let sign = p.layout_no_wrap("%".into(), FontId::new(14.0, family("display")), TEXT());
+    let wsum = num.size().x + 2.0 + sign.size().x;
+    let npos = Pos2::new(c.x - wsum / 2.0, c.y - num.size().y / 2.0 - 1.0);
+    let spos = Pos2::new(npos.x + num.size().x + 2.0, npos.y + num.size().y * 0.80 - sign.size().y);
+    p.galley(npos, num, TEXT());
+    p.galley(spos, sign, TEXT());
 }
 
 fn big_percent(p: &egui::Painter, c: Pos2, shown: f32) {
@@ -3085,6 +3476,9 @@ impl App {
         let mut approved: Option<(PathBuf, Option<String>)> = None;
         let cover_path = match &self.overlay {
             Overlay::Legal { path, .. } | Overlay::Password { path, .. } => Some(path.clone()),
+            // The soundbank card shows the bank's own cover, cached like an archive's.
+            Overlay::Soundbank { path, .. } => Some(path.clone()),
+            Overlay::Package(pkg) => Some(pkg.path.clone()),
             Overlay::Cover => self.browser.as_ref().map(|b| b.path.clone()),
             _ => None,
         };
@@ -3125,6 +3519,175 @@ impl App {
                     }
                     if pill_button(ui, &p, ok, t("Close"), true, "about-close") || card_close(ui, &p, c, "about-x") {
                         next = Some(Overlay::None);
+                    }
+                }
+                Overlay::Soundbank { info, .. } => {
+                    // A card, not an error: the file is a `.nik`, it is just not an
+                    // archive. It shows what the bank's header exposes without its
+                    // password — the name, the author, the terms, the cover and how
+                    // many sounds are inside — and says where it opens.
+                    let tw = 380.0;
+                    let cover_side = if cover_tex.is_some() { 150.0 } else { 0.0 };
+                    let desc = if info.description.trim().is_empty() {
+                        String::new()
+                    } else {
+                        info.description.trim().to_string()
+                    };
+                    let dh = crate::gui::wrapped_height(&p, tw, &desc, 12.5).min(90.0);
+                    let legal_h = if info.legal.is_some() { 26.0 } else { 0.0 };
+                    let h = 300.0 + cover_side + dh + legal_h;
+                    let c = Rect::from_center_size(panel.center(), Vec2::new(460.0, h.min(panel.height() - 24.0)));
+                    card(&p, c);
+                    glow_text(&p, Pos2::new(cx, c.top() + 30.0), t("NIKKOSYNTH SOUNDBANK"), FontId::new(11.0, family("ui")), ACCENT_SOFT(), alpha(ACCENT(), 5), 3.0);
+                    let mut y = c.top() + 52.0;
+                    if let Some(tex) = &cover_tex {
+                        let r = Rect::from_min_size(Pos2::new(cx - cover_side / 2.0, y), Vec2::splat(cover_side));
+                        crate::gui::paint_cover(&p, r, Some(tex), "");
+                        y += cover_side + 12.0;
+                    }
+                    text_fit(&p, Pos2::new(cx, y + 8.0), Align2::CENTER_CENTER, info.name.as_str(), FontId::new(21.0, family("display")), TEXT(), c.width() - 44.0);
+                    y += 30.0;
+                    if !info.author.trim().is_empty() {
+                        text_fit(&p, Pos2::new(cx, y + 6.0), Align2::CENTER_CENTER, &tf("by {}", &[info.author.trim()]), FontId::new(13.0, family("ui-light")), TEXT_DIM(), c.width() - 44.0);
+                        y += 20.0;
+                    }
+                    let count_line = if info.count == 1 {
+                        tf("{} patch", &[&info.count.to_string()])
+                    } else {
+                        tf("{} patches", &[&info.count.to_string()])
+                    };
+                    text(&p, Pos2::new(cx, y + 6.0), Align2::CENTER_CENTER, &count_line, FontId::new(13.0, family("ui")), OK_GREEN());
+                    y += 24.0;
+                    if !desc.is_empty() {
+                        y += wrapped(&p, Pos2::new(c.left() + 30.0, y), tw, &desc, 12.5, TEXT_DIM());
+                    }
+                    if info.legal.is_some() {
+                        text(&p, Pos2::new(cx, y + 8.0), Align2::CENTER_CENTER, t("It carries a legal statement, shown when it is imported."), FontId::new(12.0, family("ui-light")), TEXT_DIM());
+                        y += legal_h;
+                    }
+                    // **What it is, in one sentence** — the whole point of the card.
+                    let note = t("This is a Nikkosynth soundbank, not a NikPak archive: its sounds are encrypted and it is imported from inside Nikkosynth.");
+                    wrapped(&p, Pos2::new(c.left() + 30.0, y + 2.0), tw, note, 12.5, TEXT());
+                    let b = Rect::from_center_size(Pos2::new(cx, c.bottom() - 42.0), Vec2::new(160.0, 42.0));
+                    if pill_button(ui, &p, b, t("Close"), true, "sb-close") || card_close(ui, &p, c, "sb-x")
+                        || ui.input(|i| i.key_pressed(egui::Key::Enter) || i.key_pressed(egui::Key::Escape))
+                    {
+                        next = Some(Overlay::None);
+                    }
+                }
+                Overlay::Package(pkg) => {
+                    let c = Rect::from_center_size(panel.center(), Vec2::new(470.0, (panel.height() - 24.0).min(540.0)));
+                    card(&p, c);
+                    glow_text(&p, Pos2::new(cx, c.top() + 30.0), t("OPEN PACKAGE"), FontId::new(11.0, family("ui")), ACCENT_SOFT(), alpha(ACCENT(), 5), 3.0);
+                    if let Some((dest, n)) = pkg.done.clone() {
+                        p.circle_stroke(Pos2::new(cx, c.top() + 90.0), 26.0, Stroke::new(3.0_f32, OK_GREEN()));
+                        p.add(PathShape::line(
+                            vec![Pos2::new(cx - 11.0, c.top() + 90.0), Pos2::new(cx - 3.0, c.top() + 98.0), Pos2::new(cx + 12.0, c.top() + 81.0)],
+                            Stroke::new(3.0_f32, OK_GREEN()),
+                        ));
+                        let msg = if n == 1 { tf("{} file extracted to {}", &[&n.to_string(), &dest.display().to_string()]) } else { tf("{} files extracted to {}", &[&n.to_string(), &dest.display().to_string()]) };
+                        wrapped(&p, Pos2::new(c.left() + 30.0, c.top() + 140.0), c.width() - 60.0, &msg, 14.0, TEXT());
+                        let folder = Rect::from_min_size(Pos2::new(c.left() + 30.0, c.bottom() - 70.0), Vec2::new(180.0, 44.0));
+                        let ok = Rect::from_min_size(Pos2::new(c.right() - 30.0 - 180.0, c.bottom() - 70.0), Vec2::new(180.0, 44.0));
+                        if pill_button(ui, &p, ok, t("Open folder"), true, "pkgopen-folder") {
+                            open_folder(&dest);
+                        }
+                        if pill_button(ui, &p, folder, t("Close"), false, "pkgopen-close2") {
+                            next = Some(Overlay::None);
+                        }
+                    } else {
+                        let body = Rect::from_min_max(Pos2::new(c.left() + 20.0, c.top() + 66.0), Pos2::new(c.right() - 20.0, c.bottom() - 74.0));
+                        let mut picked: Option<PathBuf> = None;
+                        ui.scope_builder(egui::UiBuilder::new().max_rect(body), |ui| {
+                            egui::ScrollArea::vertical().id_salt("pkgopen-scroll").auto_shrink([false, false]).show(ui, |ui| {
+                                ui.set_width(body.width());
+                                ui.vertical_centered(|ui| {
+                                    if let Some(tex) = &cover_tex {
+                                        let side = 104.0;
+                                        let (rect, _) = ui.allocate_exact_size(Vec2::splat(side), Sense::hover());
+                                        let up = ui.painter().clone();
+                                        crate::gui::paint_cover(&up, rect, Some(tex), "");
+                                        ui.add_space(8.0);
+                                    }
+                                    ui.label(egui::RichText::new(pkg.info.name.as_str()).font(FontId::new(22.0, family("display"))).color(TEXT()));
+                                    if !pkg.info.author.trim().is_empty() {
+                                        ui.label(egui::RichText::new(tf("by {}", &[pkg.info.author.trim()])).font(FontId::new(13.0, family("ui-light"))).color(TEXT_DIM()));
+                                    }
+                                    ui.label(egui::RichText::new(tf("{} files", &[&pkg.info.count.to_string()])).font(FontId::new(13.0, family("ui"))).color(OK_GREEN()));
+                                });
+                                if !pkg.info.description.trim().is_empty() {
+                                    ui.add_space(6.0);
+                                    ui.label(egui::RichText::new(pkg.info.description.trim()).font(FontId::new(12.5, family("ui-light"))).color(TEXT_DIM()));
+                                }
+                                if let Some(terms) = pkg.info.eula.clone() {
+                                    ui.add_space(6.0);
+                                    ui.label(egui::RichText::new(t("EULA")).font(FontId::new(10.0, family("ui"))).color(TEXT_DIM()).strong());
+                                    egui::Frame::group(ui.style()).inner_margin(egui::Margin::symmetric(8, 6)).show(ui, |ui| {
+                                        egui::ScrollArea::vertical().id_salt("pkg-terms-read").max_height(110.0).auto_shrink([false, false]).show(ui, |ui| {
+                                            ui.add(egui::Label::new(egui::RichText::new(terms.as_str()).font(FontId::new(12.5, family("ui-light"))).color(TEXT())).wrap());
+                                        });
+                                    });
+                                    ui.add_space(4.0);
+                                    ui.label(egui::RichText::new(t("This package comes with a EULA. Read it, then click I approve to extract it.")).font(FontId::new(11.5, family("ui-light"))).color(TEXT_DIM()));
+                                    let label = if pkg.approved { t("✓ Approved") } else { t("I approve") };
+                                    if ui.add(egui::Button::new(label).min_size(Vec2::new(120.0, 30.0))).clicked() {
+                                        pkg.approved = !pkg.approved;
+                                        sfx::play(Sfx::Click);
+                                    }
+                                }
+                                ui.add_space(8.0);
+                                ui.label(egui::RichText::new(t("PASSWORD")).font(FontId::new(10.0, family("ui"))).color(TEXT_DIM()).strong());
+                                ui.add(egui::TextEdit::singleline(&mut pkg.password).password(true).font(FontId::new(13.0, family("ui-light"))).desired_width(f32::INFINITY).hint_text(t("Password")));
+                                ui.add_space(6.0);
+                                ui.label(egui::RichText::new(t("DESTINATION FOLDER")).font(FontId::new(10.0, family("ui"))).color(TEXT_DIM()).strong());
+                                ui.horizontal(|ui| {
+                                    ui.add(egui::TextEdit::singleline(&mut pkg.dest).font(FontId::new(13.0, family("ui-light"))).desired_width(300.0).hint_text(t("Where the files are extracted")));
+                                    if ui.button(t("Browse")).clicked() {
+                                        picked = rfd::FileDialog::new().set_title(t("Where should the files be extracted?")).pick_folder();
+                                    }
+                                });
+                            });
+                        });
+                        if let Some(dir) = picked {
+                            pkg.dest = dir.display().to_string();
+                        }
+                        if pkg.job.as_ref().is_some_and(|j| j.is_finished()) {
+                            let job = pkg.job.take().unwrap();
+                            match job.join() {
+                                Ok(Ok((dest, n))) => {
+                                    sfx::play(Sfx::Success);
+                                    pkg.done = Some((dest, n));
+                                    pkg.error = None;
+                                }
+                                Ok(Err(e)) => pkg.error = Some(e),
+                                Err(_) => pkg.error = Some(t("Internal error while extracting.").to_string()),
+                            }
+                        }
+                        if let Some(e) = pkg.error.as_ref() {
+                            let er = Rect::from_min_size(Pos2::new(c.left() + 20.0, c.bottom() - 70.0), Vec2::new(c.width() - 40.0, 16.0));
+                            text_fit(&p, er.center(), Align2::CENTER_CENTER, e.as_str(), FontId::new(11.5, family("ui-light")), ERR_RED(), er.width());
+                        }
+                        let busy = pkg.job.is_some();
+                        let cancel = Rect::from_min_size(Pos2::new(c.left() + 20.0, c.bottom() - 62.0), Vec2::new(200.0, 44.0));
+                        let go = Rect::from_min_size(Pos2::new(c.right() - 20.0 - 200.0, c.bottom() - 62.0), Vec2::new(200.0, 44.0));
+                        if pill_button(ui, &p, cancel, t("Cancel"), false, "pkgopen-cancel") || card_close(ui, &p, c, "pkgopen-x") {
+                            next = Some(Overlay::None);
+                        }
+                        let can_go = !busy && pkg.approved && !pkg.password.is_empty() && !pkg.dest.trim().is_empty();
+                        if pill_button(ui, &p, go, t("Extract"), true, "pkgopen-go") && can_go {
+                            crate::gui::save_package_dest(&pkg.dest);
+                            let path = pkg.path.clone();
+                            let password = pkg.password.clone();
+                            let approved = pkg.info.eula.clone();
+                            let dest = PathBuf::from(pkg.dest.trim());
+                            let handle = std::thread::spawn(move || {
+                                let n = crate::package::extract(&path, &password, approved.as_deref(), &dest).map_err(|e| e.to_string())?;
+                                Ok((dest, n))
+                            });
+                            pkg.job = Some(handle);
+                            pkg.error = None;
+                            sfx::play(Sfx::Start);
+                        }
                     }
                 }
                 Overlay::Message { title, body, ok } => {
@@ -3398,7 +3961,7 @@ impl App {
         let total = PROGRESS.total.load(Relaxed).max(1);
         let done = PROGRESS.done.load(Relaxed).min(total);
         let target = (done as f32 / total as f32 * 99.0).min(99.0);
-        self.shown += (target - self.shown) * 0.2;
+        ease(&mut self.shown, target, ctx.input(|i| i.unstable_dt));
         let shown = self.shown;
         let label = job.label.clone();
         let work = job.work;
@@ -3426,7 +3989,12 @@ impl App {
             };
             glow_text(&p, Pos2::new(c.center().x, c.top() + 186.0), verb, FontId::new(12.0, family("ui")), ACCENT_SOFT(), alpha(ACCENT(), 5), 3.0);
             text_fit(&p, Pos2::new(c.center().x, c.top() + 208.0), Align2::CENTER_CENTER, &label, FontId::new(14.0, family("ui-light")), TEXT(), c.width() - 40.0);
-            text(&p, Pos2::new(c.center().x, c.top() + 228.0), Align2::CENTER_CENTER, format!("{}  ·  {:.0} s", tf("{} of {}", &[&human(done), &human(total)]), secs), FontId::new(12.0, family("ui-light")), TEXT_DIM());
+            let status = if done > 0 && total > done {
+                format!("{}  ·  {:.0} s  ·  {}", tf("{} of {}", &[&human(done), &human(total)]), secs, tf("{} left", &[&human_secs(remaining_secs(done, total, secs))]))
+            } else {
+                format!("{}  ·  {:.0} s", tf("{} of {}", &[&human(done), &human(total)]), secs)
+            };
+            text(&p, Pos2::new(c.center().x, c.top() + 228.0), Align2::CENTER_CENTER, status, FontId::new(12.0, family("ui-light")), TEXT_DIM());
             let cancel = Rect::from_center_size(Pos2::new(c.center().x, c.bottom() - 44.0), Vec2::new(150.0, 38.0));
             if !PROGRESS.cancel.load(Relaxed) && (pill_button(ui, &p, cancel, t("Cancel"), false, "busy-cancel") || ui.input(|i| i.key_pressed(egui::Key::Escape))) {
                 sfx::play(Sfx::Cancel);
@@ -3706,6 +4274,13 @@ fn relaunch_unelevated() -> bool {
 
 /// Open the window; `archive` is opened at once (unNik archive.nik).
 pub fn run(archive: Option<PathBuf>) -> Result<(), String> {
+    // **A self-extracting archive is this program with an archive appended**:
+    // started as `photos.exe` it shows the small extract box instead of the
+    // drop window (split.rs, `self_embedded`).
+    if archive.is_none() && std::env::var_os("NIKPAK_GUI_NO_SFX").is_none() && crate::split::self_embedded().is_some() {
+        let exe = std::env::current_exe().map_err(|e| e.to_string())?;
+        return run_window(None, None, Some(exe));
+    }
     // NIKPAK_GUI_CAPTURE: the window is being photographed (tools\site-shots.ps1).
     // It then stays elevated instead of restarting through Explorer, so the shell
     // that started it - often an administrator one - owns the window.
@@ -3713,7 +4288,7 @@ pub fn run(archive: Option<PathBuf>) -> Result<(), String> {
     if archive.is_none() && std::env::var_os("NIKPAK_GUI_CAPTURE").is_none() && relaunch_unelevated() {
         return Ok(());
     }
-    run_window(archive, None)
+    run_window(archive, None, None)
 }
 
 /// `unNik --extract / --extract-here / --extract-to <archives>` (right-click menu).
@@ -3738,7 +4313,7 @@ pub fn run_quick(mode: Quick, archives: Vec<PathBuf>) -> Result<(), String> {
             }
         }
     }
-    run_window(None, Some((mode, archives)))
+    run_window(None, Some((mode, archives)), None)
 }
 
 /// `unNik --add / --add-here <items>`: hand the items to nikpak, which is a console
@@ -3755,12 +4330,16 @@ pub fn forward_to_nikpak(args: &[std::ffi::OsString]) -> Result<(), String> {
     cmd.spawn().map(|_| ()).map_err(|e| e.to_string())
 }
 
-fn run_window(archive: Option<PathBuf>, quick: Option<(Quick, Vec<PathBuf>)>) -> Result<(), String> {
+fn run_window(archive: Option<PathBuf>, quick: Option<(Quick, Vec<PathBuf>)>, sfx: Option<PathBuf>) -> Result<(), String> {
     i18n::set(crate::gui::load_language());
     crate::gui::start_sounds();
+    let title = match &sfx {
+        Some(p) => p.file_name().map(|s| s.to_string_lossy().into_owned()).unwrap_or_else(|| "unNik".into()),
+        None => "unNik".to_string(),
+    };
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
-            .with_title("unNik")
+            .with_title(&title)
             .with_app_id("unNik")
             .with_inner_size(SMALL)
             .with_min_inner_size(SMALL)
@@ -3772,7 +4351,7 @@ fn run_window(archive: Option<PathBuf>, quick: Option<(Quick, Vec<PathBuf>)>) ->
         centered: true,
         ..Default::default()
     };
-    eframe::run_native("unNik", options, Box::new(move |cc| Ok(Box::new(App::new(cc, archive, quick))))).map_err(|e| e.to_string())
+    eframe::run_native(&title, options, Box::new(move |cc| Ok(Box::new(App::new(cc, archive, quick, sfx))))).map_err(|e| e.to_string())
 }
 
 #[cfg(test)]

@@ -40,6 +40,46 @@ pub(crate) const RADIUS: f32 = 22.0;
 /// That part of the window is transparent (clear_color is fully transparent).
 pub(crate) const SKIN_SLOT: f32 = 560.0;
 
+/// How often the window refreshes **while an archive is being compressed,
+/// extracted or tested**: once a second, not once a frame. Painting the window
+/// (skins, glows, text, the whole 500 x 560 panel) costs real CPU on the same
+/// machine as the compressor, and a percentage and a size estimate do not need
+/// sixty pictures a second - at 1 Hz the compression itself is measurably
+/// faster. Clicks, keys and drags still repaint at once (egui asks for a
+/// repaint on every input event), so Cancel stays instant.
+pub(crate) const WORK_REPAINT: Duration = Duration::from_secs(1);
+
+/// Move a shown percentage toward its target for a frame that lasted `dt`
+/// seconds. Time based, and fed with `InputState::unstable_dt` - the *real*
+/// time since the last frame. (`stable_dt` would be wrong here: egui caps it to
+/// the predicted frame time, so under WORK_REPAINT - one frame a second - the
+/// second that passed would be hidden and the ring would crawl.)
+pub(crate) fn ease(shown: &mut f32, target: f32, dt: f32) {
+    let k = 1.0 - (-dt.clamp(0.001, 1.0) * 14.0).exp();
+    *shown += (target - *shown) * k;
+}
+
+/// Stop the zoom (Ctrl + / Ctrl -) at the largest factor whose window still
+/// fits on the screen. A window of `base` points needs `base * zoom` points of
+/// screen: past the screen's own size something would have to hang off it -
+/// and the request is that all of the interface stays visible, so the zoom
+/// stops there instead. `base` is always the size of the **closed** program,
+/// so opening the skins box does not shrink the zoom.
+pub(crate) fn cap_zoom_to_screen(ctx: &egui::Context, base: Vec2) {
+    let Some(m) = ctx.input(|i| i.viewport().monitor_size) else { return };
+    let zoom = ctx.zoom_factor();
+    if zoom <= 1.0 || m.x <= 0.0 || m.y <= 0.0 {
+        return;
+    }
+    // the monitor is reported in points at the current zoom: multiplying it
+    // back by the zoom and dividing by the window's own size gives the
+    // largest factor that still fits (a few points are kept for the frame)
+    let fit = (m.x * zoom / (base.x + 8.0)).min(m.y * zoom / (base.y + 8.0));
+    if fit >= 0.5 && zoom > fit + 0.01 {
+        ctx.set_zoom_factor(fit);
+    }
+}
+
 // The colours come from the skin (skin.rs: the same skins as Nikkomander).
 // Nikkoid Blue, the default skin, is NikPak's original look.
 #[allow(non_snake_case)]
@@ -232,6 +272,41 @@ pub(crate) fn load_destination() -> String {
 
 pub(crate) fn save_destination(dest: &str) {
     write_setting("destination", dest.trim());
+}
+
+/// The destination of the package boxes: remembered on its own, falling back to
+/// the archive destination the first time.
+pub(crate) fn load_package_dest() -> String {
+    read_setting("package_dest")
+        .filter(|d| !d.trim().is_empty())
+        .unwrap_or_else(load_destination)
+}
+
+pub(crate) fn save_package_dest(dest: &str) {
+    write_setting("package_dest", dest.trim());
+}
+
+/// The EULA the Create Package box drafts, kept in its own file beside the settings
+/// (it has several lines), so the next package can start from the last one.
+fn package_eula_file() -> Option<PathBuf> {
+    settings_file().and_then(|f| f.parent().map(|d| d.join("package-eula.txt")))
+}
+
+pub(crate) fn load_package_eula_text() -> String {
+    package_eula_file().and_then(|f| std::fs::read_to_string(f).ok()).unwrap_or_default()
+}
+
+/// Remember the package box's author, EULA and EULA switch (mirroring Nikkosynth,
+/// which saves its author and terms between exports).
+pub(crate) fn save_package_prefs(author: &str, eula_on: bool, eula: &str) {
+    write_setting("package_author", author.trim());
+    write_setting("package_eula_on", if eula_on { "1" } else { "0" });
+    if let Some(f) = package_eula_file() {
+        if let Some(dir) = f.parent() {
+            let _ = std::fs::create_dir_all(dir);
+        }
+        let _ = std::fs::write(f, eula);
+    }
 }
 
 /// The legal statement lives in its own file (it has several lines), beside the settings.
@@ -555,6 +630,18 @@ pub(crate) fn human_secs(s: f64) -> String {
     }
 }
 
+/// Seconds still to go, extrapolated from the bytes done so far and the time
+/// they took: `elapsed * (total - done) / done`. 0 while nothing is done or
+/// when the work is already finished (there is nothing left to estimate).
+/// The window shows this as the "time to completion" while extracting.
+pub(crate) fn remaining_secs(done: u64, total: u64, elapsed_secs: f32) -> f64 {
+    if done == 0 || total <= done {
+        0.0
+    } else {
+        elapsed_secs as f64 * (total - done) as f64 / done as f64
+    }
+}
+
 /// Open a web link in the default browser.
 pub(crate) fn open_link(url: &str) {
     #[cfg(windows)]
@@ -596,10 +683,60 @@ pub(crate) fn describe(l: &License) -> String {
     }
 }
 
+/// The volume size kept in the settings, if the archive is split.
+fn split_size_setting() -> Option<u64> {
+    crate::split::parse_size(&read_setting("split")?)
+}
+
+/// What a fresh install offers in the Split box.
+pub(crate) const DEFAULT_SPLIT: u64 = 700 * 1024 * 1024;
+
+/// Remember the split choice: a size, or "0" for one file.
+fn save_split(on: bool, size: u64, sfx: bool) {
+    let value = if on { size.to_string() } else { "0".to_string() };
+    write_setting("split", &value);
+    write_setting("sfx", if sfx { "1" } else { "0" });
+}
+
+/// A small caption above a form field (the hand-drawn "NAME", "AUTHOR" … look).
+fn caption(ui: &mut egui::Ui, text: &str) {
+    ui.label(egui::RichText::new(text).font(FontId::new(10.0, family("ui"))).color(TEXT_DIM()).strong());
+}
+
+/// A file-system-safe file name for a package, from its name.
+fn package_file_name(name: &str) -> String {
+    let s: String = name
+        .chars()
+        .map(|c| if c.is_alphanumeric() || c == ' ' || c == '-' || c == '_' || c == '.' { c } else { '_' })
+        .collect();
+    let s = s.trim().trim_matches('.').trim();
+    if s.is_empty() { "package".to_string() } else { s.to_string() }
+}
+
+/// A green check-in-a-circle (the "done" mark of the Open Package box).
+fn glyph_check(p: &egui::Painter, c: Pos2, col: Color32) {
+    p.circle_stroke(c, 26.0, Stroke::new(3.0_f32, col));
+    p.add(PathShape::line(
+        vec![c + Vec2::new(-11.0, 0.0), c + Vec2::new(-3.0, 8.0), c + Vec2::new(12.0, -9.0)],
+        Stroke::new(3.0_f32, col),
+    ));
+}
+
+/// A read-only, boxed multi-line text (the EULA in the Open Package box).
+fn p_field_box(ui: &mut egui::Ui, text: &str) {
+    egui::Frame::group(ui.style()).inner_margin(egui::Margin::symmetric(8, 6)).show(ui, |ui| {
+        egui::ScrollArea::vertical().id_salt("pkg-terms-read").max_height(120.0).auto_shrink([false, false]).show(ui, |ui| {
+            ui.add(egui::Label::new(egui::RichText::new(text).font(FontId::new(12.5, family("ui-light"))).color(TEXT())).wrap());
+        });
+    });
+}
+
 enum Modal {
     None,
-    /// shareware reminder; the two buttons swap sides at random
-    Nag { register_left: bool },
+    /// shareware reminder; the two buttons swap sides at random.
+    /// `feature`: a licensed feature was asked for (split volumes, the
+    /// self-extracting .exe) - same box, with its own heading and text.
+    Nag { register_left: bool, feature: bool },
     /// registration form
     Register { name: String, email: String, key: String, error: Option<String>, done: Option<String> },
     /// version, copyright and licence status (the small "i" button)
@@ -610,6 +747,166 @@ enum Modal {
     Legal { text: String, on: bool, error: Option<String> },
     /// the cover picture attached to new archives (the "Cover" pill)
     Cover { pic: Option<Vec<u8>>, on: bool, error: Option<String>, tex: Option<egui::TextureHandle> },
+    /// "Create Package": pack files into an encrypted, sellable `.nik` package
+    CreatePackage(Box<PackageForm>),
+    /// "Open Package": the box that shows a dropped package and asks for its
+    /// password (and EULA approval) before extracting it.
+    OpenPackage(Box<PackageOpen>),
+    /// "Split": the size of each volume and the self-extracting .exe
+    Split(Box<SplitForm>),
+    /// an archive was dropped on the window (the first volume of a split set,
+    /// or a self-extracting .exe too): unpack it, never compress it
+    Extract(Box<ExtractForm>),
+}
+
+/// The Extract box: where an archive dropped on NikPak unpacks its files.
+/// unNik has the same box for its Extract button; here it exists so that
+/// dropping `photos.nik` - or the `photos.nik` of a set with its `.n01`,
+/// `.n02` … beside it - gives the files back instead of making an archive of
+/// an archive.
+struct ExtractForm {
+    /// the archive itself (volume 1 of a set, or the .exe of a self-extracting one)
+    path: PathBuf,
+    /// bytes of the archive, all volumes together
+    size: u64,
+    /// how many volumes the set is made of (1 = one file)
+    volumes: u32,
+    encrypted: bool,
+    /// the legal statement it carries, which has to be approved first
+    legal: Option<String>,
+    approved: bool,
+    password: String,
+    dest: String,
+    error: Option<String>,
+    /// the extraction, running on its own thread
+    job: Option<JoinHandle<Result<(PathBuf, u64, Vec<String>), String>>>,
+    /// when the extraction started, for its time-to-completion estimate
+    started: Option<Instant>,
+    /// where the files went and how many, once they are out
+    done: Option<(PathBuf, u64)>,
+}
+
+impl ExtractForm {
+    /// What the box needs: size, volumes, encryption and terms (no password yet).
+    fn load(path: PathBuf) -> ExtractForm {
+        let size = crate::split::total_size(&path);
+        let volumes = crate::split::volume_count(&path);
+        let encrypted = crate::archive::peek(&path).unwrap_or(false);
+        let legal = crate::archive::legal_statement(&path).ok().flatten();
+        let approved = match legal.as_deref() {
+            Some(t) => crate::archive::legal_is_accepted(&path, t),
+            None => true,
+        };
+        // next to the archive, in a folder of its own - as unNik offers it
+        let stem = path.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_else(|| "archive".into());
+        let dest = path.parent().map(|d| d.to_path_buf()).unwrap_or_default().join(stem);
+        ExtractForm {
+            path,
+            size,
+            volumes,
+            encrypted,
+            approved,
+            legal,
+            password: String::new(),
+            dest: dest.display().to_string(),
+            error: None,
+            job: None,
+            started: None,
+            done: None,
+        }
+    }
+}
+
+/// Is this dropped file an archive to unpack rather than a file to compress?
+/// A `.nik` archive says yes - a plain one, the first volume of a split set
+/// (the `.n01` beside it is followed by itself), or the archive inside a
+/// self-extracting `.exe`. NikPak packages are `.nik` too but have their own
+/// box, which is checked before this one.
+fn is_archive_file(path: &Path) -> bool {
+    use std::io::Read;
+    if crate::split::embedded(path).is_some() {
+        return true;
+    }
+    let mut magic = [0u8; 8];
+    std::fs::File::open(path).and_then(|mut f| f.read_exact(&mut magic)).is_ok() && magic == crate::format::MAGIC
+}
+
+/// The Split box: volumes of a given size, and the self-extracting `.exe`.
+struct SplitForm {
+    /// the size of a volume in the field, as typed (empty = one file)
+    text: String,
+    /// the field is in gigabytes (otherwise megabytes)
+    gb: bool,
+    /// the preset chip to light (usize::MAX = none, the field was typed in)
+    preset: usize,
+    /// write a self-extracting .exe
+    sfx: bool,
+    error: Option<String>,
+}
+
+/// The volume sizes offered beside "Off": (label, megabytes).
+const SPLIT_PRESETS: [(&str, u64); 5] = [("100 MB", 100), ("700 MB", 700), ("1 GB", 1024), ("2 GB", 2048), ("4.7 GB", 4700)];
+
+impl SplitForm {
+    fn new(on: bool, size: u64, sfx: bool) -> SplitForm {
+        let mb = size / (1024 * 1024);
+        let preset = SPLIT_PRESETS.iter().position(|(_, m)| *m == mb).unwrap_or(usize::MAX);
+        SplitForm {
+            text: if on { mb.to_string() } else { String::new() },
+            gb: false,
+            preset: if on { preset } else { usize::MAX },
+            sfx,
+            error: None,
+        }
+    }
+
+    /// The size of a volume, in bytes (None: one file).
+    fn size(&self) -> Option<u64> {
+        let t = self.text.trim().replace(',', ".");
+        if t.is_empty() {
+            return None;
+        }
+        let v: f64 = t.parse().ok()?;
+        if !v.is_finite() || v <= 0.0 {
+            return None;
+        }
+        let bytes = v * if self.gb { 1024.0 * 1024.0 * 1024.0 } else { 1024.0 * 1024.0 };
+        Some((bytes as u64).max(crate::split::MIN_VOLUME))
+    }
+}
+
+/// The Create Package box: everything a package needs, in one form.
+struct PackageForm {
+    files: Vec<PathBuf>,
+    name: String,
+    author: String,
+    description: String,
+    password: String,
+    password2: String,
+    eula_on: bool,
+    eula: String,
+    dest: String,
+    cover: Option<Vec<u8>>,
+    cover_tex: Option<egui::TextureHandle>,
+    error: Option<String>,
+    /// the seal runs on a thread (the KDF takes about half a second); returns the
+    /// written file and the total input bytes for the "Done" screen
+    job: Option<JoinHandle<Result<(PathBuf, u64), String>>>,
+}
+
+/// The Open Package box: shows the package before asking for its password.
+struct PackageOpen {
+    path: PathBuf,
+    info: crate::package::PackageInfo,
+    cover_tex: Option<egui::TextureHandle>,
+    password: String,
+    approved: bool,
+    dest: String,
+    error: Option<String>,
+    /// the extraction runs on a thread
+    job: Option<JoinHandle<Result<(PathBuf, u64), String>>>,
+    /// set when the extraction finished, so the box shows "done, open the folder"
+    done: Option<(PathBuf, u64)>,
 }
 
 struct App {
@@ -633,6 +930,11 @@ struct App {
     /// the size the window was asked to take (it widens while the skins box
     /// is open, to give the box room beside the program)
     win_size: Vec2,
+    /// the window's context, kept so a worker thread can ask for one repaint
+    /// when it finishes (the frame timer is slow while it works: WORK_REPAINT)
+    ctx: egui::Context,
+    /// the zoom (Ctrl + / Ctrl -) the window was last fitted to
+    zoom: f32,
     /// the answer of the launch update check, when it arrives
     update_rx: Option<crate::update::Answer>,
     /// the update screen was shown once: this launch is done asking
@@ -645,6 +947,12 @@ struct App {
     cover_on: bool,
     /// the cover (a 1024 x 1024 JPEG, kept in cover.jpg beside the settings)
     cover: Option<Vec<u8>>,
+    /// cut the new archive into volumes of `split_size` bytes
+    split_on: bool,
+    /// size of a volume (remembered between launches)
+    split_size: u64,
+    /// write a self-extracting .exe instead of a .nik
+    sfx_on: bool,
 }
 
 impl App {
@@ -655,7 +963,7 @@ impl App {
         let modal = if lic.is_some() || std::env::var_os("NIKPAK_GUI_NO_NAG").is_some() {
             Modal::None
         } else {
-            Modal::Nag { register_left: rand::random::<bool>() }
+            Modal::Nag { register_left: rand::random::<bool>(), feature: false }
         };
         let mut app = App {
             // NIKPAK_GUI_CAPTURE: the window is being photographed (buildskins.ps1).
@@ -676,6 +984,8 @@ impl App {
             skins: SkinMenu { open: std::env::var_os("NIKPAK_GUI_SKINMENU").is_some(), beside: true, ..Default::default() },
             was_hover: false,
             win_size: Vec2::new(W, H),
+            ctx: cc.egui_ctx.clone(),
+            zoom: 1.0,
             // the check runs in the background; the window opens immediately
             update_rx: if std::env::var_os("NIKPAK_GUI_NO_UPDATE").is_some() { None } else { Some(crate::update::check_in_background()) },
             update_shown: false,
@@ -683,12 +993,18 @@ impl App {
             legal_text: load_legal_text(),
             cover_on: read_setting("cover").as_deref() == Some("1"),
             cover: load_cover(),
+            // "0" / a missing setting: one file; a number: volumes of that size
+            split_on: split_size_setting().is_some(),
+            split_size: split_size_setting().unwrap_or(DEFAULT_SPLIT),
+            sfx_on: read_setting("sfx").as_deref() == Some("1"),
         };
         // Test hooks (screenshots)
         match std::env::var("NIKPAK_GUI_MODAL").as_deref() {
             Ok("register") => app.modal = Modal::Register { name: String::new(), email: String::new(), key: String::new(), error: None, done: None },
-            Ok("nag-left") => app.modal = Modal::Nag { register_left: true },
-            Ok("nag-right") => app.modal = Modal::Nag { register_left: false },
+            Ok("nag-left") => app.modal = Modal::Nag { register_left: true, feature: false },
+            Ok("nag-right") => app.modal = Modal::Nag { register_left: false, feature: false },
+            // the box a licensed feature shows: split volumes / the .exe
+            Ok("nag-split") => app.modal = Modal::Nag { register_left: true, feature: true },
             Ok("about") => app.modal = Modal::About,
             Ok("legal") => app.modal = Modal::Legal { text: app.legal_text.clone(), on: true, error: None },
             _ => {}
@@ -703,7 +1019,7 @@ impl App {
         }
         // started from the right-click menu: compress at once to the chosen archive
         if let Some((items, out)) = shell_job {
-            app.start_job_to(items, out);
+            app.start_job_to(items, out, false);
         }
         app
     }
@@ -712,15 +1028,29 @@ impl App {
     /// beside the program, and put it back when the box closes. The extra
     /// part of the window stays transparent (clear_color has alpha 0); the
     /// program keeps drawing its 500 x 560 box at the top left.
-    fn fit_skins_window(&mut self, ctx: &egui::Context) {
+    ///
+    /// The window also follows the **zoom** (Ctrl + / Ctrl - / Ctrl 0). The
+    /// program draws in *points* and its panel is always 500 x 560 of them,
+    /// while the window size asked for here is in points too - the backend
+    /// multiplies them by `pixels_per_point` (which already contains the zoom)
+    /// to get pixels. So the same 500 x 560 points at zoom 2 mean twice the
+    /// pixels: asking again when the zoom changes is what makes the whole
+    /// window - and thus the whole interface - follow the zoom. Without that
+    /// only the drawing got bigger and the rest was cut off.
+    fn fit_window(&mut self, ctx: &egui::Context) {
+        // a zoom the screen cannot hold is capped, so nothing is ever cut off
+        cap_zoom_to_screen(ctx, Vec2::new(W, H));
+        let zoom = ctx.zoom_factor();
         let want = if self.skins.open { Vec2::new(W + SKIN_SLOT, H) } else { Vec2::new(W, H) };
-        if self.win_size == want {
+        if self.win_size == want && (self.zoom - zoom).abs() < 0.001 {
             return;
         }
         self.win_size = want;
+        self.zoom = zoom;
         let (outer, monitor) = ctx.input(|i| (i.viewport().outer_rect, i.viewport().monitor_size));
         // never wider than the screen: on a small screen the box then stands
-        // a little over the program, as it used to
+        // a little over the program, as it used to. The monitor is reported in
+        // points at the current zoom, so both sides are comparable.
         let mut size = want;
         if let Some(m) = monitor {
             size.x = size.x.min(m.x - 24.0).max(W);
@@ -755,12 +1085,19 @@ impl App {
             }
         }
         save_destination(&self.dest);
-        let out = unique_archive_path(&dest, &archive_stem(&paths));
-        self.start_job_to(paths, out);
+        let mut out = unique_archive_path(&dest, &archive_stem(&paths));
+        // a self-extracting archive is an .exe (licensed: an evaluation copy
+        // keeps the .nik name, as it ignores the .exe switch itself)
+        if self.sfx_on && self.license.is_some() {
+            out = crate::split::sfx_name(&out);
+        }
+        self.start_job_to(paths, out, true);
     }
 
-    /// Compress `paths` into the archive `out` (the drop window, or the right-click menu).
-    fn start_job_to(&mut self, paths: Vec<PathBuf>, out: PathBuf) {
+    /// Compress `paths` into the archive `out`. `settings` is false for the
+    /// right-click menu, where the user typed the archive name himself: the
+    /// Split and EXE choices of the window must not rename his file.
+    fn start_job_to(&mut self, paths: Vec<PathBuf>, out: PathBuf, settings: bool) {
         if paths.is_empty() || matches!(self.stage, Stage::Working(_)) {
             return;
         }
@@ -787,13 +1124,26 @@ impl App {
             accept_legal: false,
             // and the cover when the "Cover" pill is on
             cover: if self.cover_on { self.cover.clone() } else { None },
+            // the Split pill: volumes of that size, and/or a self-extracting .exe.
+            // **Licensed**: an evaluation copy ignores a split kept in the settings
+            // (a settings file from a registered install, or a licence removed
+            // since) instead of writing volumes it should not.
+            split: if settings && self.split_on && self.license.is_some() { Some(self.split_size) } else { None },
+            sfx: settings && self.sfx_on && self.license.is_some(),
         };
         PROGRESS.cancel.store(false, Relaxed);
         PROGRESS.done.store(0, Relaxed);
         PROGRESS.total.store(0, Relaxed);
         PROGRESS.phase.store(PHASE_SCAN, Relaxed);
         self.shown = 0.0;
-        let handle = std::thread::spawn(move || archive::create(&opts));
+        let wake = self.ctx.clone();
+        let handle = std::thread::spawn(move || {
+            let r = archive::create(&opts);
+            // one repaint the moment it ends, so the "done" screen is not
+            // held back by the deliberately slow frame timer (WORK_REPAINT)
+            wake.request_repaint();
+            r
+        });
         self.stage = Stage::Working(Job { handle, out, label, started: Instant::now() });
         sfx::play(Sfx::Start);
     }
@@ -808,7 +1158,8 @@ impl App {
         self.stage = match job.handle.join() {
             Ok(Ok(code)) => Stage::Done {
                 input: PROGRESS.total.load(Relaxed),
-                output: std::fs::metadata(&job.out).map(|m| m.len()).unwrap_or(0),
+                // all the volumes, not just the first one
+                output: crate::split::total_size(&job.out),
                 out: job.out,
                 secs,
                 warnings: code != 0,
@@ -1796,24 +2147,42 @@ impl App {
                 p.rect_filled(panel, rr(RADIUS as u8), alpha(skin::c().overlay, 205));
                 let cx = panel.center().x;
                 let mut next: Option<Modal> = None;
+                // a package was just created: (output file, input bytes) for the Done screen
+                let mut packaged: Option<(PathBuf, u64)> = None;
                 match &mut self.modal {
                     Modal::None => {}
-                    Modal::Nag { register_left } => {
+                    Modal::Nag { register_left, feature } => {
+                        // The same box serves two causes: the shareware reminder at
+                        // launch, and a **licensed feature that was asked for** -
+                        // split volumes and the self-extracting .exe (see the Split
+                        // pill below). The second says which feature and why.
                         let tw = 384.0 - 60.0;
+                        let lead: &str = if *feature {
+                            t("Splitting an archive into volumes and writing a self-extracting .exe are features of the registered NikPak. Register it to have access to them.")
+                        } else {
+                            t("NikPak is shareware. You may test it for free, without time limit, for personal use.")
+                        };
+                        let tail: &str = if *feature { "" } else { t("Registering removes this reminder.") };
+                        let tail_h = if tail.is_empty() { 0.0 } else { wrapped_height(&p, tw, tail, 12.5) + 16.0 };
                         let need = 104.0
-                            + wrapped_height(&p, tw, t("NikPak is shareware. You may test it for free, without time limit, for personal use."), 14.0)
+                            + wrapped_height(&p, tw, lead, 14.0)
                             + 12.0
                             + wrapped_height(&p, tw, t("Companies and organisations need one licence per seat."), 14.0)
-                            + 16.0 + 74.0
-                            + wrapped_height(&p, tw, t("Registering removes this reminder."), 12.5)
-                            + 16.0 + 70.0;
+                            + 16.0
+                            + 74.0
+                            + tail_h
+                            + 70.0;
                         let c = Rect::from_center_size(Pos2::new(cx, panel.center().y), Vec2::new(384.0, need.clamp(404.0, H - 20.0)));
                         card(&p, c);
-                        glow_text(&p, Pos2::new(cx, c.top() + 34.0), t("SHAREWARE"), FontId::new(11.0, family("ui")), ACCENT_SOFT(), alpha(ACCENT(), 5), 3.0);
-                        glow_text(&p, Pos2::new(cx, c.top() + 70.0), t("Evaluation copy"), FontId::new(24.0, family("display")), TEXT(), alpha(ACCENT(), 6), 1.0);
+                        glow_text(&p, Pos2::new(cx, c.top() + 34.0), if *feature { t("LICENSED FEATURE") } else { t("SHAREWARE") }, FontId::new(11.0, family("ui")), ACCENT_SOFT(), alpha(ACCENT(), 5), 3.0);
+                        if *feature {
+                            // a longer heading than "Evaluation copy": fitted to the card
+                            text_fit(&p, Pos2::new(cx, c.top() + 70.0), Align2::CENTER_CENTER, t("Split volumes and .exe need a licence"), FontId::new(19.0, family("display")), TEXT(), c.width() - 40.0);
+                        } else {
+                            glow_text(&p, Pos2::new(cx, c.top() + 70.0), t("Evaluation copy"), FontId::new(24.0, family("display")), TEXT(), alpha(ACCENT(), 6), 1.0);
+                        }
                         let mut y = c.top() + 104.0;
-                        y += wrapped(&p, Pos2::new(c.left() + 30.0, y), c.width() - 60.0,
-                            t("NikPak is shareware. You may test it for free, without time limit, for personal use."), 14.0, TEXT());
+                        y += wrapped(&p, Pos2::new(c.left() + 30.0, y), c.width() - 60.0, lead, 14.0, TEXT());
                         y += 12.0;
                         y += wrapped(&p, Pos2::new(c.left() + 30.0, y), c.width() - 60.0,
                             t("Companies and organisations need one licence per seat."), 14.0, TEXT());
@@ -1827,7 +2196,9 @@ impl App {
                             text_fit(&p, Pos2::new(bx.center().x, bx.top() + 39.0), Align2::CENTER_CENTER, *price, FontId::new(19.0, family("display")), TEXT(), bx.width() - 14.0);
                         }
                         y += 74.0;
-                        wrapped(&p, Pos2::new(c.left() + 30.0, y), c.width() - 60.0, t("Registering removes this reminder."), 12.5, TEXT_DIM());
+                        if !tail.is_empty() {
+                            wrapped(&p, Pos2::new(c.left() + 30.0, y), c.width() - 60.0, tail, 12.5, TEXT_DIM());
+                        }
                         // the two buttons swap sides at random
                         let left = Rect::from_min_size(Pos2::new(c.left() + 30.0, c.bottom() - 70.0), Vec2::new(156.0, 44.0));
                         let right = left.translate(Vec2::new(168.0, 0.0));
@@ -1835,7 +2206,21 @@ impl App {
                         if pill_button(ui, &p, reg_r, t("Register"), true, "nag-register") {
                             next = Some(Modal::Register { name: String::new(), email: String::new(), key: String::new(), error: None, done: None });
                         }
-                        if pill_button(ui, &p, test_r, t("Test for free"), false, "nag-test") || ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+                        // the second button: "test for free" at launch, "buy a
+                        // licence" when a licensed feature was asked for
+                        let second = if *feature { t("Buy a licence") } else { t("Test for free") };
+                        if pill_button(ui, &p, test_r, second, false, "nag-second") {
+                            if *feature {
+                                open_link(license::BUY_URL);
+                            } else {
+                                next = Some(Modal::None);
+                            }
+                        }
+                        if ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+                            next = Some(Modal::None);
+                        }
+                        // the × closes the feature box too
+                        if *feature && card_close(ui, &p, c, "nag-x") {
                             next = Some(Modal::None);
                         }
                     }
@@ -1986,6 +2371,586 @@ impl App {
                             }
                         }
                     }
+                    Modal::CreatePackage(form) => {
+                        let c = Rect::from_center_size(Pos2::new(cx, panel.center().y), Vec2::new(470.0, (H - 16.0).min(544.0)));
+                        card(&p, c);
+                        glow_text(&p, Pos2::new(cx, c.top() + 30.0), t("CREATE PACKAGE"), FontId::new(11.0, family("ui")), ACCENT_SOFT(), alpha(ACCENT(), 5), 3.0);
+                        glow_text(&p, Pos2::new(cx, c.top() + 62.0), t("Package files to share or sell"), FontId::new(21.0, family("display")), TEXT(), alpha(ACCENT(), 6), 1.0);
+                        let close = Rect::from_center_size(Pos2::new(c.right() - 26.0, c.top() + 26.0), Vec2::splat(26.0));
+                        let (xr, xcol) = icon_button(ui, close, "pkg-close");
+                        p.line_segment([close.center() + Vec2::new(-5.0, -5.0), close.center() + Vec2::new(5.0, 5.0)], Stroke::new(1.4_f32, xcol));
+                        p.line_segment([close.center() + Vec2::new(-5.0, 5.0), close.center() + Vec2::new(5.0, -5.0)], Stroke::new(1.4_f32, xcol));
+                        if xr.clicked() || ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+                            next = Some(Modal::None);
+                        }
+                        // lazily decode the cover
+                        if form.cover.is_some() && form.cover_tex.is_none() {
+                            form.cover_tex = form.cover.as_deref().and_then(|b| cover_texture(ctx, "pkg-cover", b));
+                        }
+                        let body = Rect::from_min_max(Pos2::new(c.left() + 20.0, c.top() + 88.0), Pos2::new(c.right() - 20.0, c.bottom() - 74.0));
+                        let mut chosen_cover: Option<PathBuf> = None;
+                        let mut chosen_files: Option<Vec<PathBuf>> = None;
+                        let mut remove_cover = false;
+                        ui.scope_builder(egui::UiBuilder::new().max_rect(body), |ui| {
+                            egui::ScrollArea::vertical().id_salt("pkg-scroll").auto_shrink([false, false]).show(ui, |ui| {
+                                ui.set_width(body.width());
+                                ui.horizontal_top(|ui| {
+                                    let side = 92.0;
+                                    let (rect, resp) = ui.allocate_exact_size(Vec2::splat(side), Sense::click());
+                                    let up = ui.painter().clone();
+                                    paint_cover(&up, rect, form.cover_tex.as_ref(), t("Cover"));
+                                    if resp.clicked() {
+                                        chosen_cover = rfd::FileDialog::new().set_title(t("Choose a cover picture"))
+                                            .add_filter(t("Pictures"), &["png", "jpg", "jpeg", "webp", "bmp", "gif"])
+                                            .pick_file();
+                                    }
+                                    ui.add_space(10.0);
+                                    ui.vertical(|ui| {
+                                        caption(ui, t("PACKAGE NAME"));
+                                        ui.add(egui::TextEdit::singleline(&mut form.name).font(FontId::new(13.0, family("ui-light"))).desired_width(300.0).hint_text(t("Package name")));
+                                        caption(ui, t("AUTHOR"));
+                                        ui.add(egui::TextEdit::singleline(&mut form.author).font(FontId::new(13.0, family("ui-light"))).desired_width(300.0).hint_text(t("Your name, or your studio's")));
+                                    });
+                                });
+                                if form.cover.is_some() && ui.link(t("Remove")).clicked() {
+                                    remove_cover = true;
+                                }
+                                ui.add_space(6.0);
+                                caption(ui, t("DESCRIPTION"));
+                                ui.add(egui::TextEdit::multiline(&mut form.description).font(FontId::new(13.0, family("ui-light"))).desired_rows(2).desired_width(f32::INFINITY).hint_text(t("What is in this package, who it is for…")));
+                                ui.add_space(6.0);
+                                caption(ui, t("PASSWORD"));
+                                ui.add(egui::TextEdit::singleline(&mut form.password).password(true).font(FontId::new(13.0, family("ui-light"))).desired_width(f32::INFINITY).hint_text(t("Password")));
+                                caption(ui, t("CONFIRM PASSWORD"));
+                                ui.add(egui::TextEdit::singleline(&mut form.password2).password(true).font(FontId::new(13.0, family("ui-light"))).desired_width(f32::INFINITY).hint_text(t("Password again")));
+                                ui.add_space(6.0);
+                                ui.checkbox(&mut form.eula_on, t("Attach a EULA (the buyer must approve it to open the package)"));
+                                if form.eula_on {
+                                    ui.add(egui::TextEdit::multiline(&mut form.eula).font(FontId::new(12.5, family("ui-light"))).desired_rows(5).desired_width(f32::INFINITY).hint_text(t("Terms of use: licence, what the buyer may and may not do…")));
+                                }
+                                ui.add_space(6.0);
+                                caption(ui, t("DESTINATION FOLDER"));
+                                ui.horizontal(|ui| {
+                                    ui.add(egui::TextEdit::singleline(&mut form.dest).font(FontId::new(13.0, family("ui-light"))).desired_width(300.0).hint_text(t("Where the package is saved")));
+                                    if ui.button(t("Browse")).clicked() {
+                                        if let Some(dir) = rfd::FileDialog::new().set_title(t("Where should the package be saved?")).pick_folder() {
+                                            form.dest = dir.display().to_string();
+                                        }
+                                    }
+                                });
+                                ui.add_space(6.0);
+                                caption(ui, t("FILES"));
+                                ui.horizontal(|ui| {
+                                    if ui.button(t("Choose files")).clicked() {
+                                        chosen_files = rfd::FileDialog::new().set_title(t("Choose files to package")).pick_files();
+                                    }
+                                    if ui.button(t("Choose a folder")).clicked() {
+                                        chosen_files = rfd::FileDialog::new().set_title(t("Choose a folder to package")).pick_folder().map(|d| vec![d]);
+                                    }
+                                    let n = form.files.len();
+                                    ui.label(if n == 0 { t("No files yet — drop some here, or choose them.").to_string() } else { tf("{} files", &[&n.to_string()]) });
+                                });
+                            });
+                        });
+                        if let Some(pic) = chosen_cover {
+                            match crate::cover::from_file(&pic) {
+                                Ok(b) => { form.cover = Some(b); form.cover_tex = None; form.error = None; }
+                                Err(e) => form.error = Some(e),
+                            }
+                        }
+                        if remove_cover {
+                            form.cover = None;
+                            form.cover_tex = None;
+                        }
+                        if let Some(fs) = chosen_files {
+                            for f in fs {
+                                if !form.files.contains(&f) {
+                                    form.files.push(f);
+                                }
+                            }
+                        }
+                        // poll the sealing job
+                        if form.job.as_ref().is_some_and(|j| j.is_finished()) {
+                            let job = form.job.take().unwrap();
+                            match job.join() {
+                                Ok(Ok((out, input))) => {
+                                    sfx::play(Sfx::Success);
+                                    packaged = Some((out, input));
+                                    next = Some(Modal::None);
+                                }
+                                Ok(Err(e)) => form.error = Some(e),
+                                Err(_) => form.error = Some(t("Internal error while packaging.").to_string()),
+                            }
+                        }
+                        if let Some(e) = form.error.as_ref() {
+                            let er = Rect::from_min_size(Pos2::new(c.left() + 20.0, c.bottom() - 70.0), Vec2::new(c.width() - 40.0, 16.0));
+                            text_fit(&p, er.center(), Align2::CENTER_CENTER, e.as_str(), FontId::new(11.5, family("ui-light")), ERR_RED(), er.width());
+                        }
+                        let busy = form.job.is_some();
+                        let cancel = Rect::from_min_size(Pos2::new(c.left() + 20.0, c.bottom() - 62.0), Vec2::new(200.0, 44.0));
+                        let go = Rect::from_min_size(Pos2::new(c.right() - 20.0 - 200.0, c.bottom() - 62.0), Vec2::new(200.0, 44.0));
+                        if pill_button(ui, &p, cancel, t("Cancel"), false, "pkg-cancel") {
+                            next = Some(Modal::None);
+                        }
+                        let can_go = !busy
+                            && !form.name.trim().is_empty()
+                            && !form.files.is_empty()
+                            && !form.password.is_empty()
+                            && form.password == form.password2
+                            && (!form.eula_on || !form.eula.trim().is_empty())
+                            && !form.dest.trim().is_empty();
+                        if pill_button(ui, &p, go, t("Create Package"), true, "pkg-go") && can_go {
+                            save_package_prefs(&form.author, form.eula_on, &form.eula);
+                            save_package_dest(&form.dest);
+                            let name = form.name.trim().to_string();
+                            let author = form.author.trim().to_string();
+                            let description = form.description.trim().to_string();
+                            let eula = if form.eula_on && !form.eula.trim().is_empty() { Some(form.eula.trim().to_string()) } else { None };
+                            let cover = form.cover.clone();
+                            let password = form.password.clone();
+                            let files = form.files.clone();
+                            let dest = PathBuf::from(form.dest.trim());
+                            let out = unique_archive_path(&dest, &package_file_name(&name));
+                            let wake = ctx.clone();
+                            let handle = std::thread::spawn(move || {
+                                let entries = crate::package::collect(&files);
+                                let input: u64 = entries.iter().filter(|e| !e.is_dir).map(|e| e.size).sum();
+                                let pkg = crate::package::Package { name, author, description, eula, cover, entries };
+                                let bytes = crate::package::seal(&pkg, Some(&password)).map_err(|e| e.to_string())?;
+                                std::fs::write(&out, bytes).map_err(|e| format!("Cannot write '{}': {e}", out.display()))?;
+                                // the box repaints once a second while working (WORK_REPAINT)
+                                wake.request_repaint();
+                                Ok((out, input))
+                            });
+                            form.job = Some(handle);
+                            form.error = None;
+                            sfx::play(Sfx::Start);
+                        }
+                    }
+                    Modal::OpenPackage(open) => {
+                        let c = Rect::from_center_size(Pos2::new(cx, panel.center().y), Vec2::new(470.0, (H - 16.0).min(544.0)));
+                        card(&p, c);
+                        glow_text(&p, Pos2::new(cx, c.top() + 30.0), t("OPEN PACKAGE"), FontId::new(11.0, family("ui")), ACCENT_SOFT(), alpha(ACCENT(), 5), 3.0);
+                        let close = Rect::from_center_size(Pos2::new(c.right() - 26.0, c.top() + 26.0), Vec2::splat(26.0));
+                        let (xr, xcol) = icon_button(ui, close, "pkgopen-close");
+                        p.line_segment([close.center() + Vec2::new(-5.0, -5.0), close.center() + Vec2::new(5.0, 5.0)], Stroke::new(1.4_f32, xcol));
+                        p.line_segment([close.center() + Vec2::new(-5.0, 5.0), close.center() + Vec2::new(5.0, -5.0)], Stroke::new(1.4_f32, xcol));
+                        if xr.clicked() || ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+                            next = Some(Modal::None);
+                        }
+                        if let Some((dest, n)) = open.done.clone() {
+                            // done: extracted
+                            glyph_check(&p, Pos2::new(cx, c.top() + 96.0), OK_GREEN());
+                            let msg = if n == 1 { tf("{} file extracted to {}", &[&n.to_string(), &dest.display().to_string()]) } else { tf("{} files extracted to {}", &[&n.to_string(), &dest.display().to_string()]) };
+                            wrapped(&p, Pos2::new(c.left() + 30.0, c.top() + 150.0), c.width() - 60.0, &msg, 14.0, TEXT());
+                            let folder = Rect::from_min_size(Pos2::new(c.left() + 30.0, c.bottom() - 70.0), Vec2::new(180.0, 44.0));
+                            let ok = Rect::from_min_size(Pos2::new(c.right() - 30.0 - 180.0, c.bottom() - 70.0), Vec2::new(180.0, 44.0));
+                            if pill_button(ui, &p, ok, t("Open folder"), true, "pkgopen-folder") {
+                                open_folder(&dest);
+                            }
+                            if pill_button(ui, &p, folder, t("Close"), false, "pkgopen-close2") {
+                                next = Some(Modal::None);
+                            }
+                        } else {
+                            if open.cover_tex.is_none() {
+                                open.cover_tex = open.info.cover.as_deref().and_then(|b| cover_texture(ctx, "pkg-open-cover", b));
+                            }
+                            let body = Rect::from_min_max(Pos2::new(c.left() + 20.0, c.top() + 74.0), Pos2::new(c.right() - 20.0, c.bottom() - 74.0));
+                            ui.scope_builder(egui::UiBuilder::new().max_rect(body), |ui| {
+                                egui::ScrollArea::vertical().id_salt("pkgopen-scroll").auto_shrink([false, false]).show(ui, |ui| {
+                                    ui.set_width(body.width());
+                                    ui.vertical_centered(|ui| {
+                                        if let Some(tex) = &open.cover_tex {
+                                            let side = 108.0;
+                                            let (rect, _) = ui.allocate_exact_size(Vec2::splat(side), Sense::hover());
+                                            let up = ui.painter().clone();
+                                            paint_cover(&up, rect, Some(tex), "");
+                                            ui.add_space(8.0);
+                                        }
+                                        ui.label(egui::RichText::new(open.info.name.as_str()).font(FontId::new(22.0, family("display"))).color(TEXT()));
+                                        if !open.info.author.trim().is_empty() {
+                                            ui.label(egui::RichText::new(tf("by {}", &[open.info.author.trim()])).font(FontId::new(13.0, family("ui-light"))).color(TEXT_DIM()));
+                                        }
+                                        ui.label(egui::RichText::new(tf("{} files", &[&open.info.count.to_string()])).font(FontId::new(13.0, family("ui"))).color(OK_GREEN()));
+                                    });
+                                    if !open.info.description.trim().is_empty() {
+                                        ui.add_space(6.0);
+                                        ui.label(egui::RichText::new(open.info.description.trim()).font(FontId::new(12.5, family("ui-light"))).color(TEXT_DIM()));
+                                    }
+                                    if let Some(terms) = open.info.eula.clone() {
+                                        ui.add_space(6.0);
+                                        caption(ui, t("EULA"));
+                                        p_field_box(ui, &terms);
+                                        ui.add_space(4.0);
+                                        ui.label(egui::RichText::new(t("This package comes with a EULA. Read it, then click I approve to extract it.")).font(FontId::new(11.5, family("ui-light"))).color(TEXT_DIM()));
+                                        let label = if open.approved { t("✓ Approved") } else { t("I approve") };
+                                        if ui.add(egui::Button::new(label).min_size(Vec2::new(120.0, 30.0))).clicked() {
+                                            open.approved = !open.approved;
+                                            sfx::play(Sfx::Click);
+                                        }
+                                    }
+                                    ui.add_space(8.0);
+                                    caption(ui, t("PASSWORD"));
+                                    ui.add(egui::TextEdit::singleline(&mut open.password).password(true).font(FontId::new(13.0, family("ui-light"))).desired_width(f32::INFINITY).hint_text(t("Password")));
+                                    ui.add_space(6.0);
+                                    caption(ui, t("DESTINATION FOLDER"));
+                                    ui.horizontal(|ui| {
+                                        ui.add(egui::TextEdit::singleline(&mut open.dest).font(FontId::new(13.0, family("ui-light"))).desired_width(300.0).hint_text(t("Where the files are extracted")));
+                                        if ui.button(t("Browse")).clicked() {
+                                            if let Some(dir) = rfd::FileDialog::new().set_title(t("Where should the files be extracted?")).pick_folder() {
+                                                open.dest = dir.display().to_string();
+                                            }
+                                        }
+                                    });
+                                });
+                            });
+                            if open.job.as_ref().is_some_and(|j| j.is_finished()) {
+                                let job = open.job.take().unwrap();
+                                match job.join() {
+                                    Ok(Ok((dest, n))) => {
+                                        sfx::play(Sfx::Success);
+                                        open.done = Some((dest, n));
+                                        open.error = None;
+                                    }
+                                    Ok(Err(e)) => open.error = Some(e),
+                                    Err(_) => open.error = Some(t("Internal error while extracting.").to_string()),
+                                }
+                            }
+                            if let Some(e) = open.error.as_ref() {
+                                let er = Rect::from_min_size(Pos2::new(c.left() + 20.0, c.bottom() - 70.0), Vec2::new(c.width() - 40.0, 16.0));
+                                text_fit(&p, er.center(), Align2::CENTER_CENTER, e.as_str(), FontId::new(11.5, family("ui-light")), ERR_RED(), er.width());
+                            }
+                            let busy = open.job.is_some();
+                            let cancel = Rect::from_min_size(Pos2::new(c.left() + 20.0, c.bottom() - 62.0), Vec2::new(200.0, 44.0));
+                            let go = Rect::from_min_size(Pos2::new(c.right() - 20.0 - 200.0, c.bottom() - 62.0), Vec2::new(200.0, 44.0));
+                            if pill_button(ui, &p, cancel, t("Cancel"), false, "pkgopen-cancel") {
+                                next = Some(Modal::None);
+                            }
+                            let can_go = !busy && open.approved && !open.password.is_empty() && !open.dest.trim().is_empty();
+                            if pill_button(ui, &p, go, t("Extract"), true, "pkgopen-go") && can_go {
+                                save_package_dest(&open.dest);
+                                let path = open.path.clone();
+                                let password = open.password.clone();
+                                let approved = open.info.eula.clone();
+                                let dest = PathBuf::from(open.dest.trim());
+                                let wake = ctx.clone();
+                                let handle = std::thread::spawn(move || {
+                                    let n = crate::package::extract(&path, &password, approved.as_deref(), &dest).map_err(|e| e.to_string())?;
+                                    // the box repaints once a second while working (WORK_REPAINT)
+                                    wake.request_repaint();
+                                    Ok((dest, n))
+                                });
+                                open.job = Some(handle);
+                                open.error = None;
+                                sfx::play(Sfx::Start);
+                            }
+                        }
+                    }
+                    Modal::Extract(f) => {
+                        let c = Rect::from_center_size(Pos2::new(cx, panel.center().y), Vec2::new(470.0, (H - 16.0).min(544.0)));
+                        card(&p, c);
+                        glow_text(&p, Pos2::new(cx, c.top() + 30.0), t("EXTRACT"), FontId::new(11.0, family("ui")), ACCENT_SOFT(), alpha(ACCENT(), 5), 3.0);
+                        if card_close(ui, &p, c, "extract-close") && f.job.is_none() {
+                            next = Some(Modal::None);
+                        }
+                        if let Some((dest, n)) = f.done.clone() {
+                            // ---- done: the files are out --------------------------
+                            glyph_check(&p, Pos2::new(cx, c.top() + 96.0), OK_GREEN());
+                            let msg = if n == 1 {
+                                tf("{} file extracted to {}", &[&n.to_string(), &dest.display().to_string()])
+                            } else {
+                                tf("{} files extracted to {}", &[&n.to_string(), &dest.display().to_string()])
+                            };
+                            wrapped(&p, Pos2::new(c.left() + 30.0, c.top() + 150.0), c.width() - 60.0, &msg, 14.0, TEXT());
+                            let folder = Rect::from_min_size(Pos2::new(c.left() + 30.0, c.bottom() - 70.0), Vec2::new(180.0, 44.0));
+                            let ok = Rect::from_min_size(Pos2::new(c.right() - 30.0 - 180.0, c.bottom() - 70.0), Vec2::new(180.0, 44.0));
+                            if pill_button(ui, &p, folder, t("Open folder"), true, "extract-folder") {
+                                open_folder(&dest);
+                            }
+                            if pill_button(ui, &p, ok, t("Close"), false, "extract-done-close") {
+                                next = Some(Modal::None);
+                            }
+                        } else {
+                            // ---- what the archive is -----------------------------
+                            let name = f.path.file_name().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default();
+                            let sub = if f.volumes > 1 {
+                                format!("{}  ·  {} {}", human(f.size), f.volumes, t("volumes"))
+                            } else {
+                                human(f.size)
+                            };
+                            glow_text(&p, Pos2::new(cx, c.top() + 62.0), &name, FontId::new(21.0, family("display")), TEXT(), alpha(ACCENT(), 6), 1.0);
+                            text(&p, Pos2::new(cx, c.top() + 84.0), Align2::CENTER_CENTER, &sub, FontId::new(12.5, family("ui-light")), TEXT_DIM());
+                            // the body scrolls, so a long legal statement never pushes the buttons out
+                            let top = c.top() + 100.0;
+                            let bottom = c.bottom() - 118.0;
+                            let body = Rect::from_min_max(Pos2::new(c.left() + 20.0, top), Pos2::new(c.right() - 20.0, bottom));
+                            ui.scope_builder(egui::UiBuilder::new().max_rect(body), |ui| {
+                                egui::ScrollArea::vertical().id_salt("extract-scroll").auto_shrink([false, false]).show(ui, |ui| {
+                                    ui.set_width(body.width());
+                                    if let Some(terms) = f.legal.clone() {
+                                        ui.label(egui::RichText::new(t("This archive comes with a legal statement. Read it, then approve it to open the archive.")).font(FontId::new(11.5, family("ui-light"))).color(TEXT_DIM()));
+                                        p_field_box(ui, &terms);
+                                        let label = if f.approved { t("✓ Approved") } else { t("I approve") };
+                                        if ui.add(egui::Button::new(label).min_size(Vec2::new(120.0, 30.0))).clicked() {
+                                            f.approved = !f.approved;
+                                            sfx::play(Sfx::Click);
+                                        }
+                                        ui.add_space(6.0);
+                                    }
+                                    if f.encrypted {
+                                        ui.label(egui::RichText::new(t("PASSWORD")).font(FontId::new(10.0, family("ui"))).color(TEXT_DIM()));
+                                        ui.add(egui::TextEdit::singleline(&mut f.password).password(true).font(FontId::new(13.0, family("ui-light"))).desired_width(f32::INFINITY).hint_text(t("Password")));
+                                        ui.add_space(6.0);
+                                    }
+                                    ui.label(egui::RichText::new(t("DESTINATION FOLDER")).font(FontId::new(10.0, family("ui"))).color(TEXT_DIM()));
+                                    ui.horizontal(|ui| {
+                                        ui.add(egui::TextEdit::singleline(&mut f.dest).font(FontId::new(13.0, family("ui-light"))).desired_width(300.0).hint_text(t("Where the files are extracted")));
+                                        if ui.button(t("Browse")).clicked() {
+                                            if let Some(dir) = rfd::FileDialog::new().set_title(t("Where should the files be extracted?")).pick_folder() {
+                                                f.dest = dir.display().to_string();
+                                            }
+                                        }
+                                    });
+                                });
+                            });
+                            let busy = f.job.is_some();
+                            // the progress of a long extraction, over all the volumes
+                            if busy {
+                                let done = PROGRESS.done.load(Relaxed);
+                                let total = PROGRESS.total.load(Relaxed);
+                                let pct = if total > 0 { (done.min(total) as f64 * 100.0 / total as f64) as f32 } else { 0.0 };
+                                let bar = Rect::from_min_size(Pos2::new(c.left() + 20.0, c.bottom() - 104.0), Vec2::new(c.width() - 40.0, 8.0));
+                                p.rect_filled(bar, rr(4), alpha(skin::c().field, 200));
+                                if pct > 0.0 {
+                                    p.rect_filled(Rect::from_min_size(bar.min, Vec2::new(bar.width() * pct / 100.0, bar.height())), rr(4), ACCENT());
+                                }
+                                // the time-to-completion estimate, once enough is
+                                // done to extrapolate (the bytes read cover all the
+                                // volumes, so the estimate spans the whole set)
+                                let secs = f.started.map(|s| s.elapsed().as_secs_f32()).unwrap_or(0.0);
+                                let status = if done > 0 && total > done {
+                                    format!("{}  {:.0} %  ·  {}", t("EXTRACTING"), pct, tf("{} left", &[&human_secs(remaining_secs(done, total, secs))]))
+                                } else {
+                                    format!("{}  {:.0} %", t("EXTRACTING"), pct)
+                                };
+                                text_fit(&p, Pos2::new(cx, bar.top() - 10.0), Align2::CENTER_CENTER, &status, FontId::new(11.5, family("ui")), TEXT_DIM(), c.width() - 40.0);
+                            }
+                            if f.job.as_ref().is_some_and(|j| j.is_finished()) {
+                                let job = f.job.take().unwrap();
+                                match job.join() {
+                                    Ok(Ok((dest, n, warnings))) => {
+                                        sfx::play(if warnings.is_empty() { Sfx::Success } else { Sfx::Error });
+                                        f.done = Some((dest, n));
+                                        f.error = None;
+                                    }
+                                    Ok(Err(e)) => {
+                                        sfx::play(Sfx::Error);
+                                        f.error = Some(e);
+                                    }
+                                    Err(_) => f.error = Some(t("Extraction failed").to_string()),
+                                }
+                            }
+                            if let Some(e) = f.error.as_ref() {
+                                let er = Rect::from_min_size(Pos2::new(c.left() + 20.0, c.bottom() - 78.0), Vec2::new(c.width() - 40.0, 16.0));
+                                text_fit(&p, er.center(), Align2::CENTER_CENTER, e.as_str(), FontId::new(11.5, family("ui-light")), ERR_RED(), er.width());
+                            }
+                            // Cancel closes the box, or stops a running extraction
+                            // (the files already out are kept)
+                            let cancel = Rect::from_min_size(Pos2::new(c.left() + 20.0, c.bottom() - 62.0), Vec2::new(200.0, 44.0));
+                            let go = Rect::from_min_size(Pos2::new(c.right() - 20.0 - 200.0, c.bottom() - 62.0), Vec2::new(200.0, 44.0));
+                            if pill_button(ui, &p, cancel, t("Cancel"), false, "extract-cancel") {
+                                if busy {
+                                    sfx::play(Sfx::Cancel);
+                                    PROGRESS.cancel.store(true, Relaxed);
+                                } else {
+                                    next = Some(Modal::None);
+                                }
+                            }
+                            if busy && ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+                                PROGRESS.cancel.store(true, Relaxed);
+                            }
+                            let can_go = !busy && f.approved && (!f.encrypted || !f.password.is_empty()) && !f.dest.trim().is_empty();
+                            if can_go && pill_button(ui, &p, go, t("Extract"), true, "extract-go") {
+                                let path = f.path.clone();
+                                let dest = PathBuf::from(f.dest.trim());
+                                let password = f.password.clone();
+                                let legal = f.legal.clone();
+                                let wake = ctx.clone();
+                                PROGRESS.cancel.store(false, Relaxed);
+                                let handle = std::thread::spawn(move || {
+                                    if let Some(t) = legal.as_deref() {
+                                        crate::archive::accept_legal(&path, t);
+                                    }
+                                    let mut o = archive::gui_options(&path, Some(password.as_str()));
+                                    o.command = Command::ExtractFull;
+                                    o.dest = Some(dest.clone());
+                                    o.accept_legal = true;
+                                    let files = match archive::extract(&o) {
+                                        Ok(_) => PROGRESS.files_done.load(Relaxed),
+                                        Err(e) => {
+                                            // the window repaints at once: the error is worth seeing now
+                                            wake.request_repaint();
+                                            return Err(if PROGRESS.cancel.load(Relaxed) { t("Cancelled.").to_string() } else { e.to_string() });
+                                        }
+                                    };
+                                    let warnings = archive::WARNINGS.lock().map(|w| w.clone()).unwrap_or_default();
+                                    wake.request_repaint();
+                                    Ok((dest, files, warnings))
+                                });
+                                f.job = Some(handle);
+                                f.started = Some(Instant::now());
+                                f.error = None;
+                                sfx::play(Sfx::Start);
+                            }
+                        }
+                    }
+                    Modal::Split(form) => {
+                        let c = Rect::from_center_size(Pos2::new(cx, panel.center().y), Vec2::new(420.0, 452.0));
+                        card(&p, c);
+                        glow_text(&p, Pos2::new(cx, c.top() + 32.0), t("SPLIT AND EXE"), FontId::new(11.0, family("ui")), ACCENT_SOFT(), alpha(ACCENT(), 5), 3.0);
+                        glow_text(&p, Pos2::new(cx, c.top() + 64.0), t("Split into volumes"), FontId::new(21.0, family("display")), TEXT(), alpha(ACCENT(), 6), 1.0);
+                        let mut y = c.top() + 84.0;
+                        y += wrapped(
+                            &p,
+                            Pos2::new(c.left() + 28.0, y),
+                            c.width() - 56.0,
+                            t("A volume is a part of the archive. To unpack, extract the first one: the others are read by themselves."),
+                            12.5,
+                            TEXT_DIM(),
+                        );
+                        y += 14.0;
+                        // ---- Off + the presets, as chips --------------------------
+                        let chip_font = FontId::new(12.0, family("ui"));
+                        let custom = form.text.trim().parse::<f64>().ok();
+                        let mut items: Vec<(usize, String, bool)> = vec![(usize::MAX, t("Off").to_string(), form.text.trim().is_empty())];
+                        for (k, (label, mb)) in SPLIT_PRESETS.iter().enumerate() {
+                            let lit = form.preset == k
+                                || (custom.is_some_and(|v| (v - *mb as f64).abs() < 0.5) && !form.gb);
+                            items.push((k, label.to_string(), lit));
+                        }
+                        let widths: Vec<f32> = items.iter().map(|(_, l, _)| lay(&p, l, chip_font.clone()).size().x + 22.0).collect();
+                        let gap = 6.0;
+                        let total: f32 = widths.iter().sum::<f32>() + gap * (items.len() - 1) as f32;
+                        let mut x = cx - total / 2.0;
+                        for ((k, label, lit), w) in items.iter().zip(&widths) {
+                            let r = Rect::from_min_size(Pos2::new(x, y), Vec2::new(*w, 26.0));
+                            let resp = ui.interact(r, egui::Id::new(("split-chip", *k)), Sense::click()).on_hover_cursor(egui::CursorIcon::PointingHand);
+                            if *lit {
+                                p.rect_filled(r, rr(13), skin::c().accent_btn());
+                            } else {
+                                p.rect_filled(r, rr(13), alpha(skin::c().field, 170));
+                                p.rect_stroke(r, rr(13), Stroke::new(1.0_f32, alpha(ACCENT_SOFT(), if resp.hovered() { 150 } else { 60 })), egui::StrokeKind::Inside);
+                            }
+                            let col = if *lit { ACCENT_FG() } else { TEXT() };
+                            text_fit(&p, r.center(), Align2::CENTER_CENTER, label, chip_font.clone(), col, *w - 12.0);
+                            if resp.clicked() {
+                                sfx::play(Sfx::Click);
+                                if *k == usize::MAX {
+                                    form.text.clear();
+                                    form.preset = usize::MAX;
+                                } else {
+                                    form.text = SPLIT_PRESETS[*k].1.to_string();
+                                    form.gb = false;
+                                    form.preset = *k;
+                                }
+                            }
+                            x += w + gap;
+                        }
+                        y += 26.0 + 16.0;
+                        // ---- the exact size ---------------------------------------
+                        text(&p, Pos2::new(c.left() + 28.0, y), Align2::LEFT_CENTER, t("SIZE OF EACH VOLUME"), FontId::new(10.0, family("ui")), TEXT_DIM());
+                        y += 10.0;
+                        let f = Rect::from_min_size(Pos2::new(c.left() + 28.0, y), Vec2::new(180.0, 34.0));
+                        p.rect_filled(f, rr(10), alpha(skin::c().field, 190));
+                        p.rect_stroke(f, rr(10), Stroke::new(1.0_f32, alpha(ACCENT_SOFT(), 70)), egui::StrokeKind::Inside);
+                        let edit = egui::TextEdit::singleline(&mut form.text)
+                            .id(egui::Id::new("split-text"))
+                            .font(FontId::new(13.0, family("ui-light")))
+                            .text_color(TEXT())
+                            .frame(false)
+                            .margin(egui::Margin::symmetric(12, 0))
+                            .vertical_align(egui::Align::Center)
+                            .hint_text(t("Size of each volume"));
+                        let r = ui.put(f, edit);
+                        if r.changed() {
+                            form.preset = usize::MAX;
+                        }
+                        for k in 0..2usize {
+                            let on = (k == 1) == form.gb;
+                            let unit_txt = if k == 1 { "GB" } else { "MB" };
+                            let bx = Rect::from_min_size(Pos2::new(f.right() + 8.0 + k as f32 * 52.0, y), Vec2::new(48.0, 34.0));
+                            let resp = ui.interact(bx, egui::Id::new(("split-unit", k)), Sense::click()).on_hover_cursor(egui::CursorIcon::PointingHand);
+                            if on {
+                                p.rect_filled(bx, rr(10), skin::c().accent_btn());
+                            } else {
+                                p.rect_filled(bx, rr(10), alpha(skin::c().field, 150));
+                            }
+                            p.rect_stroke(bx, rr(10), Stroke::new(1.0_f32, alpha(ACCENT_SOFT(), if on { 200 } else { 60 })), egui::StrokeKind::Inside);
+                            text_fit(&p, bx.center(), Align2::CENTER_CENTER, unit_txt, FontId::new(12.0, family("ui")), if on { ACCENT_FG() } else { TEXT() }, bx.width() - 8.0);
+                            if resp.clicked() {
+                                sfx::play(Sfx::Click);
+                                form.gb = k == 1;
+                            }
+                        }
+                        // ---- self-extracting .exe ---------------------------------
+                        y += 34.0 + 16.0;
+                        p.line_segment(
+                            [Pos2::new(c.left() + 28.0, y), Pos2::new(c.right() - 28.0, y)],
+                            Stroke::new(1.0_f32, alpha(ACCENT_SOFT(), 40)),
+                        );
+                        y += 12.0;
+                        let sw = Rect::from_min_size(Pos2::new(c.left() + 28.0, y), Vec2::new(34.0, 18.0));
+                        let swr = ui
+                            .interact(sw.union(Rect::from_min_size(sw.right_top(), Vec2::new(c.width() - 100.0, 18.0))), egui::Id::new("sfx-on"), Sense::click())
+                            .on_hover_cursor(egui::CursorIcon::PointingHand);
+                        if swr.clicked() {
+                            sfx::play(Sfx::Click);
+                            form.sfx = !form.sfx;
+                        }
+                        p.rect_filled(sw, rr(9), if form.sfx { skin::c().accent_btn() } else { alpha(skin::c().field, 220) });
+                        let knob = if form.sfx { Pos2::new(sw.right() - 9.0, sw.center().y) } else { Pos2::new(sw.left() + 9.0, sw.center().y) };
+                        p.circle_filled(knob, 6.5, if form.sfx { ACCENT_FG() } else { TEXT_DIM() });
+                        text_fit(&p, Pos2::new(sw.right() + 10.0, sw.center().y), Align2::LEFT_CENTER, t("Create a self-extracting .exe"), FontId::new(13.0, family("ui")), TEXT(), c.width() - 110.0);
+                        wrapped(
+                            &p,
+                            Pos2::new(c.left() + 28.0, y + 30.0),
+                            c.width() - 56.0,
+                            t("The .exe carries unNik inside it: whoever runs it can unpack the files without installing NikPak."),
+                            12.5,
+                            TEXT_DIM(),
+                        );
+                        if let Some(e) = form.error.as_ref() {
+                            let er = Rect::from_min_size(Pos2::new(c.left() + 20.0, c.bottom() - 78.0), Vec2::new(c.width() - 40.0, 16.0));
+                            text_fit(&p, er.center(), Align2::CENTER_CENTER, e.as_str(), FontId::new(11.5, family("ui-light")), ERR_RED(), er.width());
+                        }
+                        let no = Rect::from_min_size(Pos2::new(c.left() + 28.0, c.bottom() - 64.0), Vec2::new(170.0, 44.0));
+                        let yes = Rect::from_min_size(Pos2::new(c.right() - 28.0 - 170.0, c.bottom() - 64.0), Vec2::new(170.0, 44.0));
+                        if pill_button(ui, &p, no, t("Cancel"), false, "split-cancel") || ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+                            next = Some(Modal::None);
+                        }
+                        if pill_button(ui, &p, yes, t("Save"), true, "split-save") {
+                            let typed = !form.text.trim().is_empty();
+                            let size = form.size();
+                            if self.license.is_none() && (size.is_some() || form.sfx) {
+                                // the licence went away while the box was open: the
+                                // licence box comes first, whatever else is missing
+                                next = Some(Modal::Nag { register_left: true, feature: true });
+                            } else if typed && size.is_none() {
+                                form.error = Some(t("Enter the size of a volume, or click Off.").to_string());
+                            } else if form.sfx && crate::split::stub().is_none() {
+                                form.error = Some(t("unNik must be next to nikpak to make a .exe archive.").to_string());
+                            } else {
+                                sfx::play(Sfx::Click);
+                                self.split_on = size.is_some();
+                                if let Some(s) = size {
+                                    self.split_size = s;
+                                }
+                                self.sfx_on = form.sfx;
+                                save_split(self.split_on, self.split_size, self.sfx_on);
+                                next = Some(Modal::None);
+                            }
+                        }
+                    }
                     Modal::Legal { text: terms, on, error } => {
                         let c = Rect::from_center_size(Pos2::new(cx, panel.center().y), Vec2::new(420.0, (H - 24.0).min(500.0)));
                         card(&p, c);
@@ -2123,8 +3088,25 @@ impl App {
                 if let Some(m) = next {
                     self.modal = m;
                 }
+                if let Some((out, input)) = packaged {
+                    // measured before `out` moves into the stage
+                    let output = std::fs::metadata(&out).map(|m| m.len()).unwrap_or(0);
+                    self.stage = Stage::Done {
+                        out,
+                        input,
+                        output,
+                        secs: 0.0,
+                        warnings: false,
+                    };
+                }
             });
-        ctx.request_repaint_after(Duration::from_millis(50));
+        // a package being sealed or extracted runs on its own thread: while it
+        // does, a picture a second is enough (WORK_REPAINT); otherwise the box
+        // keeps its softer 50 ms for the pointer and the keyboard.
+        let working = matches!(&self.modal, Modal::CreatePackage(f) if f.job.is_some())
+            || matches!(&self.modal, Modal::OpenPackage(o) if o.job.is_some())
+            || matches!(&self.modal, Modal::Extract(e) if e.job.is_some());
+        ctx.request_repaint_after(if working { WORK_REPAINT } else { Duration::from_millis(50) });
     }
 }
 
@@ -2161,7 +3143,12 @@ impl eframe::App for App {
                     }
                     Err(std::sync::mpsc::TryRecvError::Empty) => {
                         self.update_rx = Some(rx);
-                        ctx.request_repaint_after(std::time::Duration::from_millis(250));
+                        // not while compressing: the answer is not urgent, and
+                        // this poll would keep the window at 4 pictures a second
+                        // instead of WORK_REPAINT's one
+                        if !matches!(self.stage, Stage::Working(_)) {
+                            ctx.request_repaint_after(std::time::Duration::from_millis(250));
+                        }
                     }
                     Err(std::sync::mpsc::TryRecvError::Disconnected) => {}
                 }
@@ -2194,16 +3181,71 @@ impl eframe::App for App {
                     Err(e) => *error = Some(e),
                 }
             }
+        } else if let Modal::CreatePackage(form) = &mut self.modal {
+            // the Create Package box is open: a dropped picture becomes the cover,
+            // anything else is added to the files to package
+            if let Some(f) = dropped.iter().find(|f| is_picture(f)) {
+                match crate::cover::from_file(f) {
+                    Ok(b) => {
+                        form.cover = Some(b);
+                        form.cover_tex = None;
+                        form.error = None;
+                        sfx::play(Sfx::Click);
+                    }
+                    Err(e) => form.error = Some(e),
+                }
+            } else {
+                for f in dropped {
+                    if !form.files.contains(&f) {
+                        form.files.push(f);
+                    }
+                }
+            }
         } else if !dropped.is_empty() && matches!(self.modal, Modal::None) {
-            self.chooser = false;
-            self.start_job(dropped);
+            // a dropped NikPak package is opened, not compressed
+            if dropped.len() == 1 && crate::package::is_package(&dropped[0]) {
+                match crate::package::read_info(&dropped[0]) {
+                    Ok(info) => {
+                        let approved = info.eula.is_none();
+                        self.modal = Modal::OpenPackage(Box::new(PackageOpen {
+                            path: dropped[0].clone(),
+                            info,
+                            cover_tex: None,
+                            password: String::new(),
+                            approved,
+                            dest: load_package_dest(),
+                            error: None,
+                            job: None,
+                            done: None,
+                        }));
+                        sfx::play(Sfx::Pop);
+                    }
+                    Err(e) => self.stage = Stage::Failed(e.to_string()),
+                }
+            } else if dropped.len() == 1
+                && !matches!(self.stage, Stage::Working(_))
+                && is_archive_file(&crate::split::first_volume(&dropped[0]))
+            {
+                // **A dropped archive is unpacked, not compressed.** Dropping
+                // `photos.nik` (or any volume of its set, `.n01` …) used to put
+                // that file inside a brand-new archive, which is never what was
+                // meant: it opens the Extract box instead, which reads the whole
+                // set through split::Chain. (Not while another job runs: the
+                // progress counters and Cancel are shared - see PROGRESS.)
+                let first = crate::split::first_volume(&dropped[0]);
+                self.modal = Modal::Extract(Box::new(ExtractForm::load(first)));
+                sfx::play(Sfx::Pop);
+            } else {
+                self.chooser = false;
+                self.start_job(dropped);
+            }
         }
 
         // ---- room for the skins box beside the program --------------------
         // The box is drawn inside the window, so to stand outside the program
         // the window itself grows by SKIN_SLOT while the box is open; that
         // extra part is left transparent and the program keeps its size.
-        self.fit_skins_window(ctx);
+        self.fit_window(ctx);
 
         let now = self.start.elapsed().as_secs_f32();
         let mut panel_rect = Rect::NOTHING;
@@ -2314,17 +3356,39 @@ impl eframe::App for App {
             let lvl_font = FontId::new(11.5, family("ui"));
             let lvl_txts: Vec<Txt> = LEVELS.iter().map(|(k, _)| lay(&p, t(*k), lvl_font.clone())).collect();
             let lvl_sep = 6.0;
-            let legal_w = lay(&p, &format!("§ {}", t("Legal")), lvl_font.clone()).size().x + 20.0;
-            let cover_w = lay(&p, &format!("▣ {}", t("Cover")), lvl_font.clone()).size().x + 20.0;
-            let extra_w = legal_w + lvl_sep + cover_w;
+            let rtl = i18n::current().rtl();
+            // the pills after the levels: Legal, Cover, Package and Split, each
+            // lit while it is in force. Off, the Split pill carries its name;
+            // on, the value it will use ("700 MB", "EXE 4.70 GB"), which stays
+            // short in every language.
+            // an evaluation copy has no split in force (the pill shows its bare
+            // name, and clicking it explains why: see below)
+            let split_on = self.split_on && self.license.is_some();
+            let sfx_on = self.sfx_on && self.license.is_some();
+            let split_label = if sfx_on && split_on {
+                format!("EXE {}", crate::split::size_text(self.split_size))
+            } else if sfx_on {
+                "EXE".to_string()
+            } else if split_on {
+                crate::split::size_text(self.split_size)
+            } else {
+                t("Split").to_string()
+            };
+            let mut pills: Vec<(&str, String, bool)> = vec![
+                ("legal-pill", format!("§ {}", t("Legal")), self.legal_on),
+                ("cover-pill", format!("▣ {}", t("Cover")), self.cover_on && self.cover.is_some()),
+                ("package-pill", t("Package").to_string(), false),
+                ("split-pill", split_label, split_on || sfx_on),
+            ];
+            let extra_w: f32 = pills.iter().map(|(_, l, _)| lay(&p, l, lvl_font.clone()).size().x + 20.0).sum::<f32>()
+                + lvl_sep * (pills.len() - 1) as f32;
             let lvl_w: f32 = lvl_txts.iter().map(|g| g.size().x + 20.0).sum::<f32>() + lvl_sep * (LEVELS.len() - 1) as f32;
             let lvl_y = lr.bottom() + 20.0;
-            // the row (levels + the Legal pill) stays centred as a whole; right-to-left
-            // languages put the pill first
+            // the row stays centred as a whole; right-to-left languages read it
+            // right-to-left, with the pills first
             let row_x = panel.center().x - (lvl_w + lvl_sep * 2.0 + extra_w) / 2.0;
-            let mut lvl_x = if i18n::current().rtl() { row_x + extra_w + lvl_sep * 2.0 } else { row_x };
-            // right-to-left languages read the pills right-to-left
-            let lvl_order: Vec<usize> = if i18n::current().rtl() {
+            let mut lvl_x = if rtl { row_x + extra_w + lvl_sep * 2.0 } else { row_x };
+            let lvl_order: Vec<usize> = if rtl {
                 (0..LEVELS.len()).rev().collect()
             } else {
                 (0..LEVELS.len()).collect()
@@ -2349,45 +3413,67 @@ impl eframe::App for App {
                 }
                 lvl_x += w + lvl_sep;
             }
-            // the "Legal" pill closes the row (opposite end for right-to-left): lit
-            // while new archives carry the terms; a click opens the terms box
-            let rtl = i18n::current().rtl();
-            let extras_x = if rtl { row_x } else { lvl_x + lvl_sep };
-            {
-                let w = legal_w;
-                let x = if rtl { extras_x + cover_w + lvl_sep } else { extras_x };
-                let rect = Rect::from_min_size(Pos2::new(x, lvl_y - 9.0), Vec2::new(w, 18.0));
-                let resp = ui.interact(rect, egui::Id::new("legal-pill"), Sense::click()).on_hover_cursor(egui::CursorIcon::PointingHand);
-                let hover = resp.hovered() && !busy_now;
-                if hover {
-                    p.rect_filled(rect, rr(9), alpha(ACCENT(), 34));
-                }
-                let col = if self.legal_on { ACCENT_SOFT() } else if hover { TEXT() } else { TEXT_DIM() };
-                p.rect_stroke(rect, rr(9), Stroke::new(1.0_f32, alpha(col, if self.legal_on { 220 } else { 90 })), egui::StrokeKind::Inside);
-                text_fit(&p, rect.center(), Align2::CENTER_CENTER, &format!("§ {}", t("Legal")), lvl_font.clone(), col, w - 10.0);
-                if resp.clicked() && !busy_now && matches!(self.modal, Modal::None) {
-                    sfx::play(Sfx::Click);
-                    self.modal = Modal::Legal { text: self.legal_text.clone(), on: self.legal_on || self.legal_text.trim().is_empty(), error: None };
-                }
+            if rtl {
+                pills.reverse();
             }
-            // the "Cover" pill: lit while new archives carry the cover
-            {
-                let w = cover_w;
-                let x = if rtl { extras_x } else { extras_x + legal_w + lvl_sep };
-                let rect = Rect::from_min_size(Pos2::new(x, lvl_y - 9.0), Vec2::new(w, 18.0));
-                let resp = ui.interact(rect, egui::Id::new("cover-pill"), Sense::click()).on_hover_cursor(egui::CursorIcon::PointingHand);
+            let mut px = if rtl { row_x } else { lvl_x + lvl_sep };
+            for (id, label, lit) in &pills {
+                let w = lay(&p, label, lvl_font.clone()).size().x + 20.0;
+                let rect = Rect::from_min_size(Pos2::new(px, lvl_y - 9.0), Vec2::new(w, 18.0));
+                let resp = ui.interact(rect, egui::Id::new(*id), Sense::click()).on_hover_cursor(egui::CursorIcon::PointingHand);
+                // the Split pill is licensed: say so before it is clicked
+                let resp = if *id == "split-pill" && self.license.is_none() {
+                    resp.on_hover_text(tip("A registered copy can split an archive into volumes and write a self-extracting .exe."))
+                } else {
+                    resp
+                };
                 let hover = resp.hovered() && !busy_now;
                 if hover {
                     p.rect_filled(rect, rr(9), alpha(ACCENT(), 34));
                 }
-                let lit = self.cover_on && self.cover.is_some();
-                let col = if lit { ACCENT_SOFT() } else if hover { TEXT() } else { TEXT_DIM() };
-                p.rect_stroke(rect, rr(9), Stroke::new(1.0_f32, alpha(col, if lit { 220 } else { 90 })), egui::StrokeKind::Inside);
-                text_fit(&p, rect.center(), Align2::CENTER_CENTER, &format!("▣ {}", t("Cover")), lvl_font.clone(), col, w - 10.0);
+                let col = if *lit { ACCENT_SOFT() } else if hover { TEXT() } else { TEXT_DIM() };
+                p.rect_stroke(rect, rr(9), Stroke::new(1.0_f32, alpha(col, if *lit { 220 } else { 90 })), egui::StrokeKind::Inside);
+                text_fit(&p, rect.center(), Align2::CENTER_CENTER, label, lvl_font.clone(), col, w - 10.0);
                 if resp.clicked() && !busy_now && matches!(self.modal, Modal::None) {
                     sfx::play(Sfx::Click);
-                    self.modal = Modal::Cover { pic: self.cover.clone(), on: self.cover_on || self.cover.is_none(), error: None, tex: None };
+                    match *id {
+                        "legal-pill" => {
+                            self.modal = Modal::Legal { text: self.legal_text.clone(), on: self.legal_on || self.legal_text.trim().is_empty(), error: None };
+                        }
+                        "cover-pill" => {
+                            self.modal = Modal::Cover { pic: self.cover.clone(), on: self.cover_on || self.cover.is_none(), error: None, tex: None };
+                        }
+                        "package-pill" => {
+                            self.modal = Modal::CreatePackage(Box::new(PackageForm {
+                                files: Vec::new(),
+                                name: String::new(),
+                                author: read_setting("package_author").unwrap_or_default(),
+                                description: String::new(),
+                                password: String::new(),
+                                password2: String::new(),
+                                eula_on: read_setting("package_eula_on").as_deref() == Some("1"),
+                                eula: load_package_eula_text(),
+                                dest: load_package_dest(),
+                                cover: None,
+                                cover_tex: None,
+                                error: None,
+                                job: None,
+                            }));
+                        }
+                        _ => {
+                            // **Split volumes and the .exe are licensed features.**
+                            // An evaluation copy gets the registration box (which
+                            // says which feature was asked for) instead of the
+                            // Split box; the CLI refuses -v and -sfx the same way.
+                            if self.license.is_none() {
+                                self.modal = Modal::Nag { register_left: rand::random::<bool>(), feature: true };
+                            } else {
+                                self.modal = Modal::Split(Box::new(SplitForm::new(self.split_on, self.split_size, self.sfx_on)));
+                            }
+                        }
+                    }
                 }
+                px += w + lvl_sep;
             }
 
             // ---- centre ------------------------------------------------------------
@@ -2400,7 +3486,7 @@ impl eframe::App for App {
                     let phase = PROGRESS.phase.load(Relaxed);
                     // 0-99 % while reading input, 100 % only when the archive is complete
                     let target = (done as f32 / total as f32 * 99.0).min(99.0);
-                    self.shown += (target - self.shown) * 0.18;
+                    ease(&mut self.shown, target, ctx.input(|i| i.unstable_dt));
                     p.circle_stroke(ring_c, r, Stroke::new(9.0_f32, TRACK()));
                     progress_arc(&p, ring_c, r, self.shown / 100.0, ACCENT());
                     let pct = format!("{}", self.shown.round() as u32);
@@ -2448,7 +3534,9 @@ impl eframe::App for App {
                         sfx::play(Sfx::Cancel);
                         PROGRESS.cancel.store(true, Relaxed);
                     }
-                    ctx.request_repaint_after(Duration::from_millis(16));
+                    // one picture a second while compressing: the rest of the
+                    // CPU belongs to the compressor (see WORK_REPAINT)
+                    ctx.request_repaint_after(WORK_REPAINT);
                 }
                 Stage::Done { out, input, output, secs, warnings } => {
                     p.circle_stroke(ring_c, r, Stroke::new(9.0_f32, TRACK()));
@@ -2637,7 +3725,17 @@ impl eframe::App for App {
                         _ => {}
                     }
                     if let Some(paths) = chosen {
-                        self.start_job(paths);
+                        // an archive chosen on purpose is unpacked too: it is
+                        // never a file to put inside another archive
+                        let arc = if paths.len() == 1 { crate::split::first_volume(&paths[0]) } else { PathBuf::new() };
+                        if paths.len() == 1 && is_archive_file(&arc) {
+                            // an archive (or a volume of a split set) chosen on
+                            // purpose is unpacked, never packed into another one
+                            self.modal = Modal::Extract(Box::new(ExtractForm::load(arc)));
+                            sfx::play(Sfx::Pop);
+                        } else {
+                            self.start_job(paths);
+                        }
                     }
                     ctx.request_repaint_after(Duration::from_millis(33));
                 }

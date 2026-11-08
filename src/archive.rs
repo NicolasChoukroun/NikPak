@@ -17,6 +17,7 @@ use crate::error::{from_io, NikError, Result};
 use crate::format::*;
 use crate::media;
 use crate::recomp;
+use crate::split::{self, Chain, Out};
 use crate::util::*;
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, BufReader, BufWriter, Read, Seek, Write};
@@ -87,21 +88,10 @@ fn warn(msg: String) {
     }
 }
 
-/// Reads the archive file and counts the bytes read in PROGRESS.done, so
-/// reading, extracting and deleting show a progress bar in the window.
-struct Counted(File);
-
-impl Read for Counted {
-    fn read(&mut self, b: &mut [u8]) -> io::Result<usize> {
-        let n = self.0.read(b)?;
-        PROGRESS.done.fetch_add(n as u64, Relaxed);
-        Ok(n)
-    }
-}
-
 /// Counts the bytes written to the archive in PROGRESS.out, so the window can
-/// estimate the final size and ratio while compressing.
-struct CountedW(File);
+/// estimate the final size and ratio while compressing. `Out` writes one file,
+/// a set of volumes, or a self-extracting .exe (see split.rs).
+struct CountedW(Out);
 
 impl Write for CountedW {
     fn write(&mut self, b: &[u8]) -> io::Result<usize> {
@@ -115,8 +105,8 @@ impl Write for CountedW {
 }
 
 impl CountedW {
-    fn sync_all(&self) -> io::Result<()> {
-        self.0.sync_all()
+    fn into_out(self) -> Out {
+        self.0
     }
 }
 
@@ -153,14 +143,16 @@ impl Write for Sink {
 }
 
 impl Sink {
-    fn finish(self) -> io::Result<()> {
+    /// Flush everything and hand the output, so the caller can put the file (or
+    /// the volumes, or the .exe) in place with `Out::finish`.
+    fn finish(self) -> io::Result<Out> {
+        fn take(mut w: BufWriter<CountedW>) -> io::Result<Out> {
+            w.flush()?;
+            Ok(w.into_inner().map_err(|e| e.into_error())?.into_out())
+        }
         match self {
-            Sink::Plain(mut w) => w.flush(),
-            Sink::Enc(w) => {
-                let mut inner = w.finish()?;
-                inner.flush()?;
-                inner.get_ref().sync_all()
-            }
+            Sink::Plain(w) => take(w),
+            Sink::Enc(w) => take(w.finish()?),
         }
     }
 }
@@ -189,29 +181,11 @@ impl Write for Compressor {
 }
 
 impl Compressor {
-    fn finish(self) -> io::Result<()> {
+    fn finish(self) -> io::Result<Out> {
         match self {
             Compressor::Store(s) => s.finish(),
             Compressor::Zstd(e) => e.finish()?.finish(),
             Compressor::Blocks(b) => b.finish()?.finish(),
-        }
-    }
-}
-
-/// Removes the temporary file unless `keep` is called.
-struct TempGuard {
-    path: PathBuf,
-    armed: bool,
-}
-impl TempGuard {
-    fn disarm(&mut self) {
-        self.armed = false;
-    }
-}
-impl Drop for TempGuard {
-    fn drop(&mut self) {
-        if self.armed {
-            let _ = fs::remove_file(&self.path);
         }
     }
 }
@@ -423,17 +397,35 @@ pub fn create(o: &Options) -> Result<u8> {
     PROGRESS.files_total.store(0, Relaxed);
     let archive = PathBuf::from(&o.archive);
 
+    // ---- a self-extracting archive is an .exe, not a .nik ---------------
+    // The archive is written inside a copy of unNik, so whoever gets the file
+    // can unpack it without installing anything.
+    let (archive, sfx) = if o.sfx {
+        let stub = split::stub().ok_or_else(|| {
+            NikError::Fatal(
+                "Cannot make a self-extracting archive: unNik is not next to nikpak.\n\
+                 The .exe is unNik with the archive appended, so the two must sit together."
+                    .into(),
+            )
+        })?;
+        let len = fs::metadata(&stub).map(|m| m.len()).unwrap_or(0);
+        (split::sfx_name(&archive), Some((stub, len)))
+    } else {
+        (archive, None)
+    };
+    let archive_display = archive.display().to_string();
+
     if let Some(parent) = archive.parent() {
         if !parent.as_os_str().is_empty() && !parent.is_dir() {
             return Err(NikError::Fatal(format!(
                 "Cannot create '{}': the folder '{}' does not exist.",
-                o.archive,
+                archive_display,
                 parent.display()
             )));
         }
     }
     if archive.is_dir() {
-        return Err(NikError::Fatal(format!("'{}' is a folder, not an archive file.", o.archive)));
+        return Err(NikError::Fatal(format!("'{}' is a folder, not an archive file.", archive_display)));
     }
     if archive.exists() {
         let allow = match o.overwrite {
@@ -441,7 +433,7 @@ pub fn create(o: &Options) -> Result<u8> {
             Overwrite::Skip => false,
             Overwrite::Rename => false,
             Overwrite::Ask => matches!(
-                ask_yes_no(&format!("Archive '{}' already exists. Overwrite it?", o.archive)),
+                ask_yes_no(&format!("Archive '{}' already exists. Overwrite it?", archive_display)),
                 Some('y') | Some('a')
             ),
         };
@@ -449,7 +441,7 @@ pub fn create(o: &Options) -> Result<u8> {
             return Err(NikError::Fatal(format!(
                 "Archive '{}' already exists. Adding to an existing archive is not supported;\n\
                  use -o+ to overwrite it, or choose another name.",
-                o.archive
+                archive_display
             )));
         }
     }
@@ -518,17 +510,15 @@ pub fn create(o: &Options) -> Result<u8> {
         nonce_prefix: crypto::random_bytes::<NONCE_PREFIX_LEN>(),
         legal: checked_legal(o.legal.as_deref())?,
         cover: checked_cover(o.cover.as_deref())?,
+        // the volumes, when the archive is split (see split.rs)
+        split: o.split.map(|s| s.max(split::MIN_VOLUME)),
     };
     let header_bytes = header.to_bytes();
 
-    // ---- open temp output ------------------------------------------------
-    let mut tmp_name = archive.as_os_str().to_owned();
-    tmp_name.push(".tmp");
-    let tmp_path = PathBuf::from(tmp_name);
-    let file = File::create(&tmp_path)
-        .map_err(|e| NikError::Fatal(format!("Cannot create '{}': {e}", tmp_path.display())))?;
-    let mut guard = TempGuard { path: tmp_path.clone(), armed: true };
-    let mut bw = BufWriter::with_capacity(IO_BUF, CountedW(file));
+    // ---- open the output (a temp file, or the first temp volume) ---------
+    let out = Out::create(&archive, o.split, sfx.clone())
+        .map_err(|e| NikError::Fatal(format!("Cannot create '{}': {e}", archive_display)))?;
+    let mut bw = BufWriter::with_capacity(IO_BUF, CountedW(out));
     bw.write_all(&header_bytes).map_err(|e| from_io(e, "Write error"))?;
 
     let sink = if let Some(pw) = &password {
@@ -547,212 +537,73 @@ pub fn create(o: &Options) -> Result<u8> {
     } else {
         std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1)
     };
-    let mut comp = match o.level {
-        Level::Store => Compressor::Store(sink),
-        Level::Max => Compressor::Blocks(BlockWriter::new(sink)),
-        Level::Zstd(lvl) => {
-            let mut enc = zstd::stream::write::Encoder::new(sink, lvl)
-                .map_err(|e| from_io(e, "Cannot start compressor"))?;
-            if threads > 1 {
-                enc.multithread(threads as u32).map_err(|e| from_io(e, "Cannot enable multithreading"))?;
-            }
-            let _ = enc.include_checksum(true);
-            // High levels: 128 MiB window + long-distance matching finds repeats
-            // that are far apart (large source trees, many similar documents).
-            // 2^27 is within the decoder's default window limit, so every
-            // zstd-capable reader can still decode it.
-            if lvl >= 15 {
-                let _ = enc.window_log(27);
-                let _ = enc.long_distance_matching(true);
-            }
-            Compressor::Zstd(enc)
-        }
-    };
-
-    // ---- write entries ----------------------------------------------------
-    let mut warnings = warnings_collect;
-    let mut count: u64 = 0;
-    let mut total_in: u64 = 0;
-    let mut media_files: u64 = 0;
-    let mut deflate_files: u64 = 0;
-    let mut buf = vec![0u8; IO_BUF];
+    let parallel = parallel_wanted(threads);
     let filters_on = o.media != MediaMode::Off && o.level != Level::Store;
     // Deflate recompression at -m4 and -m5: at lower levels the fast zstd
     // settings gain little on the expanded data and the analysis costs time.
     let recomp_on = filters_on && o.level.effort() >= 15;
 
-    // Order of entries and where a new compression block starts (-m5 only).
-    let plan = if o.level == Level::Max {
-        plan_blocks(&items, o.quiet, recomp_on, threads)?
-    } else {
-        (0..items.len()).map(|i| (i, None)).collect()
-    };
-
     PROGRESS.files_done.store(0, Relaxed);
     PROGRESS.phase.store(PHASE_COMPRESS, Relaxed);
-    for (idx, new_block) in plan {
-        check_cancel()?;
-        let it = &items[idx];
-        if let (Some(e), Compressor::Blocks(b)) = (new_block, &mut comp) {
-            b.start(e, threads as u32).map_err(|e| from_io(e, "Cannot start compressor"))?;
-        }
-        let name_bytes = it.name.as_bytes();
-        if it.is_dir {
-            write_rec_header(&mut comp, REC_DIR, name_bytes, it.mtime, it.mode, None)
-                .map_err(|e| from_io(e, "Write error"))?;
-            count += 1;
-            if !o.quiet {
-                outln!("Adding    {}/", it.name);
+
+    // ---- write entries ----------------------------------------------------
+    let mut warnings = warnings_collect;
+    let stats: Stats;
+    let out: Out;
+    if o.level == Level::Max {
+        // -m5: blocks of LZMA2 / PPMd, compressed one per thread at the same
+        // time (the reader has always accepted any number of blocks)
+        let blocks = plan_blocks(&items, o.quiet, recomp_on, threads)?;
+        let (back, st) = write_body_blocks(sink, &blocks, &items, o, filters_on, recomp_on, parallel, &archive)?;
+        warnings += st.warnings;
+        stats = st;
+        PROGRESS.phase.store(PHASE_FINISH, Relaxed);
+        out = back.finish().map_err(|e| from_io(e, "Cannot finish archive"))?;
+    } else {
+        let mut comp = match o.level {
+            Level::Zstd(lvl) => {
+                let mut enc = zstd::stream::write::Encoder::new(sink, lvl)
+                    .map_err(|e| from_io(e, "Cannot start compressor"))?;
+                if threads > 1 {
+                    enc.multithread(threads as u32).map_err(|e| from_io(e, "Cannot enable multithreading"))?;
+                }
+                let _ = enc.include_checksum(true);
+                // High levels: 128 MiB window + long-distance matching finds repeats
+                // that are far away (large source trees, many similar documents).
+                // 2^27 is within the decoder's default window limit, so every
+                // zstd-capable reader can still decode it.
+                if lvl >= 15 {
+                    let _ = enc.window_log(27);
+                    let _ = enc.long_distance_matching(true);
+                }
+                Compressor::Zstd(enc)
             }
-            continue;
-        }
-        let mut f = match File::open(&it.src) {
-            Ok(f) => f,
-            Err(e) => {
-                warnings += 1;
-                eprintln!("WARNING: Cannot open '{}': {e} - skipped", it.src.display());
-                continue;
-            }
+            _ => Compressor::Store(sink),
         };
-        let size = match f.metadata() {
-            Ok(m) => m.len(),
-            Err(e) => {
-                warnings += 1;
-                eprintln!("WARNING: Cannot read size of '{}': {e} - skipped", it.src.display());
-                continue;
-            }
-        };
-        // ---- media filters (WAV / AIFF / MOD / BMP) ----
-        if filters_on {
-            let zl = o.level.effort();
-            if let Some(det) = media::detect(&mut f, size) {
-                let nl = media::nac_level(zl);
-                let method = if o.media == MediaMode::Force {
-                    Some(det.default_method())
-                } else {
-                    match media::choose(&mut f, &det, nl) {
-                        Ok(m) => m,
-                        Err(_) => None,
-                    }
-                };
-                let _ = f.seek(io::SeekFrom::Start(0));
-                if let Some(m) = method {
-                    let params = det.params_bytes();
-                    write_rec_header(&mut comp, REC_MEDIA, name_bytes, it.mtime, it.mode, Some(size))
-                        .map_err(|e| from_io(e, "Write error"))?;
-                    comp.write_all(&[det.filter_id(), m, params.len() as u8])
-                        .and_then(|_| comp.write_all(&params))
-                        .map_err(|e| from_io(e, "Write error"))?;
-                    let mut cw = media::ChunkWriter::new(&mut comp);
-                    let mut rd = media::CrcRead::new(&mut f, size);
-                    media::encode(&mut rd, size, &det, m, nl, &mut cw)
-                        .map_err(|e| from_io(e, &format!("'{}'", it.src.display())))?;
-                    cw.finish().map_err(|e| from_io(e, "Write error"))?;
-                    let (crc, left) = rd.finish();
-                    if left != 0 {
-                        return Err(NikError::Fatal(format!(
-                            "'{}' changed while it was being archived; aborting (archive not created).",
-                            it.src.display()
-                        )));
-                    }
-                    comp.write_all(&crc.to_le_bytes()).map_err(|e| from_io(e, "Write error"))?;
-                    count += 1;
-                    total_in += size;
-                    media_files += 1;
-                    PROGRESS.done.fetch_add(size, Relaxed);
-                    PROGRESS.files_done.fetch_add(1, Relaxed);
-                    if !o.quiet {
-                        outln!("Adding    {}   [{} {}]", it.name, det.kind.name(), media::method_name(det.filter_id(), m));
-                    }
-                    continue;
-                }
-            }
+        let all: Vec<usize> = (0..items.len()).collect();
+        let mut st = Stats::default();
+        if parallel {
+            write_items_pipelined(&mut comp, &items, &all, o, filters_on, recomp_on, threads, &archive, &mut st)?;
+        } else {
+            write_items_list(&mut comp, &items, &all, o, filters_on, recomp_on, &mut st, true)?;
         }
-        // ---- Deflate recompression (ZIP containers, PDF, gzip) ----
-        if recomp_on {
-            if let Some(kind) = recomp::detect(&mut f, size) {
-                let mut data = Vec::with_capacity(size as usize);
-                if let Err(e) = Read::by_ref(&mut f).take(size).read_to_end(&mut data) {
-                    return Err(NikError::Fatal(format!("Read error on '{}': {e}", it.src.display())));
-                }
-                if data.len() as u64 != size {
-                    return Err(NikError::Fatal(format!(
-                        "'{}' became shorter while it was being archived; aborting (archive not created).",
-                        it.src.display()
-                    )));
-                }
-                let crc = crc32fast::hash(&data);
-                let mut label = String::new();
-                match recomp::encode(&data, kind).filter(|(t, _)| recomp_verified(t, size, crc)) {
-                    Some((t, st)) => {
-                        write_rec_header(&mut comp, REC_MEDIA, name_bytes, it.mtime, it.mode, Some(size))
-                            .and_then(|_| comp.write_all(&[recomp::FILTER_DEFLATE, recomp::M_PREFLATE, 0]))
-                            .map_err(|e| from_io(e, "Write error"))?;
-                        let mut cw = media::ChunkWriter::new(&mut comp);
-                        cw.write_all(&t).and_then(|_| cw.finish()).map_err(|e| from_io(e, "Write error"))?;
-                        deflate_files += 1;
-                        label = format!("   [{} {} stream{} recompressed]", kind.name(), st.streams, if st.streams == 1 { "" } else { "s" });
-                    }
-                    None => {
-                        write_rec_header(&mut comp, REC_FILE, name_bytes, it.mtime, it.mode, Some(size))
-                            .and_then(|_| comp.write_all(&data))
-                            .map_err(|e| from_io(e, "Write error"))?;
-                    }
-                }
-                comp.write_all(&crc.to_le_bytes()).map_err(|e| from_io(e, "Write error"))?;
-                count += 1;
-                total_in += size;
-                PROGRESS.done.fetch_add(size, Relaxed);
-                PROGRESS.files_done.fetch_add(1, Relaxed);
-                if !o.quiet {
-                    outln!("Adding    {}{}", it.name, label);
-                }
-                continue;
-            }
-        }
-        write_rec_header(&mut comp, REC_FILE, name_bytes, it.mtime, it.mode, Some(size))
-            .map_err(|e| from_io(e, "Write error"))?;
-        let mut crc = crc32fast::Hasher::new();
-        let mut remaining = size;
-        while remaining > 0 {
-            let want = remaining.min(buf.len() as u64) as usize;
-            let n = f.read(&mut buf[..want]).map_err(|e| {
-                NikError::Fatal(format!("Read error on '{}': {e}", it.src.display()))
-            })?;
-            if n == 0 {
-                return Err(NikError::Fatal(format!(
-                    "'{}' became shorter while it was being archived; aborting (archive not created).",
-                    it.src.display()
-                )));
-            }
-            crc.update(&buf[..n]);
-            comp.write_all(&buf[..n]).map_err(|e| from_io(e, "Write error"))?;
-            remaining -= n as u64;
-            PROGRESS.done.fetch_add(n as u64, Relaxed);
-            check_cancel()?;
-        }
-        comp.write_all(&crc.finalize().to_le_bytes()).map_err(|e| from_io(e, "Write error"))?;
-        count += 1;
-        total_in += size;
-        PROGRESS.files_done.fetch_add(1, Relaxed);
-        if !o.quiet {
-            outln!("Adding    {}", it.name);
-        }
+        warnings += st.warnings;
+        stats = st;
+        PROGRESS.phase.store(PHASE_FINISH, Relaxed);
+        comp.write_all(&[REC_END]).map_err(|e| from_io(e, "Write error"))?;
+        comp.write_all(&stats.count.to_le_bytes()).map_err(|e| from_io(e, "Write error"))?;
+        out = comp.finish().map_err(|e| from_io(e, "Cannot finish archive"))?;
     }
+    let count = stats.count;
+    let total_in = stats.total_in;
+    let media_files = stats.media;
+    let deflate_files = stats.deflate;
+    let volumes = out
+        .finish()
+        .map_err(|e| NikError::Fatal(format!("Cannot create '{}': {e}", archive_display)))?;
 
-    // ---- trailer ----------------------------------------------------------
-    PROGRESS.phase.store(PHASE_FINISH, Relaxed);
-    comp.write_all(&[REC_END]).map_err(|e| from_io(e, "Write error"))?;
-    comp.write_all(&count.to_le_bytes()).map_err(|e| from_io(e, "Write error"))?;
-    comp.finish().map_err(|e| from_io(e, "Cannot finish archive"))?;
-
-    if archive.exists() {
-        let _ = fs::remove_file(&archive);
-    }
-    fs::rename(&tmp_path, &archive)
-        .map_err(|e| NikError::Fatal(format!("Cannot create '{}': {e}", archive.display())))?;
-    guard.disarm();
-
+    // one file, or a set of volumes (with the .exe holding the first of them)
+    let files = volumes;
     let out_size = fs::metadata(&archive).map(|m| m.len()).unwrap_or(0);
     if !o.quiet {
         let secs = started.elapsed().as_secs_f64();
@@ -767,6 +618,15 @@ pub fn create(o: &Options) -> Result<u8> {
             secs,
             if header.encrypted { ", encrypted" } else { "" }
         );
+        if files > 1 {
+            outln!("The archive is split into {} files of {}.", files, split::size_text(o.split.unwrap_or(0)));
+        }
+        if sfx.is_some() {
+            outln!(
+                "Self-extracting archive: '{}' unpacks itself on any Windows PC (no nikpak needed).",
+                archive_display
+            );
+        }
         if media_files > 0 {
             outln!("{} media file(s) were compressed with media filters.", media_files);
         }
@@ -775,6 +635,94 @@ pub fn create(o: &Options) -> Result<u8> {
         }
     }
     Ok(if warnings > 0 { 1 } else { 0 })
+}
+
+/// Write the -m5 body: every block, in order, then a last small block that
+/// holds the end record, then the body's end marker. The blocks are made at
+/// the same time on several threads (`parallel`), each into its own holding
+/// area (memory, then a temporary file), and only copied into the archive in
+/// this order - so the archive itself is still written strictly sequentially,
+/// which is what encryption and the volume splitter need.
+fn write_body_blocks(
+    sink: Sink,
+    blocks: &[BlockPlan],
+    items: &[Item],
+    o: &Options,
+    filters_on: bool,
+    recomp_on: bool,
+    parallel: bool,
+    archive: &Path,
+) -> Result<(Sink, Stats)> {
+    let mut sink = sink;
+    let mut stats = Stats::default();
+    if parallel && blocks.len() > 1 {
+        // each block may keep this much in memory before spilling to a file
+        let per_block = (BLOCK_SPILL_TOTAL / blocks.len() as u64).clamp(8 << 20, 64 << 20);
+        let results: Vec<(Result<Stats>, Spill)> = std::thread::scope(|s| {
+            let handles: Vec<_> = blocks
+                .iter()
+                .enumerate()
+                .map(|(k, b)| {
+                    let path = spill_path(archive, k as u64);
+                    s.spawn(move || {
+                        let mut sp = Spill::new(path, per_block);
+                        let mut st = Stats::default();
+                        let r = (|| -> Result<()> {
+                            let mut bw = BlockWriter::new(&mut sp);
+                            // one block is one thread: the engine is LZMA2 or PPMd,
+                            // which are single-threaded by nature
+                            bw.start(b.engine, 1).map_err(|e| from_io(e, "Cannot start compressor"))?;
+                            write_items_list(&mut bw, items, &b.items, o, filters_on, recomp_on, &mut st, false)?;
+                            // `end` closes this block; the body's end marker is
+                            // written once, after the last block, by the caller
+                            bw.end().map_err(|e| from_io(e, "Cannot finish compressor"))?;
+                            Ok(())
+                        })();
+                        (r.map(|()| st), sp)
+                    })
+                })
+                .collect();
+            handles
+                .into_iter()
+                .map(|h| {
+                    h.join().unwrap_or_else(|_| {
+                        (Err(NikError::Fatal("Internal error while compressing.".into())), Spill::new(PathBuf::new(), 0))
+                    })
+                })
+                .collect()
+        });
+        for (r, sp) in results {
+            let st = r?;
+            sp.finish().map_err(|e| from_io(e, "Write error"))?.copy_to(&mut sink)?;
+            for line in &st.logs {
+                outln!("{}", line);
+            }
+            stats.merge(&st);
+        }
+    } else {
+        let mut bw = BlockWriter::new(&mut sink);
+        for b in blocks {
+            check_cancel()?;
+            bw.start(b.engine, 1).map_err(|e| from_io(e, "Cannot start compressor"))?;
+            write_items_list(&mut bw, items, &b.items, o, filters_on, recomp_on, &mut stats, true)?;
+            bw.end().map_err(|e| from_io(e, "Cannot finish compressor"))?;
+        }
+    }
+    // ---- the end record, in a small block of its own ---------------------
+    // (it must live in *some* block: the record stream is what blocks carry)
+    check_cancel()?;
+    let mut tail = BlockWriter::new(&mut sink);
+    tail.start(Engine::lzma2_for(1 << 20, false), 1)
+        .map_err(|e| from_io(e, "Cannot start compressor"))?;
+    tail.write_all(&[REC_END]).map_err(|e| from_io(e, "Write error"))?;
+    tail.write_all(&stats.count.to_le_bytes()).map_err(|e| from_io(e, "Write error"))?;
+    // `finish` writes the body's end marker and hands the archive writer back;
+    // the match (not `let _ =`) makes sure the borrow of `sink` is over here
+    match tail.finish() {
+        Ok(_) => {}
+        Err(e) => return Err(from_io(e, "Cannot finish archive")),
+    }
+    Ok((sink, stats))
 }
 
 /// Decode a Deflate-recompressed transform again and compare it with the
@@ -803,9 +751,98 @@ fn looks_like_text(b: &[u8]) -> bool {
     ctrl * 100 <= b.len() && high * 100 <= b.len() * 30
 }
 
-/// -m5: put binary entries (and folders) into an LZMA2 block and text files
-/// into a second block whose engine (PPMd or LZMA2) is chosen by a trial.
-fn plan_blocks(items: &[Item], quiet: bool, recomp_on: bool, threads: usize) -> Result<Vec<(usize, Option<Engine>)>> {
+/// One block of the -m5 body: which entries go in it, and the engine it is
+/// compressed with. Blocks hold whole entries only, and are independent.
+struct BlockPlan {
+    items: Vec<usize>,
+    engine: Engine,
+}
+
+/// Smallest block worth making: below this a block's own framing and the lost
+/// cross-entry matches cost more than the extra thread wins.
+const MIN_BLOCK_BYTES: u64 = 8 << 20;
+
+/// Split a (sorted) list of items into at most `k` chunks of roughly equal
+/// *bytes*, keeping the list's order so neighbouring files stay together
+/// (which is what makes the block compress well). Entries are never split.
+fn split_by_bytes(list: &[usize], sizes: &[u64], k: usize) -> Vec<Vec<usize>> {
+    if list.is_empty() {
+        return Vec::new();
+    }
+    if k <= 1 {
+        return vec![list.to_vec()];
+    }
+    let total: u64 = list.iter().map(|&i| sizes[i]).sum();
+    let target = (total / k as u64).max(1);
+    let mut out: Vec<Vec<usize>> = Vec::with_capacity(k);
+    let mut cur: Vec<usize> = Vec::new();
+    let mut acc = 0u64;
+    for (pos, &i) in list.iter().enumerate() {
+        cur.push(i);
+        acc += sizes[i];
+        let chunks_left = k - out.len();
+        let items_left = list.len() - (pos + 1);
+        // close this chunk once it has its share - but always leave at least
+        // one item for each chunk still to come, so none comes out empty
+        if acc >= target && chunks_left > 1 && items_left >= chunks_left - 1 {
+            out.push(std::mem::take(&mut cur));
+            acc = 0;
+        }
+    }
+    if !cur.is_empty() {
+        out.push(cur);
+    }
+    out
+}
+
+/// How many blocks a group of `bytes` deserves: one per thread, but never a
+/// block smaller than MIN_BLOCK_BYTES (a 200 MB archive on 16 threads makes 8
+/// blocks of 25 MB; a 20 MB archive makes 2), never more chunks than items, and
+/// at most MAX_BLOCKS - every encoder holds a dictionary in RAM, and past eight
+/// at once the memory cost outweighs the cores.
+fn block_count(bytes: u64, items: usize, threads: usize) -> usize {
+    let by_size = (bytes / MIN_BLOCK_BYTES).max(1) as usize;
+    by_size.min(threads.clamp(1, MAX_BLOCKS)).min(items.max(1))
+}
+
+/// Most blocks compressed at the same time.
+const MAX_BLOCKS: usize = 8;
+/// What all the block encoders together may take: LZMA2 needs about 11 times
+/// its dictionary, PPMd about its model size, so the per-block size follows
+/// from how many blocks run at once.
+const ENCODER_RAM_BUDGET: u64 = 1536 << 20;
+
+/// Largest dictionary one LZMA2 block may use when `blocks` run together.
+fn lzma_dict_cap(blocks: usize) -> u32 {
+    (ENCODER_RAM_BUDGET / (11 * blocks.max(1) as u64)).clamp(1 << 20, 128 << 20) as u32
+}
+
+/// An LZMA2 engine for one block, its dictionary sized to the block but never
+/// past the share the memory budget allows.
+fn lzma_block(bytes: u64, text: bool, blocks: usize) -> Engine {
+    match Engine::lzma2_for(bytes.max(1), text) {
+        Engine::Lzma2 { dict, lc, lp, pb } => Engine::Lzma2 { dict: dict.min(lzma_dict_cap(blocks)), lc, lp, pb },
+        e => e,
+    }
+}
+
+/// A PPMd engine for one block, its model sized to the block but never past
+/// the share the memory budget allows.
+fn ppmd_block(bytes: u64, blocks: usize) -> Engine {
+    let cap = (ENCODER_RAM_BUDGET / blocks.max(1) as u64).clamp(1 << 20, engine::PPMD_MEM as u64) as u32;
+    match Engine::ppmd_for(bytes.max(1)) {
+        Engine::Ppmd { order, mem } => Engine::Ppmd { order, mem: mem.min(cap) },
+        e => e,
+    }
+}
+
+/// -m5: cut the entries into blocks - binary data (and folders) compressed
+/// with LZMA2, text with PPMd or LZMA2, chosen by a trial on a sample - and
+/// make **several blocks of each kind**, so the blocks can be compressed at
+/// the same time on different threads. (LZMA2 and PPMd are single-threaded;
+/// the format has always allowed any number of blocks - the reader walks them
+/// until the end marker - so this needs no change to the archive layout.)
+fn plan_blocks(items: &[Item], quiet: bool, recomp_on: bool, threads: usize) -> Result<Vec<BlockPlan>> {
     // the first 16 KiB tell text from binary; reading them for a million small files is the
     // slow part, so the files are looked at by several threads, with progress and cancel
     const HEAD: usize = 16 * 1024;
@@ -874,18 +911,24 @@ fn plan_blocks(items: &[Item], quiet: bool, recomp_on: bool, threads: usize) -> 
     bin.sort_by_cached_key(key);
     txt.sort_by_cached_key(key);
 
-    let mut plan = Vec::with_capacity(items.len());
+    // the size each entry takes in its block (Deflate streams already counted
+    // as the expanded size they become)
+    let sizes: Vec<u64> = kinds.iter().map(|&(_, s)| s).collect();
+    let mut plan: Vec<BlockPlan> = Vec::new();
     if !bin.is_empty() {
-        let e = Engine::lzma2_for(bin_size, false);
-        if !quiet {
-            outln!("Binary block: {} entries, {}", bin.len(), e.name());
+        let k = block_count(bin_size, bin.len(), threads);
+        for part in split_by_bytes(&bin, &sizes, k) {
+            let bytes: u64 = part.iter().map(|&i| sizes[i]).sum();
+            let engine = lzma_block(bytes, false, k);
+            if !quiet {
+                outln!("Binary block: {} entries, {}", part.len(), engine.name());
+            }
+            plan.push(BlockPlan { items: part, engine });
         }
-        plan.push((bin[0], Some(e)));
-        plan.extend(bin[1..].iter().map(|&i| (i, None)));
     }
     if !txt.is_empty() {
         // Trial on four contiguous 1 MiB runs of the (sorted) text stream, so
-        // the sample contains neighbouring files exactly as the block will.
+        // the sample contains neighbouring files exactly as the blocks will.
         let mut sample = Vec::with_capacity(4 << 20);
         for k in 0..4 {
             let start = txt.len() * k / 4;
@@ -899,19 +942,254 @@ fn plan_blocks(items: &[Item], quiet: bool, recomp_on: bool, threads: usize) -> 
                 }
             }
         }
-        let ppmd = Engine::ppmd_for(txt_size);
-        let lzma = Engine::lzma2_for(txt_size, true);
-        let e = match (engine::trial_size(&sample, ppmd), engine::trial_size(&sample, lzma)) {
+        let k = block_count(txt_size, txt.len(), threads);
+        // one engine for all the text blocks, sized to one block's share
+        let per_block = (txt_size / k as u64).max(1);
+        let ppmd = ppmd_block(per_block, k);
+        let lzma = lzma_block(per_block, true, k);
+        let engine = match (engine::trial_size(&sample, ppmd), engine::trial_size(&sample, lzma)) {
             (Ok(p), Ok(l)) if l < p => lzma,
             _ => ppmd,
         };
-        if !quiet {
-            outln!("Text block:   {} files, {}", txt.len(), e.name());
+        for part in split_by_bytes(&txt, &sizes, k) {
+            if !quiet {
+                outln!("Text block:   {} files, {}", part.len(), engine.name());
+            }
+            plan.push(BlockPlan { items: part, engine });
         }
-        plan.push((txt[0], Some(e)));
-        plan.extend(txt[1..].iter().map(|&i| (i, None)));
     }
     Ok(plan)
+}
+
+// ===========================================================================
+// Writing entries: the per-entry logic, and the ways of running it
+// ===========================================================================
+//
+// The work of one entry (open, media filter, Deflate recompression, copy,
+// CRC) is done by `write_item_records`, whatever writes the result:
+//
+// * the archive itself, one entry after the other (threads = 1, NIKPAK_SEQ, or
+//   an archive that is small enough not to bother);
+// * a block for -m5, on its own thread, several blocks at a time;
+// * a temporary holding area (`Spill`), so the expensive per-entry work can
+//   run ahead on several threads while the archive is written strictly in
+//   order.
+//
+// Keeping one copy of that logic is deliberate: it decides how a user's file
+// is stored, and two versions drifting apart would mean archives that read
+// differently depending on the level.
+
+/// What one entry cost, and the line to print for it.
+#[derive(Default)]
+struct ItemDone {
+    bytes: u64,
+    media: bool,
+    deflate: bool,
+    /// could not be opened or read: a warning was printed, nothing was written
+    skipped: bool,
+    /// the "Adding …" line, printed by whoever owns the console, in order
+    log: String,
+}
+
+/// Tallies for the closing "Done." line.
+#[derive(Default)]
+struct Stats {
+    count: u64,
+    total_in: u64,
+    media: u64,
+    deflate: u64,
+    /// u32: it is added to the collector's count, which is a u32
+    warnings: u32,
+    /// "Adding …" lines collected by a worker thread, printed by the thread
+    /// that owns the console when the piece reaches the archive
+    logs: Vec<String>,
+}
+
+impl Stats {
+    fn add(&mut self, d: &ItemDone) {
+        if d.skipped {
+            self.warnings += 1;
+            return;
+        }
+        self.count += 1;
+        self.total_in += d.bytes;
+        if d.media {
+            self.media += 1;
+        }
+        if d.deflate {
+            self.deflate += 1;
+        }
+    }
+
+    fn merge(&mut self, other: &Stats) {
+        self.count += other.count;
+        self.total_in += other.total_in;
+        self.media += other.media;
+        self.deflate += other.deflate;
+        self.warnings += other.warnings;
+        // `logs` is not merged: the block loop prints a block's lines as it
+        // copies it, and then drops them
+    }
+}
+
+/// Write one entry (a folder record, or a file's header, data and CRC) and
+/// return what it cost. `w` may be the archive, a block, or a holding area.
+fn write_item_records<W: Write>(
+    w: &mut W,
+    it: &Item,
+    o: &Options,
+    filters_on: bool,
+    recomp_on: bool,
+    buf: &mut [u8],
+) -> Result<ItemDone> {
+    let name_bytes = it.name.as_bytes();
+    let mut done = ItemDone::default();
+    if it.is_dir {
+        write_rec_header(w, REC_DIR, name_bytes, it.mtime, it.mode, None)
+            .map_err(|e| from_io(e, "Write error"))?;
+        if !o.quiet {
+            done.log = format!("Adding    {}/", it.name);
+        }
+        return Ok(done);
+    }
+    let mut f = match File::open(&it.src) {
+        Ok(f) => f,
+        Err(e) => {
+            warn(format!("Cannot open '{}': {e} - skipped", it.src.display()));
+            done.skipped = true;
+            return Ok(done);
+        }
+    };
+    let size = match f.metadata() {
+        Ok(m) => m.len(),
+        Err(e) => {
+            warn(format!("Cannot read size of '{}': {e} - skipped", it.src.display()));
+            done.skipped = true;
+            return Ok(done);
+        }
+    };
+    done.bytes = size;
+    // ---- media filters (WAV / AIFF / MOD / BMP) ----
+    if filters_on {
+        let zl = o.level.effort();
+        if let Some(det) = media::detect(&mut f, size) {
+            let nl = media::nac_level(zl);
+            let method = if o.media == MediaMode::Force {
+                Some(det.default_method())
+            } else {
+                match media::choose(&mut f, &det, nl) {
+                    Ok(m) => m,
+                    Err(_) => None,
+                }
+            };
+            let _ = f.seek(io::SeekFrom::Start(0));
+            if let Some(m) = method {
+                let params = det.params_bytes();
+                write_rec_header(w, REC_MEDIA, name_bytes, it.mtime, it.mode, Some(size))
+                    .map_err(|e| from_io(e, "Write error"))?;
+                w.write_all(&[det.filter_id(), m, params.len() as u8])
+                    .and_then(|_| w.write_all(&params))
+                    .map_err(|e| from_io(e, "Write error"))?;
+                let mut cw = media::ChunkWriter::new(&mut *w);
+                let mut rd = media::CrcRead::new(&mut f, size);
+                media::encode(&mut rd, size, &det, m, nl, &mut cw)
+                    .map_err(|e| from_io(e, &format!("'{}'", it.src.display())))?;
+                cw.finish().map_err(|e| from_io(e, "Write error"))?;
+                let (crc, left) = rd.finish();
+                if left != 0 {
+                    return Err(NikError::Fatal(format!(
+                        "'{}' changed while it was being archived; aborting (archive not created).",
+                        it.src.display()
+                    )));
+                }
+                w.write_all(&crc.to_le_bytes()).map_err(|e| from_io(e, "Write error"))?;
+                done.media = true;
+                PROGRESS.done.fetch_add(size, Relaxed);
+                PROGRESS.files_done.fetch_add(1, Relaxed);
+                if !o.quiet {
+                    done.log = format!(
+                        "Adding    {}   [{} {}]",
+                        it.name,
+                        det.kind.name(),
+                        media::method_name(det.filter_id(), m)
+                    );
+                }
+                return Ok(done);
+            }
+        }
+    }
+    // ---- Deflate recompression (ZIP containers, PDF, gzip) ----
+    if recomp_on {
+        if let Some(kind) = recomp::detect(&mut f, size) {
+            let mut data = Vec::with_capacity(size as usize);
+            if let Err(e) = Read::by_ref(&mut f).take(size).read_to_end(&mut data) {
+                return Err(NikError::Fatal(format!("Read error on '{}': {e}", it.src.display())));
+            }
+            if data.len() as u64 != size {
+                return Err(NikError::Fatal(format!(
+                    "'{}' became shorter while it was being archived; aborting (archive not created).",
+                    it.src.display()
+                )));
+            }
+            let crc = crc32fast::hash(&data);
+            let mut label = String::new();
+            match recomp::encode(&data, kind).filter(|(t, _)| recomp_verified(t, size, crc)) {
+                Some((t, st)) => {
+                    write_rec_header(w, REC_MEDIA, name_bytes, it.mtime, it.mode, Some(size))
+                        .and_then(|_| w.write_all(&[recomp::FILTER_DEFLATE, recomp::M_PREFLATE, 0]))
+                        .map_err(|e| from_io(e, "Write error"))?;
+                    let mut cw = media::ChunkWriter::new(&mut *w);
+                    cw.write_all(&t).and_then(|_| cw.finish()).map_err(|e| from_io(e, "Write error"))?;
+                    done.deflate = true;
+                    label = format!(
+                        "   [{} {} stream{} recompressed]",
+                        kind.name(),
+                        st.streams,
+                        if st.streams == 1 { "" } else { "s" }
+                    );
+                }
+                None => {
+                    write_rec_header(w, REC_FILE, name_bytes, it.mtime, it.mode, Some(size))
+                        .and_then(|_| w.write_all(&data))
+                        .map_err(|e| from_io(e, "Write error"))?;
+                }
+            }
+            w.write_all(&crc.to_le_bytes()).map_err(|e| from_io(e, "Write error"))?;
+            PROGRESS.done.fetch_add(size, Relaxed);
+            PROGRESS.files_done.fetch_add(1, Relaxed);
+            if !o.quiet {
+                done.log = format!("Adding    {}{}", it.name, label);
+            }
+            return Ok(done);
+        }
+    }
+    write_rec_header(w, REC_FILE, name_bytes, it.mtime, it.mode, Some(size))
+        .map_err(|e| from_io(e, "Write error"))?;
+    let mut crc = crc32fast::Hasher::new();
+    let mut remaining = size;
+    while remaining > 0 {
+        let want = remaining.min(buf.len() as u64) as usize;
+        let n = f
+            .read(&mut buf[..want])
+            .map_err(|e| NikError::Fatal(format!("Read error on '{}': {e}", it.src.display())))?;
+        if n == 0 {
+            return Err(NikError::Fatal(format!(
+                "'{}' became shorter while it was being archived; aborting (archive not created).",
+                it.src.display()
+            )));
+        }
+        crc.update(&buf[..n]);
+        w.write_all(&buf[..n]).map_err(|e| from_io(e, "Write error"))?;
+        remaining -= n as u64;
+        PROGRESS.done.fetch_add(n as u64, Relaxed);
+        check_cancel()?;
+    }
+    w.write_all(&crc.finalize().to_le_bytes()).map_err(|e| from_io(e, "Write error"))?;
+    PROGRESS.files_done.fetch_add(1, Relaxed);
+    if !o.quiet {
+        done.log = format!("Adding    {}", it.name);
+    }
+    Ok(done)
 }
 
 fn write_rec_header<W: Write>(
@@ -933,13 +1211,248 @@ fn write_rec_header<W: Write>(
     Ok(())
 }
 
+// ---------------------------------------------------------------------------
+// A holding area: bytes in memory up to a limit, then a temporary file
+// ---------------------------------------------------------------------------
+
+/// Where several threads put finished work while the archive is written in
+/// order: a block's compressed bytes at -m5, or one entry's records for the
+/// other levels. Small results stay in memory; big ones spill into a
+/// temporary file beside the archive, so memory stays bounded however large
+/// the archive is. The file is removed when the `Prepared` is dropped or
+/// copied into the archive.
+struct Spill {
+    mem: Vec<u8>,
+    /// bytes held in all (memory + file)
+    len: u64,
+    /// spill into a file once `limit` bytes are reached
+    limit: u64,
+    path: PathBuf,
+    file: Option<BufWriter<File>>,
+    /// the temporary file exists and has to be removed on drop
+    armed: bool,
+}
+
+impl Spill {
+    fn new(path: PathBuf, limit: u64) -> Spill {
+        Spill { mem: Vec::new(), len: 0, limit, path, file: None, armed: true }
+    }
+
+    fn finish(mut self) -> io::Result<Prepared> {
+        match self.file.take() {
+            Some(mut f) => {
+                // flush first: if that fails the file must still be removed by
+                // the drop of `self`, so `armed` stays set until it worked
+                f.flush()?;
+                drop(f);
+                self.armed = false;
+                Ok(Prepared::File { path: self.path.clone() })
+            }
+            None => {
+                self.armed = false;
+                Ok(Prepared::Mem(std::mem::take(&mut self.mem)))
+            }
+        }
+    }
+}
+
+impl Write for Spill {
+    fn write(&mut self, b: &[u8]) -> io::Result<usize> {
+        if self.file.is_none() && self.len + b.len() as u64 > self.limit {
+            // over the limit: move to a file and stream the rest into it
+            let f = File::create(&self.path)
+                .map_err(|e| io::Error::new(e.kind(), format!("Cannot write '{}': {e}", self.path.display())))?;
+            let mut bw = BufWriter::with_capacity(IO_BUF, f);
+            bw.write_all(&self.mem)?;
+            self.mem = Vec::new();
+            self.mem.shrink_to_fit();
+            self.file = Some(bw);
+        }
+        match self.file.as_mut() {
+            Some(f) => f.write_all(b)?,
+            None => self.mem.extend_from_slice(b),
+        }
+        self.len += b.len() as u64;
+        Ok(b.len())
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        match self.file.as_mut() {
+            Some(f) => f.flush(),
+            None => Ok(()),
+        }
+    }
+}
+
+impl Drop for Spill {
+    fn drop(&mut self) {
+        if self.armed && !self.path.as_os_str().is_empty() {
+            let _ = fs::remove_file(&self.path);
+        }
+    }
+}
+
+/// A finished piece of work waiting for its turn in the archive.
+enum Prepared {
+    Mem(Vec<u8>),
+    File { path: PathBuf },
+}
+
+impl Prepared {
+    /// Add the bytes to the archive. The archive's own writer counts them for
+    /// the size estimate (CountedW), so nothing is counted here.
+    fn copy_to<W: Write>(&self, w: &mut W) -> Result<()> {
+        match self {
+            Prepared::Mem(v) => {
+                w.write_all(v).map_err(|e| from_io(e, "Write error"))?;
+            }
+            Prepared::File { path, .. } => {
+                let mut f = File::open(path)
+                    .map_err(|e| NikError::Fatal(format!("Cannot read '{}': {e}", path.display())))?;
+                let mut buf = vec![0u8; IO_BUF];
+                loop {
+                    let n = f
+                        .read(&mut buf)
+                        .map_err(|e| NikError::Fatal(format!("Cannot read '{}': {e}", path.display())))?;
+                    if n == 0 {
+                        break;
+                    }
+                    w.write_all(&buf[..n]).map_err(|e| from_io(e, "Write error"))?;
+                    check_cancel()?;
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
+impl Drop for Prepared {
+    fn drop(&mut self) {
+        if let Prepared::File { path, .. } = self {
+            let _ = fs::remove_file(path);
+        }
+    }
+}
+
+/// A unique temporary file name beside the archive, for a holding area.
+fn spill_path(archive: &Path, tag: u64) -> PathBuf {
+    let mut s = archive.as_os_str().to_owned();
+    s.push(format!(".part{tag}.tmp"));
+    PathBuf::from(s)
+}
+
+/// Do we run several entries/blocks at the same time? `NIKPAK_SEQ=1` forces the
+/// old one-at-a-time path (for comparing, or when a machine behaves badly).
+fn parallel_wanted(threads: usize) -> bool {
+    threads > 1 && std::env::var_os("NIKPAK_SEQ").is_none()
+}
+
+/// Write entries one at a time, straight into `w` (the archive, a block, or a
+/// holding area). `order` is the sequence of item indices to write.
+fn write_items_list<W: Write>(
+    w: &mut W,
+    items: &[Item],
+    order: &[usize],
+    o: &Options,
+    filters_on: bool,
+    recomp_on: bool,
+    stats: &mut Stats,
+    print: bool,
+) -> Result<()> {
+    let mut buf = vec![0u8; IO_BUF];
+    for &idx in order {
+        check_cancel()?;
+        let done = write_item_records(w, &items[idx], o, filters_on, recomp_on, &mut buf)?;
+        // before the log is moved out of `done` below
+        stats.add(&done);
+        if !done.log.is_empty() {
+            if print {
+                outln!("{}", done.log);
+            } else {
+                // a worker thread: the console belongs to the main thread, which
+                // prints these in archive order
+                stats.logs.push(done.log);
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Bytes all the entries held out of order may keep in memory together; each
+/// one spills into a temporary file past its share, so this is the ceiling of
+/// what the preparation pipeline costs in RAM.
+const ITEM_SPILL_TOTAL: u64 = 256 << 20;
+/// Bytes all blocks together may hold in memory at -m5.
+const BLOCK_SPILL_TOTAL: u64 = 256 << 20;
+
+/// Prepare `chunk` on several threads and write the results in order: the
+/// expensive per-entry work (reading, media trials, Deflate recompression)
+/// runs on all cores, while the archive itself is still written strictly in
+/// the order it lists. A batch waits for its slowest entry, so its width is a
+/// compromise: wide enough that the wait is cheap, small enough to stay inside
+/// the memory ceiling below.
+fn write_items_pipelined<W: Write>(
+    w: &mut W,
+    items: &[Item],
+    order: &[usize],
+    o: &Options,
+    filters_on: bool,
+    recomp_on: bool,
+    threads: usize,
+    archive: &Path,
+    stats: &mut Stats,
+) -> Result<()> {
+    // A batch has to be wide enough that waiting for its slowest entry is
+    // cheap, and small enough to keep the memory ceiling above: three entries
+    // per thread does both.
+    let batch = (threads * 3).max(2).min(order.len().max(1));
+    let per_item = (ITEM_SPILL_TOTAL / batch as u64).clamp(1 << 20, 32 << 20);
+    let mut tag: u64 = 0;
+    for chunk in order.chunks(batch) {
+        check_cancel()?;
+        let base = tag;
+        let prepared: Vec<(Result<ItemDone>, Spill)> = std::thread::scope(|s| {
+            let handles: Vec<_> = chunk
+                .iter()
+                .enumerate()
+                .map(|(k, &idx)| {
+                    let path = spill_path(archive, base + k as u64);
+                    let it = &items[idx];
+                    s.spawn(move || {
+                        let mut sp = Spill::new(path, per_item);
+                        let mut buf = vec![0u8; IO_BUF];
+                        let r = write_item_records(&mut sp, it, o, filters_on, recomp_on, &mut buf);
+                        (r, sp)
+                    })
+                })
+                .collect();
+            handles
+                .into_iter()
+                .map(|h| h.join().unwrap_or_else(|_| (Err(NikError::Fatal("Internal error while compressing.".into())), Spill::new(PathBuf::new(), 0))))
+                .collect()
+        });
+        tag += chunk.len() as u64;
+        for (r, sp) in prepared {
+            let done = r?;
+            // a skipped entry wrote nothing: its holding area is empty and
+            // copying it adds no bytes
+            sp.finish().map_err(|e| from_io(e, "Write error"))?.copy_to(w)?;
+            if !done.log.is_empty() {
+                outln!("{}", done.log);
+            }
+            stats.add(&done);
+        }
+    }
+    Ok(())
+}
+
 // ===========================================================================
 // Reader-side plumbing
 // ===========================================================================
 
 enum Source {
-    Plain(BufReader<Counted>),
-    Dec(DecryptReader<BufReader<Counted>>),
+    Plain(BufReader<Chain>),
+    Dec(DecryptReader<BufReader<Chain>>),
 }
 
 impl Read for Source {
@@ -981,7 +1494,9 @@ struct Opened {
 
 fn open_archive(o: &Options) -> Result<Opened> {
     let path = Path::new(&o.archive);
-    let file = File::open(path).map_err(|e| {
+    // A Chain reads the archive itself, the volumes that follow it, or the
+    // archive appended to a self-extracting .exe, as one stream (split.rs).
+    let chain = Chain::open(path).map_err(|e| {
         if e.kind() == io::ErrorKind::NotFound {
             NikError::Fatal(format!("Cannot open '{}': file not found.", o.archive))
         } else {
@@ -989,14 +1504,24 @@ fn open_archive(o: &Options) -> Result<Opened> {
         }
     })?;
     PROGRESS.done.store(0, Relaxed);
-    PROGRESS.total.store(file.metadata().map(|m| m.len()).unwrap_or(0), Relaxed);
-    let mut br = BufReader::with_capacity(IO_BUF, Counted(file));
+    PROGRESS.total.store(chain.total(), Relaxed);
+    let mut br = BufReader::with_capacity(IO_BUF, chain);
 
     let mut fixed = [0u8; 12];
     br.read_exact(&mut fixed).map_err(|_| {
         NikError::Corrupt(format!("'{}' is not a valid .nik archive (file too short).", o.archive))
     })?;
     if fixed[..8] != MAGIC {
+        // A Nikkosynth soundbank shares the extension: say which it is.
+        if fixed[..8] == *crate::soundbank::MAGIC {
+            let info = crate::soundbank::read_info(path).unwrap_or_default();
+            return Err(NikError::Fatal(crate::soundbank::describe(&info)));
+        }
+        // A NikPak package does too.
+        if fixed[..8] == *crate::package::MAGIC {
+            let info = crate::package::read_info(path).unwrap_or_default();
+            return Err(NikError::Fatal(crate::package::describe(&info)));
+        }
         return Err(NikError::Corrupt(format!("'{}' is not a .nik archive (bad signature).", o.archive)));
     }
     if fixed[8] == 0 || fixed[8] > VERSION {
@@ -1007,7 +1532,7 @@ fn open_archive(o: &Options) -> Result<Opened> {
     }
     let flags = fixed[9];
     let method = fixed[10];
-    if flags & !(FLAG_ENCRYPTED | FLAG_LEGAL | FLAG_COVER) != 0 || fixed[11] != 0 {
+    if flags & !(FLAG_ENCRYPTED | FLAG_LEGAL | FLAG_COVER | FLAG_SPLIT) != 0 || fixed[11] != 0 {
         return Err(NikError::Fatal("Archive uses unknown features; please update nikpak.".into()));
     }
     if method > METHOD_BLOCKS || (method == METHOD_BLOCKS && fixed[8] < 3) {
@@ -1049,6 +1574,18 @@ fn open_archive(o: &Options) -> Result<Opened> {
     } else {
         None
     };
+    // A split archive says how big a volume is: a full volume then means that
+    // another one follows, and a missing one is named as such.
+    if flags & FLAG_SPLIT != 0 {
+        let mut size = [0u8; 8];
+        br.read_exact(&mut size).map_err(|_| NikError::Corrupt("Archive header is truncated.".into()))?;
+        header_bytes.extend_from_slice(&size);
+        let size = u64::from_le_bytes(size);
+        if size == 0 {
+            return Err(NikError::Corrupt("Archive header is damaged: its volume size is 0.".into()));
+        }
+        br.get_mut().set_volume_size(size);
+    }
     // **The legal statement comes first**: nothing is decrypted or read until it
     // has been accepted - in a window (accept_legal), with -accept, or here.
     if let Some(text) = &legal {
@@ -1166,10 +1703,14 @@ fn read_cover<R: Read>(r: &mut R) -> Result<Vec<u8>> {
 /// The archive's cover picture (JPEG or PNG bytes), if it has one. Reads only the
 /// header, like [`legal_statement`]: no password, and no need to accept the terms
 /// first, so a window can show the cover beside them.
+/// The archive's bytes: its first volume, the volumes that follow, or the
+/// archive appended to a self-extracting .exe.
+fn open_bytes(path: &Path) -> Result<Chain> {
+    Chain::open(path).map_err(|e| NikError::Fatal(format!("Cannot open '{}': {e}", path.display())))
+}
+
 pub fn cover_image(path: &Path) -> Result<Option<Vec<u8>>> {
-    let mut f = BufReader::new(
-        File::open(path).map_err(|e| NikError::Fatal(format!("Cannot open '{}': {e}", path.display())))?,
-    );
+    let mut f = BufReader::with_capacity(IO_BUF, open_bytes(path)?);
     let mut fixed = [0u8; 12];
     f.read_exact(&mut fixed)
         .map_err(|_| NikError::Corrupt(format!("'{}' is not a valid .nik archive (file too short).", path.display())))?;
@@ -1192,9 +1733,7 @@ pub fn cover_image(path: &Path) -> Result<Option<Vec<u8>>> {
 /// The archive's legal statement, if it has one. Reads only the header: no
 /// password is needed, so a window can show it before asking for one.
 pub fn legal_statement(path: &Path) -> Result<Option<String>> {
-    let mut f = BufReader::new(
-        File::open(path).map_err(|e| NikError::Fatal(format!("Cannot open '{}': {e}", path.display())))?,
-    );
+    let mut f = BufReader::with_capacity(IO_BUF, open_bytes(path)?);
     let mut fixed = [0u8; 12];
     f.read_exact(&mut fixed)
         .map_err(|_| NikError::Corrupt(format!("'{}' is not a valid .nik archive (file too short).", path.display())))?;
@@ -1616,6 +2155,9 @@ pub fn extract_pick(o: &Options, pick: Option<&Pick>) -> Result<u8> {
     let mut overwrite = o.overwrite;
     let mut buf = vec![0u8; IO_BUF];
     let mut warnings = 0u32;
+    // how many files are out: the window's Extract box reports it when the
+    // extraction ends (bytes read are counted by `Chain` in PROGRESS.done)
+    PROGRESS.files_done.store(0, Relaxed);
     let mut extracted = 0u64;
     let mut total = 0u64;
     let mut matched = 0u64;
@@ -1782,6 +2324,7 @@ pub fn extract_pick(o: &Options, pick: Option<&Pick>) -> Result<u8> {
         set_file_mode(&target, rec.mode);
 
         extracted += 1;
+        PROGRESS.files_done.fetch_add(1, Relaxed);
         total += rec.size;
         if !o.quiet {
             outln!("Extracting  {}   OK", target.display());
@@ -1921,6 +2464,20 @@ pub fn delete(o: &Options, pick: Option<&Pick>) -> Result<u64> {
         None => passes_filters(name, o),
     };
 
+    // ---- keep the shape of the archive being rewritten -------------------
+    // A split archive stays split, and a self-extracting one keeps its .exe
+    // stub (the bytes in front of the archive), so neither is lost by a delete.
+    let hidden = split::embedded(&archive);
+    let split_size = o.split.or_else(|| {
+        let first = split::volume_name(&archive, 1);
+        let len = match hidden {
+            Some(e) => e.len,
+            None => fs::metadata(&first).map(|m| m.len()).unwrap_or(0),
+        };
+        (split::is_split(&archive) && len > 0).then_some(len)
+    });
+    let stub = hidden.map(|e| (archive.clone(), e.offset));
+
     // ---- output: same method and password, new salt and nonce
     let header = Header {
         encrypted: op.encrypted,
@@ -1933,15 +2490,12 @@ pub fn delete(o: &Options, pick: Option<&Pick>) -> Result<u64> {
         // the legal statement travels with the archive: a delete never drops it
         legal: op.legal.clone(),
         cover: op.cover.clone(),
+        split: split_size,
     };
     let header_bytes = header.to_bytes();
-    let mut tmp_name = archive.as_os_str().to_owned();
-    tmp_name.push(".tmp");
-    let tmp_path = PathBuf::from(tmp_name);
-    let file = File::create(&tmp_path)
-        .map_err(|e| NikError::Fatal(format!("Cannot create '{}': {e}", tmp_path.display())))?;
-    let mut guard = TempGuard { path: tmp_path.clone(), armed: true };
-    let mut bw = BufWriter::with_capacity(IO_BUF, CountedW(file));
+    let out = Out::create(&archive, split_size, stub)
+        .map_err(|e| NikError::Fatal(format!("Cannot write '{}': {e}", archive.display())))?;
+    let mut bw = BufWriter::with_capacity(IO_BUF, CountedW(out));
     bw.write_all(&header_bytes).map_err(|e| from_io(e, "Write error"))?;
     let sink = match &op.password {
         Some(pw) => {
@@ -2033,10 +2587,9 @@ pub fn delete(o: &Options, pick: Option<&Pick>) -> Result<u64> {
         }
     }
     comp.write_all(&[REC_END]).and_then(|_| comp.write_all(&kept.to_le_bytes())).map_err(|e| from_io(e, "Write error"))?;
-    comp.finish().map_err(|e| from_io(e, "Cannot finish archive"))?;
+    let out = comp.finish().map_err(|e| from_io(e, "Cannot finish archive"))?;
     // fs::rename replaces the old archive (MoveFileEx with REPLACE_EXISTING on Windows)
-    fs::rename(&tmp_path, &archive).map_err(|e| NikError::Fatal(format!("Cannot replace '{}': {e}", archive.display())))?;
-    guard.disarm();
+    let _ = out.finish().map_err(|e| NikError::Fatal(format!("Cannot replace '{}': {e}", archive.display())))?;
     if !o.quiet {
         outln!();
         outln!("Done. {} entries deleted, {} kept, archive is now {}.", deleted, kept, human_size(fs::metadata(&archive).map(|m| m.len()).unwrap_or(0)));
@@ -2098,16 +2651,31 @@ pub fn gui_options(archive: &Path, password: Option<&str>) -> Options {
         cover: None,
         // a window shows the statement itself and calls accept_legal
         accept_legal: false,
+        // the archive keeps whatever split it has (see delete)
+        split: None,
+        sfx: false,
     }
 }
 
 /// Is this a .nik archive, and is it encrypted? Reads only the header.
+///
+/// **A Nikkosynth soundbank is named as such.** Both products write `.nik`, so a
+/// player who exports a bank and then opens it here used to get "is not a .nik
+/// archive (bad signature)" — true, and no help at all. See `soundbank.rs`.
 pub fn peek(path: &Path) -> Result<bool> {
-    let mut f = File::open(path).map_err(|e| NikError::Fatal(format!("Cannot open '{}': {e}", path.display())))?;
+    let mut f = open_bytes(path)?;
     let mut fixed = [0u8; 12];
     f.read_exact(&mut fixed)
         .map_err(|_| NikError::Corrupt(format!("'{}' is not a valid .nik archive (file too short).", path.display())))?;
     if fixed[..8] != MAGIC {
+        if fixed[..8] == *crate::soundbank::MAGIC {
+            let info = crate::soundbank::read_info(path).unwrap_or_default();
+            return Err(NikError::Fatal(crate::soundbank::describe(&info)));
+        }
+        if fixed[..8] == *crate::package::MAGIC {
+            let info = crate::package::read_info(path).unwrap_or_default();
+            return Err(NikError::Fatal(crate::package::describe(&info)));
+        }
         return Err(NikError::Corrupt(format!("'{}' is not a .nik archive.", path.display())));
     }
     Ok(fixed[9] & FLAG_ENCRYPTED != 0)
@@ -2482,6 +3050,185 @@ mod tests {
         fs::create_dir_all(&dir).unwrap();
         let arc = make(&dir, Level::Zstd(1), Some("right-password"));
         assert!(matches!(read_index(&arc, Some("wrong-password")), Err(NikError::Password(_))));
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    /// A split archive is written as a set of volumes and read back from its
+    /// first volume alone (split.rs: Out, Chain).
+    #[test]
+    fn a_split_archive_is_read_and_extracted_from_its_first_volume() {
+        let dir = std::env::temp_dir().join(format!("nikpak-api-split-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        let src = dir.join("src");
+        fs::create_dir_all(&src).unwrap();
+        let text = "alpha\n".repeat(4000);
+        fs::write(src.join("a.txt"), &text).unwrap();
+        fs::write(src.join("b.bin"), vec![7u8; 200_000]).unwrap();
+        let arc = dir.join("t.nik");
+        let mut o = gui_options(&arc, None);
+        o.command = Command::Add;
+        o.overwrite = Overwrite::All;
+        // stored, so the parser reads the chain itself and the error below is
+        // the one the reader makes (a compressor would wrap it)
+        o.level = Level::Store;
+        o.files = vec![src.display().to_string()];
+        o.ep = EpMode::Names;
+        o.split = Some(crate::split::MIN_VOLUME);
+        create(&o).unwrap();
+        assert!(crate::split::is_split(&arc), "a .n01 should sit beside the archive");
+        assert!(crate::split::volume_count(&arc) > 1);
+
+        let idx = read_index(&arc, None).unwrap();
+        assert!(idx.entries.iter().any(|e| e.name == "src/a.txt"));
+        assert_eq!(idx.archive_size, crate::split::total_size(&arc));
+
+        let out = dir.join("out");
+        let mut x = gui_options(&arc, None);
+        x.dest = Some(out.clone());
+        extract(&x).unwrap();
+        // the original files come out, not a copy of the archive: a split set
+        // is read as the one stream its volumes hold (and the files span the
+        // volume boundary - b.bin is bigger than the 64 KiB volume here)
+        assert_eq!(fs::read(out.join("src/a.txt")).unwrap(), text.into_bytes());
+        assert_eq!(fs::read(out.join("src/b.bin")).unwrap(), vec![7u8; 200_000]);
+        let niks = fs::read_dir(out.join("src"))
+            .unwrap()
+            .flatten()
+            .filter(|e| e.path().extension().is_some_and(|x| x.eq_ignore_ascii_case("nik")))
+            .count();
+        assert_eq!(niks, 0, "the archive itself must not be extracted");
+
+        // a volume that is missing says so, instead of "unexpected end of file"
+        let missing = crate::split::volume_name(&arc, 2);
+        fs::remove_file(&missing).unwrap();
+        let e = read_index(&arc, None).unwrap_err().to_string();
+        assert!(e.contains("missing"), "{e}");
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    /// The -m5 body cut into several blocks, compressed at the same time, must
+    /// read back exactly like the one-block-at-a-time version (plan_blocks,
+    /// write_body_blocks).
+    #[test]
+    fn blocks_are_split_balanced_and_read_back() {
+        // the splitter alone: no empty chunk, order kept, sizes balanced
+        let sizes = [10u64, 9, 8, 7, 6, 5, 4, 3, 2, 1];
+        let list: Vec<usize> = (0..sizes.len()).collect();
+        let parts = split_by_bytes(&list, &sizes, 3);
+        assert_eq!(parts.len(), 3);
+        assert!(parts.iter().all(|p| !p.is_empty()), "{parts:?}");
+        // every entry exactly once, in the original order
+        assert_eq!(parts.concat(), list);
+        let total: u64 = sizes.iter().sum();
+        for p in &parts {
+            let bytes: u64 = p.iter().map(|&i| sizes[i]).sum();
+            assert!(bytes * 2 >= total / 3, "chunk of {bytes} of {total} is starved: {parts:?}");
+        }
+        // more chunks than entries is refused rather than making empty ones
+        assert_eq!(split_by_bytes(&[0usize], &sizes, 8).len(), 1);
+        assert!(split_by_bytes(&[], &sizes, 4).is_empty());
+        // and the block count follows the bytes, not the thread count alone
+        assert_eq!(block_count(1 << 20, 100, 8), 1);
+        assert_eq!(block_count(40 << 20, 100, 8), 5);
+        assert_eq!(block_count(40 << 20, 2, 8), 2);
+    }
+
+    /// A real archive over several blocks: written with the parallel block
+    /// path, read back entry by entry, and compared with the same archive made
+    /// one block at a time.
+    #[test]
+    fn a_multi_block_archive_round_trips() {
+        let dir = std::env::temp_dir().join(format!("nikpak-blocks-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        let src = dir.join("src");
+        fs::create_dir_all(&src).unwrap();
+        // easy data (LZMA2 flies through it) but well over MIN_BLOCK_BYTES, so
+        // the binary part is cut into several blocks; a text file makes the
+        // text block (kept small: PPMd and the engine trial are slow)
+        let binary: Vec<u8> = (0..17_000_000u32).map(|i| (i / 64 % 251) as u8).collect();
+        fs::write(src.join("big.bin"), &binary).unwrap();
+        let text = "the quick brown fox jumps over the lazy dog\n".repeat(12_000);
+        fs::write(src.join("notes.txt"), &text).unwrap();
+        for k in 0..6 {
+            fs::write(src.join(format!("small{k}.bin")), vec![k as u8; 200_000]).unwrap();
+        }
+
+        let make = |arc: &Path, threads: usize| {
+            let mut o = gui_options(arc, None);
+            o.command = Command::Add;
+            o.overwrite = Overwrite::All;
+            o.level = Level::Max;
+            o.threads = threads;
+            o.files = vec![src.display().to_string()];
+            o.ep = EpMode::Names;
+            create(&o).unwrap();
+        };
+        let seq = dir.join("seq.nik");
+        let par = dir.join("par.nik");
+        make(&seq, 1);
+        make(&par, 4);
+
+        let idx = read_index(&par, None).unwrap();
+        let names: Vec<&str> = idx.entries.iter().map(|e| e.name.as_str()).collect();
+        for n in ["src", "src/big.bin", "src/notes.txt", "src/small0.bin", "src/small5.bin"] {
+            assert!(names.contains(&n), "{n} missing from {names:?}");
+        }
+        assert!(!idx.engines.is_empty(), "the index should name the block engines");
+
+        // both archives hold exactly the same files, byte for byte
+        let out = dir.join("out");
+        for (k, arc) in [seq, par].into_iter().enumerate() {
+            let d = out.join(k.to_string());
+            let mut x = gui_options(&arc, None);
+            x.dest = Some(d.clone());
+            extract(&x).unwrap();
+            assert_eq!(fs::read(d.join("src/big.bin")).unwrap(), binary, "block {k}");
+            assert_eq!(fs::read(d.join("src/notes.txt")).unwrap(), text.clone().into_bytes());
+            assert_eq!(fs::read(d.join("src/small3.bin")).unwrap(), vec![3u8; 200_000]);
+        }
+        // no holding area is left behind
+        let leftovers: Vec<String> = fs::read_dir(&dir)
+            .unwrap()
+            .flatten()
+            .map(|e| e.file_name().to_string_lossy().into_owned())
+            .filter(|n| n.contains(".part") || n.ends_with(".tmp"))
+            .collect();
+        assert!(leftovers.is_empty(), "temporary files left: {leftovers:?}");
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    /// The preparation pipeline (zstd levels): entries are read and filtered on
+    /// several threads and written in archive order, so the result must be the
+    /// same archive as the one-at-a-time path.
+    #[test]
+    fn the_preparation_pipeline_keeps_the_archive_order() {
+        let dir = std::env::temp_dir().join(format!("nikpak-pipe-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        let src = dir.join("src");
+        fs::create_dir_all(&src).unwrap();
+        for k in 0..12 {
+            fs::write(src.join(format!("f{k:02}.txt")), format!("file {k}\n").repeat(1000 + k)).unwrap();
+        }
+        let make = |arc: &Path, threads: usize| {
+            let mut o = gui_options(arc, None);
+            o.command = Command::Add;
+            o.overwrite = Overwrite::All;
+            o.level = Level::Zstd(3);
+            o.threads = threads;
+            o.files = vec![src.display().to_string()];
+            o.ep = EpMode::Names;
+            create(&o).unwrap();
+            read_index(arc, None).unwrap()
+        };
+        let a = make(&dir.join("one.nik"), 1);
+        let b = make(&dir.join("many.nik"), 4);
+        let names = |i: &Index| i.entries.iter().map(|e| e.name.clone()).collect::<Vec<_>>();
+        assert_eq!(names(&a), names(&b), "the pipeline must not reorder entries");
+        let sizes = |i: &Index| i.entries.iter().map(|e| e.size).collect::<Vec<_>>();
+        assert_eq!(sizes(&a), sizes(&b));
         let _ = fs::remove_dir_all(&dir);
     }
 }

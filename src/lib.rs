@@ -35,5 +35,17 @@ pub mod unnik;
 pub mod media;
 pub mod nac;
 pub mod recomp;
+/// A `.nik` that is a Nikkosynth soundbank rather than a NikPak archive: its
+/// readable header, so unNik can say what the file is instead of refusing it.
+pub mod soundbank;
+/// A `.nik` that is a NikPak **package** rather than an archive: an encrypted,
+/// compressed bundle of files with a name, cover, description and EULA (the
+/// NikPak sibling of Nikkosynth's soundbank, with its own magic so the two never
+/// import into each other).
+pub mod package;
+/// Split volumes (`photos.nik`, `photos.n01`, …) and self-extracting `.exe`
+/// archives: the reader that follows the volumes, the writer that produces
+/// them, and the trailer that marks an archive appended to unNik.
+pub mod split;
 pub mod update;
 pub mod util;

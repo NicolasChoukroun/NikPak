@@ -68,6 +68,8 @@ GENERAL = [  # tool, size, %, creation s, extraction s, is nikpak
 
 # ---- Changelog (CHANGELOG.md, newest first): version, date, one-line summary ----
 CHANGELOG = [
+    ("1.11.0", "6 November 2026", "Create Package and Open Package: an encrypted, sellable .nik package with a cover, a description and a EULA."),
+    ("1.10.0", "5 November 2026", "Nikkosynth soundbanks open as what they are instead of \u201cbad signature\u201d."),
     ("1.9.0", "4 November 2026", "Cover pictures for archives: chosen in the window or with -cover, shown by unNik and Nikkomander."),
     ("1.8.0", "4 November 2026", "Legal statements: an archive can carry terms that must be approved before it is opened."),
     ("1.7.0", "31 October 2026", "34 operating-system skins (Windows, macOS, Ubuntu) for 89 in all, and an update screen at launch."),

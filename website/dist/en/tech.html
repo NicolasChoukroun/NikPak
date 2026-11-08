@@ -60,6 +60,7 @@
 <a href="#3-9-unnik-the-free-archive-browser" class="sub">3.9 unNik, the free archive browser</a>
 <a href="#3-10-skins" class="sub">3.10 Skins</a>
 <a href="#3-11-the-file-manager-menu" class="sub">3.11 The file-manager menu</a>
+<a href="#3-12-packages-create-package-and-open-package" class="sub">3.12 Packages: Create Package and Open Package</a>
 <a href="#4-architecture" class="">4 Architecture</a>
 <a href="#4-1-data-flow-when-creating-an-archive" class="sub">4.1 Data flow when creating an archive</a>
 <a href="#4-2-source-code-map" class="sub">4.2 Source code map</a>
@@ -73,6 +74,7 @@
 <a href="#5-4-why-a-solid-stream" class="sub">5.4 Why a solid stream?</a>
 <a href="#5-5-versioning" class="sub">5.5 Versioning</a>
 <a href="#5-6-multi-engine-body-version-3" class="sub">5.6 Multi-engine body (version 3)</a>
+<a href="#5-7-the-package-container-nikpack2" class="sub">5.7 The package container (NIKPACK2)</a>
 <a href="#6-the-compression-engine" class="">6 The compression engine</a>
 <a href="#6-1-why-zstandard" class="sub">6.1 Why Zstandard</a>
 <a href="#6-2-level-mapping" class="sub">6.2 Level mapping</a>
@@ -1139,6 +1141,53 @@ macOS: Finder Quick Actions).</p>
 	installs unNik alone (the free browser) for people who only receive
 	.nik archives; when NikPak is already installed it only installs the
 	program, so the menus never double.</li></ul>
+<h3 class="se" id="3-12-packages-create-package-and-open-package">3.12 Packages: Create Package and Open Package</h3>
+<p>A <b>package</b>
+is a <code>.nik</code>
+file that is a product rather than an archive. It holds files and
+folders, a name, an author, a description, a cover picture, a password
+and an end-user licence agreement in one file that can be handed to a
+customer or sold. It is the NikPak counterpart of the Nikkosynth
+soundbank: the same shape, a different magic, so a package never imports
+into Nikkosynth and a soundbank never opens as a package (section 5.7).</p>
+<figure><img src="../assets/img/tech/package-import-box.png" alt="The packaged-file import box: cover, name, author, description, password and the EULA with I approve." loading="lazy"><figcaption>The packaged-file import box, shown here in Nikkosynth: cover, name, author, description, password and the EULA with I approve. NikPak’s Open Package box lays out the same things.</figcaption></figure>
+<p>The two boxes are in the NikPak window; unNik opens packages with the second of them.</p>
+<ul><li><b>Create Package</b>
+	— the pill at the top of the window, in the row with Fast / Medium / Best,
+	§ Legal and ▣ Cover. One box asks for everything: the package name, the
+	author, a description, the password twice, an optional EULA, a square
+	cover picture, the destination folder and the files to pack. Click the
+	picture frame to choose a cover (or drop a picture on the window), and
+	choose files or a folder in the box — or drop them on the window while it
+	is open: a picture becomes the cover, anything else is added to the list.</li><li><b>Remembered
+	between launches</b>
+	— the author, the EULA text and its switch, and the destination folder are
+	kept in the settings file (<code>package_author</code>,
+	<code>package_eula_on</code>, <code>package_dest</code>, and
+	<code>package-eula.txt</code> beside them), so the second package needs only a
+	name, its files and a password.</li><li><b>The file</b>
+	— <code>&lt;name&gt;.nik</code> in the destination folder, or
+	<code>&lt;name&gt; (2).nik</code> when that name is taken. The password is
+	required: the files, their names and their sizes are encrypted with it and
+	compressed with Zstandard. When the package is written the window shows its
+	usual green ring with the size before and after.</li><li><b>Open Package</b>
+	— drop a package on NikPak or on unNik, or open it from the file manager.
+	Before anything is decrypted a box shows the cover, the name, the author, the
+	number of files and the description; then the EULA, which has to be read and
+	approved with <b>I approve</b>; then the password and the destination
+	folder. The destination is the same remembered folder as for Create
+	Package.</li><li><b>Extraction</b>
+	— every file is written with its folders, its CRC32 is verified and unsafe
+	entry names are refused (section 10.1); the destination can be opened when
+	the work is done. When the package carries a EULA it is written into the
+	folder as <code>Terms of use.txt</code>, so the terms travel with the
+	files.</li><li><b>The same from a command line</b>
+	— a package handed to nikpak is named instead of refused: “This is a
+	NikPak package (500 files, by …), not a NikPak archive. Open it with unNik
+	or NikPak to unpack it.”</li><li><b>Not to be confused with</b>
+	— an archive (chapter 5) is a general container, a package is a product with
+	a licence, and a Nikkosynth soundbank is a bank of patches. The three are
+	told apart by their first eight bytes (section 5.7).</li></ul>
 <h2 class="ch" id="4-architecture">4 Architecture</h2>
 <p>nikpak
 is a single Rust program of about 9,600 lines (including its unit
@@ -1194,6 +1243,11 @@ plain archive, an encrypted archive, and the media trial.</p>
 				<code>format.rs</code></td><td>
 				Constants
 				of the on-disk format: magic, versions, record types, KDF limits.</td></tr><tr><td>
+				<code>package.rs</code></td><td>
+				NikPak packages (a <code>.nik</code> with the
+				<code>NIKPACK2</code> magic): collecting the files, the header, sealing,
+				and extracting. The readable header is what the Open Package box shows
+				before the password.</td></tr><tr><td>
 				<code>util.rs</code></td><td>
 				Password
 				prompting and generation, path sanitising, wildcard matching,
@@ -1496,6 +1550,68 @@ the decoder, and every parameter is range-checked before memory is
 allocated (LZMA2 dictionary at most 1.5 GiB, PPMd model at most 1
 GiB, order 2 to 16). When encrypted, the body is protected by the
 same authenticated chunks as any other archive (chapter 8).</p>
+<h3 class="se" id="5-7-the-package-container-nikpack2">5.7 The package container (NIKPACK2)</h3>
+<p>Besides archives (this chapter) and Nikkosynth soundbanks, a <code>.nik</code>
+may be a NikPak package (section 3.12). The three share the extension, so
+every program identifies a file by its first eight bytes:</p>
+<table class="tech-table"><thead><tr><th>
+				<b>Kind</b></th><th>
+				<b>First eight bytes</b></th><th>
+				<b>Written by</b></th></tr></thead><tbody><tr><td>
+				NikPak
+				archive</td><td>
+				<code>89 4E 49 4B 0D 0A 1A 0A</code></td><td>
+				nikpak;
+				unNik reads it (chapter 5)</td></tr><tr><td>
+				NikPak
+				package</td><td>
+				<code>NIKPACK2</code>
+				(4E 49 4B 50 41 43 4B 32)</td><td>
+				NikPak
+				1.11 and later; unNik unpacks it</td></tr><tr><td>
+				Nikkosynth
+				soundbank</td><td>
+				<code>NIKPACK1</code>
+				(4E 49 4B 50 41 43 4B 31)</td><td>
+				Nikkosynth
+				only</td></tr></tbody></table>
+<p>A package and a soundbank are built the same way — one plaintext JSON header
+line, then one sealed body — but the different magic is what keeps the two
+products apart.</p>
+<p>The header is a single JSON line, deliberately readable without the password:
+it is what the Open Package box shows before asking for one. It carries
+<code>format</code> (“nikpak-package”), <code>version</code> (1),
+<code>name</code>, <code>author</code>, <code>description</code>, <code>eula</code>,
+<code>cover</code> (base64 of a 1024 × 1024 JPEG or PNG) with
+<code>coverType</code>, <code>count</code>, <code>encrypted</code> and, when
+encrypted, the 16-byte <code>salt</code> and <code>nonce</code> in hexadecimal.
+Nothing about the files is in it: their names and contents are inside the body.
+Because the header is part of what the tag covers, a package whose EULA was
+edited or removed no longer opens.</p>
+<p>The body is the record stream of section 5.2 — the same records 1 FILE, 2 DIR
+and 0 END, with 64-bit sizes, the mtime, the mode and a CRC32 per file —
+compressed as one Zstandard stream (level 19). A package has no MEDIA records
+and no Deflate recompression: its files are stored as they are and the whole
+stream is compressed once, which keeps the format small enough for both
+products to implement.</p>
+<ul><li><b>Key</b>
+	— SHA-256 iterated 600 000 times over salt ‖ password, split into a
+	32-byte encryption key and a 32-byte verification key. Half a second per
+	guess, which is what makes a stolen package expensive to attack.</li><li><b>Body</b>
+	— XOR with the keystream SHA-256(encryption key ‖ nonce ‖ counter),
+	32 bytes at a time.</li><li><b>Tag</b>
+	— HMAC-SHA-256 over the header line and the ciphertext, 32 bytes at the
+	end, compared in constant time. A wrong password and a damaged file fail
+	the same way, so neither can be told from the other.</li><li><b>Why not Argon2id
+	and XChaCha20-Poly1305</b>
+	— because a package is a shared format: the same construction is what
+	Nikkosynth’s banks use, and both products must be able to implement it in a
+	few dozen lines of standard-library code. It is a sealed container — one
+	writer, one reader, no attacker-chosen messages, the password never travels
+	— and that is what it has to be.</li></ul>
+<p>Limits: description 4 KB, EULA 64 KB, author 256 bytes, package name 256
+bytes, cover 4 MB, entry name 4096 bytes, body 512 MB after decompression
+(appendix A).</p>
 <h2 class="ch" id="6-the-compression-engine">6 The compression engine</h2>
 <h3 class="se" id="6-1-why-zstandard">6.1 Why Zstandard</h3>
 <p>Zstandard

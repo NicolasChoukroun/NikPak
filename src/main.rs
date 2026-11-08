@@ -125,6 +125,19 @@ fn main() -> ExitCode {
             return ExitCode::SUCCESS;
         }
         Parsed::Run(o) => {
+            // **Split volumes and the self-extracting .exe need a licence.**
+            // The window says so in its registration box instead of opening the
+            // Split box (gui.rs); on the command line the two options are
+            // refused before anything is written. (Only `a` writes an archive:
+            // elsewhere -v and -sfx mean nothing, so they are not refused there.)
+            if o.command == Command::Add && (o.split.is_some() || o.sfx) && license::current().is_none() {
+                return report(error::NikError::Fatal(
+                    "Splitting an archive into volumes (-v) and writing a self-extracting .exe (-sfx) are features\n\
+                     of the registered NikPak. Register with:  nikpak register \"Your Name\" your@email.com <key>\n\
+                     or buy a licence at the web site to have access to them."
+                        .into(),
+                ));
+            }
             // like RAR's console version: a one-line reminder in evaluation copies
             // (on stderr, so it never mixes with listings or piped output)
             if !o.quiet && license::current().is_none() {

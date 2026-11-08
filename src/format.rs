@@ -4,7 +4,8 @@
 //! offset  size  field
 //! 0       8     magic   89 4E 49 4B 0D 0A 1A 0A  ("\x89NIK\r\n\x1a\n")
 //! 8       1     version (3; 1 and 2 are still readable)
-//! 9       1     flags   bit0 = encrypted, bit1 = legal statement, bit2 = cover
+//! 9       1     flags   bit0 = encrypted, bit1 = legal statement, bit2 = cover,
+//!               bit3 = split into volumes
 //! 10      1     method  0 = store, 1 = zstd, 2 = blocks (see engine.rs)
 //! 11      1     reserved (0)
 //! -- only when encrypted --
@@ -25,6 +26,12 @@
 //! +0      4     length of the picture in bytes (LE, at most cover::MAX_COVER_BYTES)
 //! +4      n     the cover: a JPEG (or PNG), 1024 x 1024 when nikpak made it.
 //!               Plaintext like the statement, and authenticated the same way.
+//! -- only when bit3 (split) is set --
+//! +0      8     size of one volume (LE, see split.rs). The archive is the
+//!               first volume; "name.n01", "name.n02" … hold the rest. Lets a
+//!               reader say that a volume is missing instead of reporting a
+//!               truncated archive. A reader that does not know bit3 refuses
+//!               the archive - which is right, it cannot read a set anyway.
 //! -- body --
 //! The "inner stream" (see archive.rs) optionally zstd-compressed, optionally
 //! cut into 64 KiB chunks, each sealed with XChaCha20-Poly1305 (STREAM/BE32).
@@ -42,6 +49,10 @@ pub const FLAG_LEGAL: u8 = 2;
 pub const MAX_LEGAL_LEN: usize = 64 * 1024;
 /// The archive carries a cover picture.
 pub const FLAG_COVER: u8 = 4;
+/// The archive is the first volume of a set: the header then carries the size
+/// of a volume (see split.rs), so a reader knows that another volume should
+/// follow even when the volumes beside this one are missing.
+pub const FLAG_SPLIT: u8 = 8;
 pub const METHOD_STORE: u8 = 0;
 pub const METHOD_ZSTD: u8 = 1;
 pub const METHOD_BLOCKS: u8 = 2;
@@ -82,6 +93,8 @@ pub struct Header {
     pub legal: Option<String>,
     /// The cover picture (JPEG or PNG bytes).
     pub cover: Option<Vec<u8>>,
+    /// The size of one volume when the archive is split into several files.
+    pub split: Option<u64>,
 }
 
 impl Header {
@@ -95,6 +108,9 @@ impl Header {
         }
         if self.cover.is_some() {
             flags |= FLAG_COVER;
+        }
+        if self.split.is_some() {
+            flags |= FLAG_SPLIT;
         }
         v.push(flags);
         v.push(self.method);
@@ -113,6 +129,9 @@ impl Header {
         if let Some(pic) = &self.cover {
             v.extend_from_slice(&(pic.len() as u32).to_le_bytes());
             v.extend_from_slice(pic);
+        }
+        if let Some(size) = self.split {
+            v.extend_from_slice(&size.to_le_bytes());
         }
         v
     }

@@ -5,6 +5,216 @@ The newest version is at the top. Format: version – date – summary, then the
 
 ---
 
+## 1.13.1 – 7 November 2026 – a dropped archive is unpacked, not compressed
+
+### Licensed
+- **Split volumes and the self-extracting `.exe` now need a registered copy.** They are
+  the two features that make an archive a distribution — handing it out on several
+  discs, or as one `.exe` that unpacks on a machine with nothing installed — so an
+  evaluation copy no longer writes them. Clicking the **Split** pill opens the
+  registration box instead of the Split box: it says which feature was asked for
+  ("Split volumes and .exe need a licence"), keeps the prices, and offers **Register**
+  and **Buy a licence** (an × and Esc close it). The pill shows its bare name while the
+  copy is unregistered, and its tooltip says what registering adds. On the command line
+  `-v` and `-sfx` are refused before anything is written, with the same explanation —
+  `-v0` still turns splitting off. A split remembered in the settings (from a registered
+  install, or a licence removed since) is ignored while the copy is unregistered. The
+  help text and the Split strings are translated into the ten languages.
+
+### Fixed
+- **Dropping an archive on NikPak unpacked nothing: it archived the archive.**
+  A `.nik` dropped on the window was treated as a file to compress, so a split set
+  (`photos.nik` + `photos.n01` …) came back as one new `.nik` the size of one volume —
+  the archive was copied inside another archive instead of being extracted. A dropped
+  archive now opens the **Extract box**: the archive's name, its size and how many
+  volumes it is made of, the destination (next to the archive, in a folder of its own),
+  the password when it is encrypted, its legal statement when it carries one, a progress
+  bar over all the volumes, and Cancel. It reads the whole set through `split::Chain`,
+  exactly like unNik, so the files come out in their original form.
+  This applies to a plain `.nik`, the first volume of a split set and a
+  self-extracting `.exe` (the archive inside it). Dropping several items, or anything
+  that is not an archive (files, a folder, a mix), still compresses as before — and so
+  does an archive dropped together with other items. The file chooser's "choose files"
+  link behaves the same way.
+- **Any volume of a split set opens the whole archive** (`split::first_volume`).
+  `photos.n01`, `photos.n02` … are pieces of the byte stream, not archives, so opening
+  one of them used to fail with "not a valid .nik archive (bad signature)". unNik now
+  opens `photos.nik` in their place, and the set then behaves exactly like a one-file
+  `.nik` — listing, viewing, extracting and the right-click menu all read every volume.
+  The NikPak window does the same for a dropped volume (and for a volume chosen in the
+  file dialog). A file whose extension is only digits (`.100`, `.2024`) counts as a
+  volume only when its `….nik` really sits beside it.
+- The Split box offers a **1 GB** volume size between 700 MB and 2 GB.
+
+### Changed
+- **Extraction now shows how long is left.** The progress line in unNik (the opening
+  ring, the small "busy" card, and the self-extracting box) and in the NikPak window's
+  Extract box gains a time-to-completion estimate — "… 40 s · 1.1 min left" —
+  extrapolated from the bytes read so far and the time they took, over all the volumes
+  of a split set. Before there is enough progress to extrapolate it stays with the
+  elapsed time only.
+
+---
+
+## 1.13.0 – 6 November 2026 – Multi-core compression
+
+### Changed
+- **The maximum level uses every core.** `-m5` / the "Best" pill stores the archive as
+  solid *blocks*, and LZMA2 and PPMd are single-threaded by nature — so until now the
+  whole archive was compressed by one core (the code made two blocks and ran them one
+  after the other). `plan_blocks` now cuts the binary entries and the text entries into
+  as many blocks as the machine has cores (one block per thread, never smaller than
+  8 MiB, so a small archive still gets one or two), and each block is compressed on its
+  own thread at the same time. The blocks are written into the archive in their original
+  order afterwards, so encryption and the volume splitter see one sequential stream. The
+  format is unchanged: the body has always been "block*, end marker" and the reader has
+  always walked any number of them, so older nikpak — and every existing archive —
+  still works, in both directions.
+- **The per-file work runs in parallel at every level.** Reading a file, the media-filter
+  trials (WAV / BMP / MOD) and the Deflate recompression of office/PDF/gzip files used to
+  happen one file after another on the way into the compressor. They now run on a pool of
+  worker threads into holding areas — memory up to a share of 256 MiB each, then a
+  temporary file beside the archive — and the archive is still written strictly in its
+  listed order, so the output is the same archive as before.
+- At `-m5` a finished block waits for its turn in the archive the same way: in RAM up to
+  a share of 256 MiB, then in a temporary file. `NIKPAK_SEQ=1` puts everything back on the
+  old one-at-a-time path (useful for comparing, or on a machine that behaves badly).
+
+### Note
+- The size estimate in the window (`Size` in the Ratio · Time · Size line) stays at "…"
+  while the blocks of a `-m5` archive are being compressed, because the compressed bytes
+  only reach the archive when their block's turn comes. The percentage and the time
+  estimate keep working.
+- A **single** huge file cannot be split across blocks (entries are never cut), so one
+  4 GB file is still compressed by one core at `-m5`; the zstd levels, which split their
+  input internally, do use all cores for it.
+- The blocks are smaller than before (that is the price of parallelism), and all the
+  encoders together are kept inside about 1.5 GiB of RAM: that divides the dictionary
+  between them, so on a big archive a `-m5` archive can come out larger than a 1.12 one
+  (a few percent on highly repetitive data; nothing on a tree of similar files).
+  `-mt<N>` is the dial: `-mt2` gives two big blocks (best ratio, two cores), `-mt8` the
+  fastest.
+- `NIKPAK_SEQ=1` in the environment restores the old behaviour exactly, so a size or
+  speed comparison is one command away.
+
+### Fixed
+- **A package that contains a folder could not be extracted at all.** The reader checked
+  the entry count stored at the end of the package (which counts folders) against a
+  counter that only counted files, so every extraction of a package made from a folder
+  ended in "Entry count mismatch: the package is damaged" — which is what `unNik` and the
+  Open Package box would have shown. Found by the package tests once they were run in
+  parallel without sharing a directory.
+- `-v` took only one-letter units: `-v700 MB` (and `-v700MB`, `-v4,7 GB`, `-v2 GiB`)
+  was rejected as "invalid volume size", because the parser read the unit as the last
+  character and "700M" is not a number. The unit is now the whole suffix.
+- The package tests (1.11) all shared one temporary directory while `cargo test` runs
+  them in parallel, so they deleted each other's files: five of them failed at random.
+  Each test now gets its own directory. The KDF test was also a timing threshold that a
+  fast CPU can beat legitimately: it now compares 600 000 rounds against one, so it
+  catches a skipped loop instead of a fast machine.
+
+---
+
+## 1.12.0 – 6 November 2026 – Split volumes and self-extracting .exe
+
+### Added
+- **Split volumes.** A large archive can be cut into pieces as it is written:
+  `photos.nik`, then `photos.n01`, `photos.n02` … The volumes are the archive's own bytes
+  cut at the chosen size, so nothing else changes: extract the **first** volume and the
+  rest are read by themselves (nikpak, unNik and the right-click menu all do this).
+  In the window, the new **Split** pill opens a box with Off / 100 MB / 700 MB / 2 GB /
+  4.7 GB and a free size in MB or GB; the pill shows the size in force (`700 MB`) and the
+  choice is remembered. On the command line: `nikpak a -v700m big.nik Files\`
+  (`-v4.7g`, `-v1024k`, a plain number of bytes, `-v0` for one file again).
+  A volume that is missing is reported by name ("the archive continues in …, which is
+  missing") instead of a bare "unexpected end of file". Deleting files from a split
+  archive keeps it split.
+- **Self-extracting archives.** `-sfx` (or the switch in the same box) writes
+  `photos.exe` instead of `photos.nik`: that file is **unNik with the archive appended**,
+  marked by a 40-byte CRC-checked trailer at the end. Whoever runs it gets a small
+  "self-extracting archive" window — the archive's name and size, a destination field
+  with Browse, a password field when the archive is encrypted, its terms when it has any,
+  and one Extract button — and unpacks the files with **no installation and no nikpak**.
+  `-v` and `-sfx` together give `photos.exe` plus `photos.n01` … The .exe is about 8 MB
+  (the size of unNik) plus the archive, so unNik must sit next to nikpak when one is made.
+- Library: `split::Chain` (reads a set of volumes or the archive inside an .exe as one
+  stream), `split::Out` (writes one file, a set of volumes or an .exe), `split::embedded`,
+  `split::parse_size`. Every read path (peek, cover, legal statement, index, extract,
+  test, delete) goes through `Chain`, so both new shapes work everywhere.
+
+### Changed
+- **The window refreshes once a second while it works, not sixty times.** Painting the
+  panel (skins, glows, text) on the same machine as the compressor costs a measurable
+  share of the CPU, so during compression, extraction, testing and packaging the frame
+  timer is `gui::WORK_REPAINT` (1 s); the percentage and the ratio/time/size estimates
+  update once a second. Clicks, keys and drags still repaint at once (Cancel stays
+  instant), and a worker thread asks for one repaint the moment its job ends, so the
+  "done" screen is not delayed. The progress ring now eases with real elapsed time
+  (`InputState::unstable_dt`), so it looks the same at 1 Hz as at 60 Hz.
+- **Ctrl + / Ctrl − now resize the window, not just the drawing.** egui zooms by
+  multiplying `pixels_per_point`, and `ViewportCommand::InnerSize` is given in points -
+  so the window has to be asked for its size again whenever the zoom changes, which is
+  what `fit_window` (NikPak) and `resize` (unNik) now do. A zoom the screen cannot hold
+  is capped (`gui::cap_zoom_to_screen`), so every item stays visible instead of hanging
+  off the screen.
+
+### Fixed
+- The four strings of the update card were in the nine translation tables but missing from
+  `KEYS` in `src/i18n.rs`, which made `every_language_translates_every_text` fail.
+- Deleting entries rewrote the archive through a temporary file with no volume support;
+  it now keeps the volume size and the .exe stub of the archive it rewrites.
+- `src/package.rs` did not compile (a shadowed `e` made `e.src` an `io::Error`), and
+  `src/gui.rs` measured a `PathBuf` after moving it into the "done" stage.
+
+---
+
+## 1.11.0 – 6 November 2026 – Create Package / Open Package
+
+### Added
+- **NikPak packages.** A new `.nik` container — the NikPak sibling of Nikkosynth's
+  soundbank — for bundling files into one encrypted, sellable product. Its magic is
+  `NIKPACK2` (a soundbank is `NIKPACK1`, an archive is `\x89NIK…`), so the three never
+  import into each other. A package carries a name, author, description, a square cover
+  picture and an end-user licence agreement (EULA) in its plaintext header; the file
+  names and contents sit in one SHA-256-CTR-encrypted, zstd-compressed, HMAC-sealed body.
+- **Create Package**, a new pill in the NikPak window: one box asks for the package name,
+  author, description, password (twice), an optional EULA, a cover picture and the
+  destination folder — with a files/folder picker, or drop files on the window. The
+  destination is remembered between launches (as is the EULA text and author).
+- **Open Package**: drop a package on NikPak or unNik and a box shows the picture, name,
+  description and — before anything is decrypted — the EULA (which must be approved) and
+  the password; it then extracts the files to the destination you choose, which is
+  remembered too.
+- Library: `package::collect`, `package::seal`, `package::inspect`, `package::read_info`,
+  `package::extract`, `package::is_package`, `package::describe`.
+
+### Note
+- A package is **always** encrypted and its EULA is authenticated with the body: changing
+  or removing it makes the package refuse to open, exactly as with a soundbank's terms.
+
+---
+
+## 1.10.0 – 5 November 2026 – Nikkosynth soundbanks are recognised
+
+### Added
+- **A Nikkosynth soundbank opens as what it is.** Both products write `.nik`, and a
+  soundbank is not an archive: unNik used to answer *"is not a .nik archive (bad
+  signature)"* for a file the player had just exported from Nikkosynth. It now reads the
+  part of the bank that is readable without its password — name, author, description,
+  terms, cover picture and how many patches it holds — and shows it as a card, with a
+  line saying it is imported from inside Nikkosynth.
+- The command line says the same in one sentence instead of "bad signature": *"This is
+  a Nikkosynth soundbank, not a NikPak archive (500 patches, by …). Its sounds are
+  encrypted; open it in Nikkosynth to import them."*
+- Library: `soundbank::is_soundbank`, `soundbank::read_info`, `soundbank::describe`.
+
+### Note
+- **Nothing is decrypted.** A sold soundbank's sounds, names and categories live in one
+  encrypted, compressed stream — that is what stops the bank being lifted out of the
+  application — so this reads only what the format exposes on purpose.
+
+---
+
 ## 1.9.0 – 4 November 2026 – Cover pictures for archives
 
 ### Added

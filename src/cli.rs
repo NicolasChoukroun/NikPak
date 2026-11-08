@@ -91,6 +91,10 @@ pub struct Options {
     pub accept_legal: bool,
     /// a: the cover picture (JPEG/PNG bytes, already made square by cover.rs)
     pub cover: Option<Vec<u8>>,
+    /// -v<size>: cut the archive into volumes of that many bytes (None: one file)
+    pub split: Option<u64>,
+    /// -sfx: write a self-extracting .exe (unNik with the archive appended)
+    pub sfx: bool,
 }
 
 pub enum Parsed {
@@ -162,6 +166,8 @@ pub fn parse(args: &[String]) -> Result<Parsed> {
     let mut legal: Option<String> = None;
     let mut accept_legal = false;
     let mut cover: Option<Vec<u8>> = None;
+    let mut split: Option<u64> = None;
+    let mut sfx = false;
     let mut only_positional = false;
 
     let mut i = 0;
@@ -236,6 +242,36 @@ pub fn parse(args: &[String]) -> Result<Parsed> {
         if a == "-accept" {
             accept_legal = true;
             continue;
+        }
+
+        // ---- volumes and self-extracting archives ---------------------------
+        if a == "-sfx" {
+            sfx = true;
+            continue;
+        }
+        if a == "-sfx-" {
+            sfx = false;
+            continue;
+        }
+        if let Some(sz) = a.strip_prefix("-v") {
+            // -v700m, -v4.7g, -v1024k, -v471859200; -v, -v-, -vn, -v0 turn it off
+            let size_like = sz.is_empty() || sz == "-" || sz.starts_with(|c: char| c.is_ascii_digit());
+            if size_like || sz == "n" {
+                split = if sz.is_empty() || sz == "-" || sz == "n" {
+                    None
+                } else {
+                    match crate::split::parse_size(sz) {
+                        Some(b) => Some(b.max(crate::split::MIN_VOLUME)),
+                        // -v0 / -v0m: one file, as if -v was not given
+                        None if sz.starts_with('0') => None,
+                        None => return usage_err(format!(
+                            "Invalid volume size in option '{a}'. Use -v700m, -v4.7g, -v1024k, or a size in bytes (-v471859200)."
+                        )),
+                    }
+                };
+                continue;
+            }
+            // any other -v… option (-ver …) falls through: accepted and ignored
         }
 
         // ---- overwrite ----------------------------------------------------
@@ -398,6 +434,8 @@ pub fn parse(args: &[String]) -> Result<Parsed> {
             legal: None,
             accept_legal,
             cover: None,
+            split: None,
+            sfx,
         })));
     }
     if positional.is_empty() {
@@ -449,6 +487,9 @@ pub fn parse(args: &[String]) -> Result<Parsed> {
     if cover.is_some() && command != Command::Add {
         return usage_err("-cover attaches a picture to a new archive: use it with 'a'.");
     }
+    if (split.is_some() || sfx) && command != Command::Add {
+        return usage_err("-v and -sfx shape a new archive: use them with 'a'.");
+    }
     if command == Command::Add && dest.is_some() {
         return usage_err("A destination directory only makes sense when extracting.");
     }
@@ -469,6 +510,8 @@ pub fn parse(args: &[String]) -> Result<Parsed> {
         legal,
         accept_legal,
         cover,
+        split,
+        sfx,
     })))
 }
 
@@ -541,6 +584,18 @@ OPTIONS (RAR style)                              (zip equivalent)
   -cover <file>  Attach a cover picture (PNG, JPEG, WebP, BMP or GIF) to the new
                  archive. It is cropped square from its centre and stored as a
                  1024 x 1024 JPEG; unNik and Nikkomander show it.
+  -v<size>       Split the archive into volumes of <size>: 700m, 4.7g, 1024k or
+                 a number of bytes. The first volume is "photos.nik", the next
+                 "photos.n01", "photos.n02" ... To unpack, extract the first
+                 volume: nikpak x photos.nik reads the others by itself. -v or
+                 -v0 writes one file again.        (WinRAR: Split to volumes)
+                 Registered copies only (see "nikpak licence").
+  -sfx           Write a self-extracting archive: "photos.exe", which is unNik
+                 with the archive appended. Whoever runs it gets a small window
+                 that asks where to unpack and does it - no installation, no
+                 nikpak needed. unNik must sit next to nikpak to make one.
+                 -v and -sfx together give "photos.exe" + "photos.n01" ...
+                 Registered copies only (see "nikpak licence").
   -accept        Accept the archive's legal statement without asking (scripts).
                  Without it, nikpak shows the statement and asks YES or NO.
   -inul, -idq, -q  Quiet: print only errors
@@ -559,6 +614,11 @@ EXAMPLES
   nikpak a -pMyLongPassw0rd secret.nik file.pdf      encrypted, password on the command line
   nikpak a -p -legal terms.txt sounds.nik Bank\      encrypted, with terms to accept
   nikpak a -cover art.png -legal terms.txt pack.nik Bank\   with a cover and terms
+  nikpak a -v700m -mt8 video.nik Movies\             volumes of 700 MB: video.nik,
+                                                     video.n01, video.n02 ...
+  nikpak a -sfx -p setup.nik Installer\              a self-extracting setup.exe,
+                                                     encrypted
+  nikpak a -sfx -v4.7g dvd.nik Videos\               a .exe plus 4.7 GB volumes
   nikpak x backup.nik C:\Restore\                    extract with paths
   nikpak x backup.nik Docs/report.pdf                extract ONE file (with its path)
   nikpak e backup.nik Docs/report.pdf -d C:\Out      extract one file, without its path
