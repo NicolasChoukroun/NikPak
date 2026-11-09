@@ -1,5 +1,5 @@
 {
-  "latest": "1.11.0",
+  "latest": "1.13.1",
   "url": "https://nikpak.nikkoid.com/#download",
-  "notes": "Create Package: pack files into an encrypted .nik package with a cover, a description and a licence to approve."
+  "notes": "Split volumes and self-extracting .exe, multi-core compression, and dropping an archive unpacks it instead of compressing it."
 }

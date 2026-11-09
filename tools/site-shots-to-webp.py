@@ -30,6 +30,9 @@ NOMINAL = {
     "nikpak-about": (500, 560),
     "nikpak-reminder": (500, 560),
     "nikpak-register": (500, 560),
+    "nikpak-split": (500, 560),
+    "nikpak-extract": (500, 560),
+    "nikpak-package": (500, 560),
     "skins-menu": (1060, 560),
     "skins-menu-bright": (1060, 560),
     "unnik-idle": (500, 560),
@@ -133,7 +136,8 @@ def main():
         sys.exit(f"no captures: run tools/site-shots.ps1 first ({RAW})")
     print(f"reading {RAW}")
     for n in ["nikpak-drop", "nikpak-compress", "nikpak-choose", "nikpak-about",
-              "nikpak-reminder", "nikpak-register", "skins-menu", "skins-menu-bright",
+              "nikpak-reminder", "nikpak-register", "nikpak-split", "nikpak-extract",
+              "nikpak-package", "skins-menu", "skins-menu-bright",
               "unnik-browser", "unnik-skins"]:
         single(n)
     grid(["lang-zh", "lang-hi-nag", "lang-ar", "lang-en-menu"], "lang-quad")

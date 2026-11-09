@@ -11,6 +11,9 @@
       nikpak-about       the About window
       nikpak-reminder    the shareware reminder
       nikpak-register    the registration form
+      nikpak-split       the Split box (volume sizes + self-extracting .exe)
+      nikpak-extract     the Extract box (a dropped archive is unpacked)
+      nikpak-package     the Create Package box
       skins-menu         the skins box beside the window (Nikkoid Blue)
       skins-menu-bright  the same in Nikkoid Bright
       unnik-idle         unNik, waiting for an archive
@@ -43,7 +46,10 @@ param(
     [switch]$NoBuild,
     # set by tools\unelevated.ps1 on the copy that runs as the normal user
     [switch]$Inner,
-    [string]$Root
+    [string]$Root,
+    # capture only these states, e.g. -Only nikpak-split,nikpak-extract,nikpak-package
+    # (the webp conversion is skipped too, so existing pictures stay untouched)
+    [string[]]$Only
 )
 
 $ErrorActionPreference = 'Stop'
@@ -182,8 +188,10 @@ function Save-Shot($h, $file) {
 
 # --- one state -------------------------------------------------------------
 function Shot($name, [string[]]$argv, [hashtable]$vars, $waitMs = 1800) {
+    if ($Only -and ($Only -notcontains $name)) { Write-Host ("  skip {0}" -f $name); return }
     Remove-Item Env:NIKPAK_GUI_SKIN, Env:NIKPAK_GUI_SKINMENU, Env:NIKPAK_GUI_CHOOSER, Env:NIKPAK_GUI_MODAL, `
-                Env:NIKPAK_GUI_LANG, Env:NIKPAK_GUI_LANGMENU, Env:NIKPAK_GUI_DEMO, Env:NIKPAK_GUI_HOVER -ErrorAction SilentlyContinue
+                Env:NIKPAK_GUI_LANG, Env:NIKPAK_GUI_LANGMENU, Env:NIKPAK_GUI_DEMO, Env:NIKPAK_GUI_HOVER, `
+                Env:NIKPAK_GUI_ARCHIVE -ErrorAction SilentlyContinue
     $env:NIKPAK_GUI_NO_NAG = '1'          # the reminder has its own shot
     if ($vars) { foreach ($k in $vars.Keys) { Set-Item "Env:$k" $vars[$k] } }
     if ($vars -and $vars.ContainsKey('NIKPAK_GUI_MODAL')) { Remove-Item Env:NIKPAK_GUI_NO_NAG -ErrorAction SilentlyContinue }
@@ -211,7 +219,7 @@ function Shot($name, [string[]]$argv, [hashtable]$vars, $waitMs = 1800) {
         if (-not $p.HasExited) { $p.CloseMainWindow() | Out-Null; Start-Sleep -Milliseconds 400; if (-not $p.HasExited) { $p.Kill() } }
         $p.Dispose()
         Remove-Item Env:NIKPAK_GUI_SKIN, Env:NIKPAK_GUI_SKINMENU, Env:NIKPAK_GUI_CHOOSER, Env:NIKPAK_GUI_MODAL, `
-                    Env:NIKPAK_GUI_LANG, Env:NIKPAK_GUI_LANGMENU, Env:NIKPAK_GUI_DEMO -ErrorAction SilentlyContinue
+                    Env:NIKPAK_GUI_LANG, Env:NIKPAK_GUI_LANGMENU, Env:NIKPAK_GUI_DEMO, Env:NIKPAK_GUI_ARCHIVE -ErrorAction SilentlyContinue
     }
 }
 
@@ -222,6 +230,9 @@ Shot 'nikpak-choose'   @()                                   @{ 'NIKPAK_GUI_CHOO
 Shot 'nikpak-about'    @()                                   @{ 'NIKPAK_GUI_MODAL' = 'about' }
 Shot 'nikpak-reminder' @()                                   @{ 'NIKPAK_GUI_MODAL' = 'nag-left' }
 Shot 'nikpak-register' @()                                   @{ 'NIKPAK_GUI_MODAL' = 'register' }
+Shot 'nikpak-split'    @()                                   @{ 'NIKPAK_GUI_MODAL' = 'split' }
+Shot 'nikpak-extract'  @()                                   @{ 'NIKPAK_GUI_MODAL' = 'extract'; 'NIKPAK_GUI_ARCHIVE' = $archive } 2600
+Shot 'nikpak-package'  @()                                   @{ 'NIKPAK_GUI_MODAL' = 'create-package' } 2600
 Shot 'skins-menu'      @()                                   @{ 'NIKPAK_GUI_SKIN' = 'moon'; 'NIKPAK_GUI_SKINMENU' = '1' } 2600
 Shot 'skins-menu-bright' @()                                 @{ 'NIKPAK_GUI_SKIN' = 'nikkoid-light'; 'NIKPAK_GUI_SKINMENU' = '1' } 2600
 Shot 'unnik-idle'      @('unnik')                            @{}
@@ -238,11 +249,15 @@ Write-Host ''
 Write-Host "Pictures are in $out" -ForegroundColor Cyan
 
 # --- turn them into the .webp files of the site ----------------------------
-$py = Get-Command python -ErrorAction SilentlyContinue
-if ($py) {
-    Write-Host '== webp conversions ==' -ForegroundColor Cyan
-    & $py.Source (Join-Path $root 'tools\site-shots-to-webp.py')
-    Write-Host 'Rebuild the site with:  python website\build.py' -ForegroundColor Cyan
-} else {
-    Write-Host 'Python was not found: tell Claude, it converts the pictures.'
+# skipped on an -Only run, so the existing pictures stay untouched and only
+# the new states are captured (Claude converts those afterwards)
+if (-not $Only) {
+    $py = Get-Command python -ErrorAction SilentlyContinue
+    if ($py) {
+        Write-Host '== webp conversions ==' -ForegroundColor Cyan
+        & $py.Source (Join-Path $root 'tools\site-shots-to-webp.py')
+        Write-Host 'Rebuild the site with:  python website\build.py' -ForegroundColor Cyan
+    } else {
+        Write-Host 'Python was not found: tell Claude, it converts the pictures.'
+    }
 }

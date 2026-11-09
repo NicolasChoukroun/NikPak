@@ -1007,6 +1007,31 @@ impl App {
             Ok("nag-split") => app.modal = Modal::Nag { register_left: true, feature: true },
             Ok("about") => app.modal = Modal::About,
             Ok("legal") => app.modal = Modal::Legal { text: app.legal_text.clone(), on: true, error: None },
+            // the Split box (volume sizes + self-extracting .exe), shown with the
+            // 700 MB preset lit so the picture shows the feature
+            Ok("split") => app.modal = Modal::Split(Box::new(SplitForm::new(true, 700 * 1024 * 1024, false))),
+            // the Create Package box (1.11)
+            Ok("create-package") => app.modal = Modal::CreatePackage(Box::new(PackageForm {
+                files: Vec::new(),
+                name: String::new(),
+                author: read_setting("package_author").unwrap_or_default(),
+                description: String::new(),
+                password: String::new(),
+                password2: String::new(),
+                eula_on: read_setting("package_eula_on").as_deref() == Some("1"),
+                eula: load_package_eula_text(),
+                dest: load_package_dest(),
+                cover: None,
+                cover_tex: None,
+                error: None,
+                job: None,
+            })),
+            // the Extract box (1.13.1); NIKPAK_GUI_ARCHIVE names the archive to show
+            Ok("extract") => {
+                if let Ok(path) = std::env::var("NIKPAK_GUI_ARCHIVE") {
+                    app.modal = Modal::Extract(Box::new(ExtractForm::load(PathBuf::from(path))));
+                }
+            }
             _ => {}
         }
         if std::env::var_os("NIKPAK_GUI_CHOOSER").is_some() {
@@ -1431,6 +1456,47 @@ pub(crate) fn brand_icon(p: &egui::Painter, name: &str, c: Pos2, radius: f32, ho
 /// Clickable text; returns true when clicked.
 pub(crate) fn link_font() -> FontId {
     FontId::new(13.0, family("ui"))
+}
+
+/// A centred, underlined link in the About card; true when clicked.
+pub(crate) fn about_link(ui: &mut egui::Ui, p: &egui::Painter, c: Pos2, label: &str, id: &str) -> bool {
+    let hit = Rect::from_center_size(c, Vec2::new(180.0, 22.0));
+    let resp = ui.interact(hit, egui::Id::new(id), Sense::click()).on_hover_cursor(egui::CursorIcon::PointingHand);
+    let col = if resp.hovered() { TEXT() } else { ACCENT_SOFT() };
+    let r = text(p, c, Align2::CENTER_CENTER, label, link_font(), col);
+    p.line_segment([Pos2::new(r.left(), r.bottom() + 1.0), Pos2::new(r.right(), r.bottom() + 1.0)], Stroke::new(1.0_f32, alpha(ACCENT_SOFT(), 120)));
+    resp.clicked()
+}
+
+/// A small social mark for the About card, drawn with strokes in the card's
+/// palette: a paper plane (Telegram), a cross (X), a game controller (Discord).
+pub(crate) fn social_mark(p: &egui::Painter, name: &str, c: Pos2, s: f32, color: Color32) {
+    let k = s / 14.0;
+    let v = |x: f32, y: f32| c + Vec2::new(x * k, y * k);
+    let st = |w: f32| Stroke::new(w * k, color);
+    match name {
+        "Telegram" => {
+            // a paper plane: the gap is the fold
+            p.line_segment([v(-6.5, -0.2), v(6.5, -5.5)], st(1.4));
+            p.line_segment([v(-6.5, -0.2), v(-1.0, 5.5)], st(1.4));
+            p.line_segment([v(6.5, -5.5), v(-1.0, 5.5)], st(1.4));
+            p.line_segment([v(-1.0, 5.5), v(-2.6, 1.6)], st(1.4));
+            p.line_segment([v(-2.6, 1.6), v(6.5, -5.5)], st(1.0));
+        }
+        "X" => {
+            p.line_segment([v(-5.5, -5.5), v(5.5, 5.5)], st(1.8));
+            p.line_segment([v(5.5, -5.5), v(-5.5, 5.5)], st(1.8));
+        }
+        _ => {
+            // Discord: a rounded game controller with two eyes
+            p.line_segment([v(-5.0, -2.5), v(5.0, -2.5)], st(1.6));
+            p.line_segment([v(-5.0, -2.5), v(-6.0, 4.0)], st(1.6));
+            p.line_segment([v(5.0, -2.5), v(6.0, 4.0)], st(1.6));
+            p.line_segment([v(-6.0, 4.0), v(6.0, 4.0)], st(1.6));
+            p.circle_filled(v(-2.6, 0.8), 1.3 * k, color);
+            p.circle_filled(v(2.6, 0.8), 1.3 * k, color);
+        }
+    }
 }
 
 pub(crate) fn text_link(ui: &mut egui::Ui, p: &egui::Painter, pos: Pos2, text: &str, id: &str) -> bool {
@@ -2225,7 +2291,7 @@ impl App {
                         }
                     }
                     Modal::About => {
-                        let c = Rect::from_center_size(Pos2::new(cx, panel.center().y), Vec2::new(372.0, 380.0));
+                        let c = Rect::from_center_size(Pos2::new(cx, panel.center().y), Vec2::new(372.0, 452.0));
                         card(&p, c);
                         glow_text(&p, Pos2::new(cx, c.top() + 34.0), t("ABOUT"), FontId::new(11.0, family("ui")), ACCENT_SOFT(), alpha(ACCENT(), 5), 3.0);
                         glow_text(&p, Pos2::new(cx, c.top() + 76.0), "NikPak", FontId::new(32.0, family("display")), TEXT(), alpha(ACCENT(), 8), 1.5);
@@ -2241,13 +2307,26 @@ impl App {
                         let sh = wrapped(&p, Pos2::new(c.left() + 30.0, c.top() + 214.0), c.width() - 60.0, &status, 13.5, col);
                         // web site link
                         let site = "nikpak.nikkoid.com";
-                        let link_c = Pos2::new(cx, c.top() + 232.0 + sh);
-                        let link_r = Rect::from_center_size(link_c, Vec2::new(150.0, 22.0));
-                        let lr = ui.interact(link_r, egui::Id::new("about-site"), Sense::click()).on_hover_cursor(egui::CursorIcon::PointingHand);
-                        let lt = text(&p, link_c, Align2::CENTER_CENTER, site, FontId::new(13.0, family("ui")), if lr.hovered() { TEXT() } else { ACCENT_SOFT() });
-                        p.line_segment([Pos2::new(lt.left(), lt.bottom() + 1.0), Pos2::new(lt.right(), lt.bottom() + 1.0)], Stroke::new(1.0_f32, alpha(ACCENT_SOFT(), 120)));
-                        if lr.clicked() {
+                        if about_link(ui, &p, Pos2::new(cx, c.top() + 232.0 + sh), site, "about-site") {
                             open_link("https://nikpak.nikkoid.com");
+                        }
+                        // buy a licence
+                        if about_link(ui, &p, Pos2::new(cx, c.top() + 258.0 + sh), t("Buy a licence"), "about-buy") {
+                            open_link("https://nikpak.nikkoid.com/buy.html");
+                        }
+                        // the three community links, side by side: mark + name
+                        for (k, (name, url)) in SOCIAL.iter().enumerate() {
+                            let lc = Pos2::new(cx + (k as f32 - 1.0) * 112.0, c.top() + 288.0 + sh);
+                            let hit = Rect::from_center_size(lc + Vec2::new(4.0, 0.0), Vec2::new(104.0, 24.0));
+                            let resp = ui
+                                .interact(hit, egui::Id::new(("about-social", k)), Sense::click())
+                                .on_hover_cursor(egui::CursorIcon::PointingHand);
+                            let col = if resp.hovered() { TEXT() } else { TEXT_DIM() };
+                            social_mark(&p, name, lc + Vec2::new(-27.0, 0.0), 14.0, if resp.hovered() { ACCENT_SOFT() } else { alpha(ACCENT_SOFT(), 190) });
+                            text(&p, lc + Vec2::new(10.0, 0.0), Align2::CENTER_CENTER, *name, FontId::new(13.0, family("ui")), col);
+                            if resp.clicked() {
+                                open_link(url);
+                            }
                         }
                         let terms = Rect::from_min_size(Pos2::new(c.left() + 30.0, c.bottom() - 70.0), Vec2::new(150.0, 44.0));
                         let ok = terms.translate(Vec2::new(162.0, 0.0));
@@ -2255,7 +2334,7 @@ impl App {
                             let lic = std::env::current_exe().ok().and_then(|e| e.parent().map(|d| d.join("LICENSE.txt")));
                             match lic {
                                 Some(f) if f.is_file() => open_link(&f.display().to_string()),
-                                _ => open_link("https://nikpak.nikkoid.com"),
+                                _ => open_link("https://nikpak.nikkoid.com/terms.html"),
                             }
                         }
                         if pill_button(ui, &p, ok, t("Close"), true, "about-close") {

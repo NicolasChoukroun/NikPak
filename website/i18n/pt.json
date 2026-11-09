@@ -128,7 +128,7 @@
   "price_company": "Licença empresarial",
   "price_company_note": "Preços por volume de 1 a mais de 500 estações",
   "honest_title": "Honestos sobre os limites",
-  "honest_text": "O RAR ainda oferece registros de recuperação, arquivos multivolume e autoextraíveis, e décadas de uso. O NikPak é novo e ainda não passou por auditoria independente. Dizemos isso claramente, e o roteiro mostra o que vem a seguir.",
+  "honest_text": "O RAR ainda oferece registros de recuperação, atualizações no local em arquivos existentes e décadas de testes em campo. O NikPak é novo e ainda não passou por auditoria independente. Dizemos isso claramente, e o roteiro mostra o que vem a seguir.",
   "cta_title": "Experimente o NikPak agora",
   "cta_text": "Um único instalador instala o NikPak e o unNik. Não é preciso cadastro para começar.",
   "skins_title": "89 temas",
@@ -164,7 +164,7 @@
   "office_t": "Documentos de escritório, PDF e gzip",
   "office_p": "Arquivos docx, xlsx, pptx, odt, ods, epub, jar, zip, pdf e gz guardam o conteúdo em fluxos Deflate que compressores comuns não conseguem mais reduzir. Nos níveis -m4 e -m5, o NikPak decodifica esses fluxos, compacta os dados brutos muito melhor e reconstrói o arquivo original bit a bit na extração. Com 60 arquivos de escritório, o resultado é 31,7 % menor que com o 7-Zip -mx9.",
   "engine_t": "Níveis de compressão",
-  "engine_p": "Os níveis -m1 a -m4 usam um fluxo Zstandard sólido e multithread, com janela de 128 MiB e busca de correspondências distantes no -m4. O nível máximo -m5, o padrão, cria um corpo com vários motores: LZMA2 para dados binários e PPMd para texto, escolhidos por teste, com os arquivos ordenados por tipo.",
+  "engine_p": "Os níveis -m1 a -m4 usam um fluxo Zstandard sólido e multithread, com janela de 128 MiB e busca de correspondências distantes no -m4. O nível máximo -m5, o padrão, cria um corpo com vários motores: LZMA2 para dados binários e PPMd para texto, escolhidos por teste, com os arquivos ordenados por tipo. Desde a 1.13 os blocos de um arquivo -m5 são comprimidos em paralelo, um por núcleo.",
   "lv_col_level": "Nível",
   "lv_col_use": "O que faz",
   "levels": [
@@ -228,18 +228,17 @@
   "limits_t": "Onde o RAR ainda está à frente",
   "limits_list": [
    "Registros de recuperação capazes de reparar um arquivo danificado",
-   "Arquivos multivolume e autoextraíveis",
    "Adicionar ou substituir arquivos dentro de um arquivo existente",
    "Décadas de uso e milhões de arquivos .rar existentes"
   ],
   "roadmap_t": "Roteiro",
   "roadmap_list": [
    "<b>Registros de recuperação:</b> paridade Reed-Solomon para reparar arquivos danificados.",
-   "<b>Arquivos multivolume e atualizações:</b> dividir arquivos grandes, adicionar e substituir arquivos.",
+   "<b>Atualizações:</b> adicionar e substituir arquivos dentro de um arquivo existente.",
    "<b>Compartilhamento com chaves públicas:</b> um híbrido de X25519 e ML-KEM, seguro se qualquer um dos dois resistir.",
    "<b>Mais filtros de mídia:</b> áudio em ponto flutuante, trackers XM/S3M/IT, recompressão PNG, TGA e TIFF.",
    "<b>ZIP e RAR no unNik:</b> abrir os formatos comuns no unNik, para que o NikPak seja o único compactador de que você precisa. (O menu do gerenciador de arquivos chegou na 1.5.5.)",
-   "<b>Um nível máximo mais rápido:</b> LZMA2 e PPMd multithread, deduplicação, um filtro para executáveis.",
+   "<b>Um nível máximo mais rápido:</b> LZMA2/PPMd em paralelo dentro de um único arquivo, deduplicação, um filtro para executáveis.",
    "<b>Uma auditoria de segurança externa</b> da criptografia e do extrator."
   ],
   "skins_t": "Temas",
@@ -247,7 +246,14 @@
   "cli_t": "Linha de comando",
   "cli_p": "O NikPak segue a sintaxe do RAR (a, x, e, l, v, lb, t, p, d, mt), com opções RAR e zip, códigos de saída previsíveis e um -help que documenta cada opção. A senha pode vir de uma variável de ambiente, e front-ends como o Total Commander podem usá-lo como se fosse o rar.exe.",
   "menu_t": "O menu do gerenciador de arquivos",
-  "menu_p": "Um submenu “NikPak” no menu de contexto do Explorer, Dolphin, Nemo, Nautilus e Finder: Adicionar ao arquivo, Extrair aqui, Extrair para a própria pasta e Abrir com o unNik, no seu idioma."
+  "menu_p": "Um submenu “NikPak” no menu de contexto do Explorer, Dolphin, Nemo, Nautilus e Finder: Adicionar ao arquivo, Extrair aqui, Extrair para a própria pasta e Abrir com o unNik, no seu idioma.",
+  "volumes_t": "Volumes divididos e .exe autoextraível",
+  "volumes_p1": "Um arquivo pode ser dividido em volumes de qualquer tamanho — 100 MB, 700 MB, 4.7 GB ou um número de bytes — para discos e limites de upload. O primeiro volume é photos.nik, o seguinte photos.n01, photos.n02 e assim por diante. Para descomprimir, extraia o primeiro volume: o NikPak lê os outros sozinho.",
+  "volumes_p2": "Com -sfx o arquivo vira photos.exe — o unNik com o arquivo anexado. Quem o executa recebe uma pequena janela que pergunta onde descomprimir e faz isso, sem instalação e sem precisar do NikPak. -v e -sfx juntos dão um .exe autoextraível mais os volumes seguintes. Ambos são para cópias registradas.",
+  "cores_t": "Cada núcleo conta",
+  "cores_p": "No nível máximo o arquivo é dividido em blocos equilibrados — um por núcleo, nunca menores que 8 MiB — e cada bloco é comprimido em sua própria thread ao mesmo tempo. Ler os arquivos, experimentar os filtros de mídia e recomprimir arquivos de escritório e PDF também rodam em um pipeline em todos os níveis. -mt<N> define o número de threads (2 para a melhor relação, 8 para velocidade); NIKPAK_SEQ=1 restaura o processamento um de cada vez.",
+  "packages_t": "Pacotes",
+  "packages_p": "Criar pacote empacota arquivos em um pacote .nik criptografado com um nome, uma descrição, uma capa quadrada e uma licença (EULA) para aprovar — o gêmeo NikPak de um banco de sons Nikkosynth. Solte um pacote na janela ou abra-o no unNik: uma caixa mostra a capa e a descrição, pede a senha e a aprovação e então o extrai. Os pacotes são sempre criptografados."
  },
  "bench": {
   "title": "Comparativos",
@@ -294,7 +300,7 @@
    "<b>Texto 15,9 % menor na metade do tempo:</b> o PPMd vence em prosa. Ele decodifica tão devagar quanto codifica, então a extração leva 2,7 s em vez de 0,2 s.",
    "<b>Nível rápido -m2:</b> 1,7 s para os dados gerais, contra 93,7 s do 7-Zip -mx5, 48,2 s do RAR e 7,3 s do ZIP. Não é o menor em texto e código-fonte, por isso o -m5 é o padrão.",
    "<b>Extração:</b> 0,9 s (-m2) ou 5,6 s (-m5) para os dados gerais, contra 6,0 s do 7-Zip, 6,7 s do RAR e 6,9 s do ZIP.",
-   "<b>O custo:</b> o -m5 usa uma única thread e é mais lento que o 7-Zip em grandes conjuntos de escritório e código-fonte. Um nível máximo mais rápido está no roteiro."
+   "<b>O custo:</b> o -m5 troca tempo por tamanho. Os números acima limitam cada ferramenta a um núcleo; desde a 1.13 um arquivo -m5 espalha seus blocos pelos núcleos no uso real. Um nível máximo mais rápido permanece no roteiro."
   ],
   "source_note": "Números do guia técnico do NikPak (seção 11.7, NikPak 1.2.0). Meça com seus próprios arquivos: <code>nikpak mt</code> mostra o que cada filtro de mídia alcança sem gravar nada."
  },
@@ -319,7 +325,8 @@
    "<b>Idioma:</b> o botão no canto inferior esquerdo. NikPak e unNik reiniciam no idioma escolhido e o compartilham.",
    "<b>Sons:</b> o botão do alto-falante na barra de título liga e desliga os efeitos sonoros.",
    "<b>Temas:</b> o botão da paleta abre o menu de temas ao lado da janela (clique para experimentar, <b>Aplicar tema</b> para manter, <b>Cancelar</b> para voltar); o botão sol / lua alterna entre escuro e claro. A escolha é lembrada e compartilhada com o unNik. <a href=\"skins.html\">Todos os temas</a>.",
-   "<b>Status e Sobre:</b> no canto superior esquerdo aparece CÓPIA DE AVALIAÇÃO · REGISTRAR ou o titular da licença; o botão <b>i</b> mostra a versão e a licença."
+   "<b>Status e Sobre:</b> no canto superior esquerdo aparece CÓPIA DE AVALIAÇÃO · REGISTRAR ou o titular da licença; o botão <b>i</b> mostra a versão e a licença.",
+   "<b>Solte um arquivo para extraí-lo:</b> um .nik solto na janela — ou qualquer volume de um conjunto dividido, ou um .exe autoextraível — abre a caixa Extrair (nome, tamanho, volumes, senha, destino) em vez de comprimi-lo."
   ],
   "admin_note": "<b>Executando como administrador?</b> O Windows não permite arrastar arquivos do Explorer para um programa executado como administrador. O NikPak se reinicia uma vez como usuário normal; se não for possível, escolha os arquivos com os botões.",
   "unnik_t": "Navegar e extrair com o unNik",
@@ -530,6 +537,16 @@
     "-h -help -?",
     "",
     "Ajuda completa. -V mostra a versão."
+   ],
+   [
+    "-v&lt;size&gt;",
+    "",
+    "Divide o arquivo em volumes do tamanho indicado: 700m, 4.7g, 1024k ou bytes. Somente cópias registradas."
+   ],
+   [
+    "-sfx",
+    "",
+    "Grava um .exe autoextraível: o unNik com o arquivo anexado. Somente cópias registradas."
    ]
   ],
   "pwd_t": "Senhas",
@@ -590,6 +607,8 @@
   "ex_comments": [
    "criar um arquivo",
    "nível máximo, 8 threads",
+   "volumes de 700 MB: video.nik, video.n01, …",
+   "um setup.exe autoextraível, criptografado",
    "criptografado, pede a senha",
    "extrair com caminhos",
    "só *.jpg, sem caminhos",

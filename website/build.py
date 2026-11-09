@@ -68,6 +68,9 @@ GENERAL = [  # tool, size, %, creation s, extraction s, is nikpak
 
 # ---- Changelog (CHANGELOG.md, newest first): version, date, one-line summary ----
 CHANGELOG = [
+    ("1.13.1", "7 November 2026", "A dropped archive is unpacked, not compressed; split volumes and the .exe need a licence; time-to-completion estimates."),
+    ("1.13.0", "6 November 2026", "Multi-core compression: -m5 splits into blocks compressed on separate threads, and per-file work runs in a pipeline."),
+    ("1.12.0", "6 November 2026", "Split volumes (photos.nik + photos.n01 …) and self-extracting .exe archives."),
     ("1.11.0", "6 November 2026", "Create Package and Open Package: an encrypted, sellable .nik package with a cover, a description and a EULA."),
     ("1.10.0", "5 November 2026", "Nikkosynth soundbanks open as what they are instead of \u201cbad signature\u201d."),
     ("1.9.0", "4 November 2026", "Cover pictures for archives: chosen in the window or with -cover, shown by unNik and Nikkomander."),
@@ -651,6 +654,9 @@ def page_features(L):
         ("media", f("media_t"), f'<p>{esc(f("media_p1"))}</p><p>{esc(f("media_p2"))}</p>{checks(L.raw("features.media_list"))}'),
         ("office", f("office_t"), f'<p>{esc(f("office_p"))}</p>'),
         ("levels", f("engine_t"), f'<p>{esc(f("engine_p"))}</p><div class="table-wrap"><table><thead><tr><th>{esc(f("lv_col_level"))}</th><th>{esc(f("lv_col_use"))}</th></tr></thead><tbody>{levels}</tbody></table></div>'),
+        ("volumes", f("volumes_t"), f'<p>{esc(f("volumes_p1"))}</p><p>{esc(f("volumes_p2"))}</p><div class="shots"><img class="shot" src="../assets/img/nikpak-split.webp" alt="Split volumes" width="500" height="560" loading="lazy"><img class="shot" src="../assets/img/nikpak-extract.webp" alt="The Extract box" width="500" height="560" loading="lazy"></div>'),
+        ("cores", f("cores_t"), f'<p>{esc(f("cores_p"))}</p>'),
+        ("packages", f("packages_t"), f'<p>{esc(f("packages_p"))}</p><div class="shots"><img class="shot" src="../assets/img/nikpak-package.webp" alt="Create Package" width="500" height="560" loading="lazy"></div>'),
         ("encryption", f("crypto_t"), f'<p>{esc(f("crypto_p"))}</p>{checks([esc(x) for x in L.raw("features.crypto_list")])}{cmp}'),
         ("safety", f("safety_t"), checks([esc(x) for x in L.raw("features.safety_list")])),
         ("apps", f("apps_t"), f'<p>{esc(f("apps_p"))}</p><div class="shots"><img class="shot" src="../assets/img/nikpak-choose.webp" alt="NikPak" width="500" height="560" loading="lazy"><img class="shot" src="../assets/img/nikpak-about.webp" alt="NikPak" width="500" height="560" loading="lazy"></div><figure style="margin-top:24px"><img class="shot" src="../assets/img/unnik-dialogs2.webp" alt="unNik" width="1393" height="559" loading="lazy"></figure>'),
@@ -681,6 +687,8 @@ def page_benchmarks(L):
 EXAMPLES = [
     "nikpak a backup.nik C:\\Docs\\*.txt Photos\\",
     "nikpak a -m5 -mt8 big.nik Projects\\",
+    "nikpak a -v700m -mt8 video.nik Movies\\",
+    "nikpak a -sfx -p setup.nik Installer\\",
     "nikpak a -p secret.nik Taxes2026\\",
     "nikpak x backup.nik C:\\Restore\\",
     "nikpak e backup.nik *.jpg C:\\Pics\\",

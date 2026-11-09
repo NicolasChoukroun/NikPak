@@ -1,7 +1,7 @@
 Upload these files into this folder (see site.json, downloads):
-  nikpak-1.7.0-setup.exe
-  unnik-1.7.0-setup.exe
-  nikpak-1.7.0-macos.zip
-  nikpak-1.7.0-linux-x86_64.tar.gz
-  nikpak_1.7.0_amd64.deb
-  unnik_1.7.0_amd64.deb
+  nikpak-1.13.1-setup.exe
+  unnik-1.13.1-setup.exe
+  nikpak-1.13.1-macos.zip
+  nikpak-1.13.1-linux-x86_64.tar.gz
+  nikpak_1.13.1_amd64.deb
+  unnik_1.13.1_amd64.deb
