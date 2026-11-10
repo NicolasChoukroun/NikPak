@@ -101,10 +101,13 @@ if ($missing.Count) {
 }
 
 # --- 4. Upload the website (FTP) -------------------------------------------------
-$FtpHost = '65.21.192.14'
-$FtpUser = 'NikkoD'
-$FtpPass = 'Akaklike666'
-$FtpBasePath = '/http/NikPak.nikkoid.com'
+# The credentials live in ftp-config.ps1 (git-ignored). If it is missing, copy
+# ftp-config.example.ps1 to ftp-config.ps1 and fill in the host, user, password and base path.
+$FtpConfig = Join-Path $PSScriptRoot 'ftp-config.ps1'
+if (-not (Test-Path -LiteralPath $FtpConfig)) {
+    throw "Missing $FtpConfig - copy ftp-config.example.ps1 to ftp-config.ps1 and fill in the FTP host, user, password and base path."
+}
+. $FtpConfig
 
 # upload this many files at once, each on its own FTP connection
 $FtpWorkers = 10

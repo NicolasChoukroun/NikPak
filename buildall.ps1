@@ -199,12 +199,18 @@ Write-Host "  copied to $downloads"
 # The admin part stays OFFLINE on purpose: it is never uploaded by this script.
 # Only website\dist (the public pages) goes out. Do not add an admin folder to
 # $FtpUploads below.
-$FtpHost = '65.21.192.14'
-$FtpUser = 'NikkoD'
-$FtpPass = 'Akaklike666'
-$FtpUploads = @(
-    @{ Local = (Join-Path $PSScriptRoot 'website\dist'); Remote = '/http/NikPak.nikkoid.com' }
-)
+#
+# The credentials live in ftp-config.ps1 (git-ignored). If it is missing, copy
+# ftp-config.example.ps1 to ftp-config.ps1 and fill in the host, user, password and base path.
+# A build with -NoUpload does not need it.
+$FtpConfig = Join-Path $PSScriptRoot 'ftp-config.ps1'
+$FtpUploads = @()
+if (Test-Path -LiteralPath $FtpConfig) {
+    . $FtpConfig
+    $FtpUploads = @(
+        @{ Local = (Join-Path $PSScriptRoot 'website\dist'); Remote = $FtpBasePath }
+    )
+}
 
 # upload this many files at once, each on its own FTP connection
 $FtpWorkers = 10
@@ -262,6 +268,9 @@ function Write-FtpProgress([int]$done, [int]$count, [long]$sent, [long]$total, [
 
 if (-not $NoUpload) {
     Step 'Uploading the website (FTP)'
+    if (-not $FtpUploads.Count) {
+        throw "Missing $FtpConfig - copy ftp-config.example.ps1 to ftp-config.ps1 and fill in the FTP host, user, password and base path (or build with -NoUpload)."
+    }
     Write-Host '  public site only - the admin part stays offline' -ForegroundColor DarkGray
     $creds = New-Object System.Net.NetworkCredential($FtpUser, $FtpPass)
     foreach ($u in $FtpUploads) {

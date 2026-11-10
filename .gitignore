@@ -2,5 +2,14 @@
 /dist
 /binaries
 /keys/
+# Secrets: the FTP login used by buildall.ps1 and buildweb.ps1
+# (the committed example is ftp-config.example.ps1), and the server's own
+# config.php - database password and the licence private key
+# (the committed template is server/config.sample.php).
+ftp-config.ps1
+server/config.php
+# The shop's secrets (SMTP login, payment API keys). The sample says to keep it
+# outside the web root, but one dropped next to the PHP would otherwise be committed.
+shop-config.php
 # what the FTP upload last sent (scripts/ftp-changed.ps1)
 .ftp-state.json
