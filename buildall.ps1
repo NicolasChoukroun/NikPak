@@ -17,17 +17,25 @@
       .\buildall.ps1 -NoUpload    # build everything, skip the FTP upload
       .\buildall.ps1 -Test        # run the unit tests first
       .\buildall.ps1 -Clean       # empty binaries\ first (old versions are removed)
+      .\buildall.ps1 -Version 1.14.0   # use this number and write it into every source
   If PowerShell refuses to run scripts:
       powershell -ExecutionPolicy Bypass -File .\buildall.ps1
+
+  The version is read from Cargo.toml (or taken from -Version), written into
+  Cargo.lock, website\site.json and website\version.json, and every file in
+  binaries\, dist\ and website\dist\downloads\ that carries another version is
+  deleted - only the version being built stays.
+  buildwin.ps1 adds the per-build bump; use it for a normal delivery.
 
   Needs: Rust 1.89+ with the Visual Studio C++ Build Tools, Inno Setup 6.3+ and
   Python 3.8+ (winget install Rustlang.Rustup / JRSoftware.InnoSetup /
   Python.Python.3.12).
 #>
-param([switch]$Test, [switch]$Clean, [switch]$NoUpload)
+param([switch]$Test, [switch]$Clean, [switch]$NoUpload, [string]$Version)
 
 $ErrorActionPreference = 'Stop'
 Set-Location -Path $PSScriptRoot
+. (Join-Path $PSScriptRoot 'scripts\version.ps1')
 $started = Get-Date
 
 function Fail($msg) {
@@ -83,12 +91,12 @@ foreach ($cand in @(@('python'), @('py', '-3'), @('python3'))) {
     if (-not $cmd) { continue }
     $extra = @()
     if ($cand.Count -gt 1) { $extra = $cand[1..($cand.Count - 1)] }
-    $ver = $null
-    try { $ver = (& $cmd.Source @extra --version 2>&1 | Out-String).Trim() } catch { continue }
-    if ($LASTEXITCODE -eq 0 -and $ver -match '^Python 3\.') {
+    $pyVer = $null
+    try { $pyVer = (& $cmd.Source @extra --version 2>&1 | Out-String).Trim() } catch { continue }
+    if ($LASTEXITCODE -eq 0 -and $pyVer -match '^Python 3\.') {
         $pythonExe = $cmd.Source
         $pythonArgs = $extra
-        Write-Host "Python:     $ver  ($pythonExe)"
+        Write-Host "Python:     $pyVer  ($pythonExe)"
         break
     }
 }
@@ -98,9 +106,21 @@ if (-not $pythonExe) {
           "  A new PowerShell window may be needed so the 'python' command is found.")
 }
 
-$version = (Select-String -Path 'Cargo.toml' -Pattern '^version\s*=\s*"([^"]+)"' | Select-Object -First 1).Matches[0].Groups[1].Value
-if (-not $version) { Fail 'Cannot read the version from Cargo.toml.' }
-Write-Host "Version:    $version"
+# Internal name $ver (not $version): PowerShell variable names are case-insensitive, so
+# $version would be the same variable as the -Version parameter and overwrite it.
+$ver = Get-NikpakVersion $PSScriptRoot
+# -Version is authoritative: write it into every source file before anything is built.
+if ($Version) {
+    if ($Version -notmatch '^\d+\.\d+\.\d+$') { Fail "-Version '$Version' is not x.y.z (for example 1.14.0)." }
+    if ($Version -ne $ver) {
+        Write-Host "Version:    $ver -> $Version (writing it into every source)" -ForegroundColor Cyan
+        Set-NikpakVersion $PSScriptRoot $Version
+        $ver = $Version
+    }
+}
+# The four machine-readable files must agree (fails otherwise; prose changelogs only warn).
+Assert-NikpakVersionSync $PSScriptRoot $ver
+Write-Host "Version:    $ver"
 
 # --- 2. Tests (optional) ------------------------------------------------------------
 if ($Test) {
@@ -124,9 +144,9 @@ Copy-Item -Force 'target\release\unNik.exe' 'dist\unNik.exe'
 # --- 4. The two setups ---------------------------------------------------------------
 foreach ($iss in @('nikpak', 'unnik')) {
     Step "Building the $iss setup (installer\$iss.iss)"
-    $out = "dist\$iss-$version-setup.exe"
+    $out = "dist\$iss-$ver-setup.exe"
     if (Test-Path $out) { Remove-Item -Force $out }
-    & $iscc /Q "/DMyAppVersion=$version" "installer\$iss.iss"
+    & $iscc /Q "/DMyAppVersion=$ver" "installer\$iss.iss"
     if ($LASTEXITCODE -ne 0 -or -not (Test-Path $out)) { Fail "The $iss setup could not be built (installer\$iss.iss)." }
 }
 
@@ -136,16 +156,10 @@ if ($Clean -and (Test-Path binaries)) {
     Get-ChildItem binaries -File | Remove-Item -Force
 }
 New-Item -ItemType Directory -Force -Path binaries | Out-Null
-# Only the current version is kept: installers of older versions are removed so they are
-# never copied to the website or uploaded again.
-Get-ChildItem binaries -File | ForEach-Object {
-    $m = [regex]::Match($_.Name, '(?<!\d)(\d+\.\d+\.\d+)(?!\d)')
-    if ($m.Success -and $m.Groups[1].Value -ne $version) {
-        Write-Host "   removing old version: $($_.Name)" -ForegroundColor DarkYellow
-        Remove-Item $_.FullName -Force
-    }
-}
-$files = @('nikpak.exe', 'unNik.exe', "nikpak-$version-setup.exe", "unnik-$version-setup.exe")
+# Only the current version is kept: installers of older versions are removed from
+# binaries\, dist\ and the website downloads, so they are never copied or uploaded again.
+Remove-OldNikpakFiles -Root $PSScriptRoot -Version $ver -Dirs @('binaries', 'dist')
+$files = @('nikpak.exe', 'unNik.exe', "nikpak-$ver-setup.exe", "unnik-$ver-setup.exe")
 foreach ($f in $files) {
     Copy-Item -Force (Join-Path 'dist' $f) (Join-Path 'binaries' $f)
 }
@@ -174,13 +188,7 @@ Step 'Adding the downloads to the website'
 $downloads = Join-Path $PSScriptRoot 'website\dist\downloads'
 New-Item -ItemType Directory -Force -Path $downloads | Out-Null
 # drop older versions from the downloads folder, then copy everything in binaries\
-Get-ChildItem $downloads -File | ForEach-Object {
-    $m = [regex]::Match($_.Name, '(?<!\d)(\d+\.\d+\.\d+)(?!\d)')
-    if ($m.Success -and $m.Groups[1].Value -ne $version) {
-        Write-Host "   removing old download: $($_.Name)" -ForegroundColor DarkYellow
-        Remove-Item $_.FullName -Force
-    }
-}
+Remove-OldNikpakFiles -Root $PSScriptRoot -Version $ver -Dirs @('website\dist\downloads')
 Get-ChildItem 'binaries' -File | Copy-Item -Destination $downloads -Force
 Write-Host "  copied to $downloads"
 
@@ -373,7 +381,7 @@ if (-not $NoUpload) {
 
 # --- 9. Summary ------------------------------------------------------------------------
 Write-Host ''
-Write-Host "Done in $([math]::Round(((Get-Date) - $started).TotalMinutes, 1)) min - NikPak $version" -ForegroundColor Green
+Write-Host "Done in $([math]::Round(((Get-Date) - $started).TotalMinutes, 1)) min - NikPak $ver" -ForegroundColor Green
 Write-Host ''
 Write-Host 'Files generated:' -ForegroundColor Cyan
 foreach ($f in $files + 'SHA256SUMS.txt') {

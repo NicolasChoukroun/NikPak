@@ -26,6 +26,9 @@ param([string]$Ref = '')
 
 $ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath $PSScriptRoot
+. (Join-Path $PSScriptRoot 'scripts\version.ps1')
+# The Linux packages must carry the same number as the Windows build: both read Cargo.toml.
+$Version = Get-NikpakVersion $PSScriptRoot
 $Dist = Join-Path $PSScriptRoot 'binaries'
 $Workflow = '.github\workflows\build.yml'
 $Platforms = 'linux'
@@ -88,6 +91,17 @@ function Start-RemoteBuild {
   if (-not $LASTEXITCODE) {
     $ahead = (& git rev-list --count "origin/$branch..HEAD" 2>$null)
     if ($ahead -and [int]$ahead -gt 0) { Write-Warning "$ahead commit(s) are not pushed yet (git push): GitHub will build the older version." }
+    # Refuse to build a different version than the one on this PC (buildwin.ps1 bumped it):
+    # a stale push would give Linux packages that do not match the Windows build.
+    $remoteToml = & git show ('origin/{0}:Cargo.toml' -f $branch) 2>$null
+    if ($LASTEXITCODE -eq 0 -and $remoteToml) {
+      $m = [regex]::Match(($remoteToml -join "`n"), '(?m)^\s*version\s*=\s*"([^"]+)"')
+      if ($m.Success -and $m.Groups[1].Value -ne $Version) {
+        $msg = "GitHub has version $($m.Groups[1].Value) on '$branch', but this PC has $Version."
+        $msg += " Commit and push Cargo.toml first:  git add -A; git commit -m 'NikPak $Version'; git push"
+        throw $msg
+      }
+    }
   }
   $since = (Get-Date).ToUniversalTime().AddSeconds(-15)
   $null = & gh workflow run build.yml --ref $branch -f platforms=$Platforms
@@ -123,16 +137,24 @@ function Get-RemoteBuild($runId) {
   }
   Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue
   if (-not $ok) { throw 'No Linux files were downloaded.' }
+
+  # The download must carry this build's number; a stale run would mix two versions.
+  $tar = "nikpak-$Version-linux-x86_64.tar.gz"
+  $deb = "nikpak_${Version}_amd64.deb"
+  $haveTar = Test-Path -LiteralPath (Join-Path $Dist $tar)
+  if (-not $haveTar) {
+    $foundList = @(Get-ChildItem $Dist -File | Where-Object { $_.Name -like 'nikpak-*-linux-*.tar.gz' -or $_.Name -like '*_amd64.deb' } | Select-Object -ExpandProperty Name)
+    $found = if ($foundList.Count) { $foundList -join ', ' } else { 'nothing' }
+    throw "The downloaded Linux package is not $tar (found: $found). GitHub built a different version - push Cargo.toml first."
+  }
+  $label = if (Test-Path -LiteralPath (Join-Path $Dist $deb)) { "$tar + $deb" } else { $tar }
+  Write-Host "   version check: $label" -ForegroundColor Green
 }
 
-# keep only the latest Linux build: clear the Linux packages, leave Windows / macOS files alone
-Step 'Cleaning Linux files from binaries\'
-if (Test-Path $Dist) {
-  Get-ChildItem $Dist -File |
-    Where-Object { $_.Name -like 'nikpak-*-linux-*.tar.gz' } |
-    Remove-Item -Force
-}
-else { New-Item -ItemType Directory -Force -Path $Dist | Out-Null }
+# Nothing is deleted yet: an old package is only removed once this build has been
+# downloaded and its version verified, so a failed run never destroys the last good one.
+if (-not (Test-Path $Dist)) { New-Item -ItemType Directory -Force -Path $Dist | Out-Null }
+Write-Host "Linux package version: $Version (from Cargo.toml)" -ForegroundColor Cyan
 
 $ok = $false
 try {
@@ -144,6 +166,10 @@ try {
 catch { Write-Host $_.Exception.Message -ForegroundColor Red }
 
 if ($ok) {
+    # the new build is safe on disk: now drop every other version (old installers,
+    # downloads) so only the current one stays
+    Step 'Removing older versions'
+    Remove-OldNikpakFiles -Root $PSScriptRoot -Version $Version -Dirs @('binaries', 'website\dist\downloads')
     # put the new packages where the web site's download buttons read them, so a
     # later buildweb.ps1 / buildall.ps1 upload picks them up
     Step 'Copying into website\dist\downloads'

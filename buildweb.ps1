@@ -12,8 +12,12 @@
     4. removes downloads of older versions from the server, so only the latest build
        is ever offered.
 
-  Run it after buildall.ps1 / buildwin.ps1 when you only need to refresh the web
-  site (or the download list) without rebuilding anything.
+  Run it after buildwin.ps1 + buildmac.ps1 + buildunix.ps1 when every platform is
+  built: it publishes the current version on the web site without rebuilding anything.
+
+  Before publishing it checks that Cargo.toml, Cargo.lock, website\site.json and
+  website\version.json all carry the same version. A mismatch stops the run, so the
+  site can never advertise a download that does not exist (or hide a newer release).
 
 .EXAMPLE
   .\buildweb.ps1
@@ -22,9 +26,22 @@
 
 $ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath $PSScriptRoot
+. (Join-Path $PSScriptRoot 'scripts\version.ps1')
 
 function Step([string]$msg) { Write-Host ''; Write-Host "== $msg" -ForegroundColor Cyan }
 function Fail([string]$msg) { Write-Host ''; Write-Host $msg -ForegroundColor Red; exit 1 }
+
+# The last gate before publishing: the four source files must agree, or the download
+# links ({v} in site.json) and the update manifest would point at another release.
+$version = Get-NikpakVersion $PSScriptRoot
+Step "Checking the version ($version)"
+try {
+    Assert-NikpakVersionSync $PSScriptRoot $version
+} catch {
+    Fail ("Not publishing: $($_.Exception.Message)`n" +
+          "Fix the version (or run buildwin.ps1, which writes it everywhere), then run this script again.")
+}
+Write-Host "  every source file says $version"
 
 # --- 1. Python 3 -----------------------------------------------------------------
 Step 'Checking Python 3'
@@ -35,12 +52,12 @@ foreach ($cand in @(@('python'), @('py', '-3'), @('python3'))) {
     if (-not $cmd) { continue }
     $extra = @()
     if ($cand.Count -gt 1) { $extra = $cand[1..($cand.Count - 1)] }
-    $ver = $null
-    try { $ver = (& $cmd.Source @extra --version 2>&1 | Out-String).Trim() } catch { continue }
-    if ($LASTEXITCODE -eq 0 -and $ver -match '^Python 3\.') {
+    $pyVer = $null
+    try { $pyVer = (& $cmd.Source @extra --version 2>&1 | Out-String).Trim() } catch { continue }
+    if ($LASTEXITCODE -eq 0 -and $pyVer -match '^Python 3\.') {
         $pythonExe = $cmd.Source
         $pythonArgs = $extra
-        Write-Host "Python:     $ver  ($pythonExe)"
+        Write-Host "Python:     $pyVer  ($pythonExe)"
         break
     }
 }
@@ -55,29 +72,32 @@ if ($LASTEXITCODE -ne 0) { Fail 'The website build failed (website\build.py).' }
 # Only the current version is ever published: installers of older versions are removed
 # from binaries\ and from the downloads folder first, so stale builds are never uploaded.
 Step 'Adding the downloads to the website'
-$version = (Select-String -Path 'Cargo.toml' -Pattern '^version\s*=\s*"([^"]+)"' | Select-Object -First 1).Matches[0].Groups[1].Value
-if (-not $version) { Fail 'Cannot read the version from Cargo.toml.' }
-
-function Remove-OldVersionFiles([string]$dir) {
-    if (-not (Test-Path $dir)) { return }
-    Get-ChildItem $dir -File | ForEach-Object {
-        $m = [regex]::Match($_.Name, '(?<!\d)(\d+\.\d+\.\d+)(?!\d)')
-        if ($m.Success -and $m.Groups[1].Value -ne $version) {
-            Write-Host "  removing old version: $($_.Name)" -ForegroundColor DarkYellow
-            Remove-Item $_.FullName -Force
-        }
-    }
-}
-Remove-OldVersionFiles 'binaries'
-
 $downloads = Join-Path $PSScriptRoot 'website\dist\downloads'
 New-Item -ItemType Directory -Force -Path $downloads | Out-Null
-Remove-OldVersionFiles $downloads
+Remove-OldNikpakFiles -Root $PSScriptRoot -Version $version -Dirs @('binaries', 'dist', 'website\dist\downloads')
 if (Test-Path 'binaries') {
     Get-ChildItem 'binaries' -File | Copy-Item -Destination $downloads -Force
     Write-Host "  copied $(@(Get-ChildItem 'binaries' -File).Count) file(s) to $downloads (NikPak $version)"
 } else {
     Write-Host '  binaries\ is empty: the download page will have no files' -ForegroundColor Yellow
+}
+
+# Every download button of site.json must have its file, or the site would offer a
+# 404. The usual cause is publishing before buildmac.ps1 / buildunix.ps1 have run.
+$expected = @(
+    "nikpak-$version-setup.exe", "unnik-$version-setup.exe",
+    "nikpak-$version-macos.zip", "nikpak-$version-linux-x86_64.tar.gz",
+    "nikpak_${version}_amd64.deb", "unnik_${version}_amd64.deb"
+)
+$missing = @($expected | Where-Object { -not (Test-Path -LiteralPath (Join-Path $downloads $_)) })
+if ($missing.Count) {
+    Write-Host ''
+    Write-Host '  WARNING: these downloads of the current version are missing,' -ForegroundColor Yellow
+    Write-Host '  so their buttons will lead to a 404 on the site:' -ForegroundColor Yellow
+    foreach ($m in $missing) { Write-Host "     $m" -ForegroundColor Yellow }
+    Write-Host '  Build them first: buildmac.ps1 / buildunix.ps1 (or buildwin.ps1 for the setups).' -ForegroundColor Yellow
+    Write-Host '  Continuing in 5 s - press Ctrl+C to stop.' -ForegroundColor DarkYellow
+    Start-Sleep -Seconds 5
 }
 
 # --- 4. Upload the website (FTP) -------------------------------------------------

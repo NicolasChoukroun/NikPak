@@ -120,6 +120,42 @@ sudo cp dist/nikpak dist/unNik /usr/local/bin/
 A command-line-only `nikpak` (no window) builds with
 `cargo build --release --no-default-features`.
 
+### Releasing
+
+Every delivered build gets its own version number, and the number lives in one
+place so the programs and the website cannot disagree:
+
+```powershell
+.\buildwin.ps1                 # bumps 1.13.1 -> 1.13.2, builds Windows + installers
+.\buildwin.ps1 -Version 1.14.0 # a minor or major release
+.\buildwin.ps1 -NoBump         # rebuild the current number
+```
+
+`buildwin.ps1` writes the new number into `Cargo.toml`, `Cargo.lock`,
+`website/site.json` and `website/version.json` before compiling, and restores it
+if the build fails. `buildmac.ps1` and `buildunix.ps1` read the same
+`Cargo.toml`, refuse to build when the pushed source carries a different number,
+and verify the downloaded package matches. Only the current version is kept:
+older installers and downloads are deleted from `binaries/`, `dist/` and
+`website/dist/downloads/`.
+
+A full release, in this order:
+
+```powershell
+.\buildwin.ps1                 # 1) bump + Windows binaries and setups
+.\commit.ps1                   # 2) commit and push (GitHub builds the pushed number)
+.\buildmac.ps1                 # 3) macOS package
+.\buildunix.ps1                # 4) Linux tarball and .deb
+.\buildweb.ps1                 # 5) rebuild and publish the site (checks the download set)
+```
+
+`commit.ps1` commits with a message built from what changed (`NikPak v1.13.2 - update
+src, website, ...`), leaves build output and `__pycache__` out of the commit, never
+pushes `keys/`, and still pushes when the tree was already clean.
+
+`buildweb.ps1` refuses to publish when the four source files disagree, and warns
+(5 s to cancel) if a platform's download of the current version is missing.
+
 ## Licence
 
 NikPak is **shareware**, © 2026 Nicolas Choukroun, distributed by Nikkoid LLC.
