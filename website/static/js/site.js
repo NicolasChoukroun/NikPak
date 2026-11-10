@@ -206,3 +206,38 @@
     if (e.key === 'Escape') drops.forEach(function (d) { d.open = false; });
   });
 })();
+
+/* "Our Apps": the three group titles follow the language of the page (the app names are brands) */
+(function () {
+  var T = {
+    en: 'Tools|Audio|Games',
+    zh: '工具|音频|游戏',
+    hi: 'टूल|ऑडियो|गेम',
+    es: 'Herramientas|Audio|Juegos',
+    fr: 'Outils|Audio|Jeux',
+    ar: 'الأدوات|الصوتيات|الألعاب',
+    bn: 'টুল|অডিও|গেম',
+    pt: 'Ferramentas|Áudio|Jogos',
+    ru: 'Инструменты|Аудио|Игры',
+    id: 'Alat|Audio|Permainan',
+    ur: 'ٹولز|آڈیو|گیمز',
+    de: 'Werkzeuge|Audio|Spiele',
+    ja: 'ツール|オーディオ|ゲーム',
+    tr: 'Araçlar|Ses|Oyunlar',
+    ko: '도구|오디오|게임',
+    vi: 'Công cụ|Âm thanh|Trò chơi',
+    it: 'Strumenti|Audio|Giochi',
+    pl: 'Narzędzia|Audio|Gry',
+    uk: 'Інструменти|Аудіо|Ігри',
+    nl: 'Hulpmiddelen|Audio|Spellen',
+    th: 'เครื่องมือ|เสียง|เกม'
+  };
+  function paint() {
+    var l = ((document.documentElement.getAttribute('lang') || (document.body && document.body.getAttribute('data-lang')) || 'en') + '').toLowerCase().split('-')[0];
+    var t = (T[l] || T.en).split('|');
+    var cats = document.querySelectorAll('.apps-menu .apps-cat');
+    for (var i = 0; i < cats.length && i < t.length; i++) cats[i].textContent = t[i];
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', paint); else paint();
+  if (window.MutationObserver) new MutationObserver(paint).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+})();
