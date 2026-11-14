@@ -4,4 +4,4 @@
 $FtpHost     = 'ftp.example.com'
 $FtpUser     = 'username'
 $FtpPass     = 'password'
-$FtpBasePath = '/http/example.com'
+$FtpBasePath = '/example.com'

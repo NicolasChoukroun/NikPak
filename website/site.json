@@ -3,13 +3,10 @@
   "domain": "https://nikpak.nikkoid.com",
   "version": "1.13.2",
   "downloads": {
-    "_comment": "{v} is replaced by the version above. Put the files in dist/downloads/ (or change the paths).",
-    "windows": "downloads/nikpak-{v}-setup.exe",
-    "macos": "downloads/nikpak-{v}-macos.zip",
-    "linux": "downloads/nikpak-{v}-linux-x86_64.tar.gz",
-    "deb": "downloads/nikpak_{v}_amd64.deb",
-    "windows_unnik": "downloads/unnik-{v}-setup.exe",
-    "deb_unnik": "downloads/unnik_{v}_amd64.deb"
+    "_comment": "{v} is replaced by the version above. One zip per platform: the build scripts pack them and copy nothing else into the downloads folder.",
+    "windows": "downloads/Nikpak-{v}-Windows.zip",
+    "macos": "downloads/Nikpak-{v}-macOS.zip",
+    "linux": "downloads/Nikpak-{v}-Linux.zip"
   },
   "download_sizes": {
     "_comment": "Display size of each download on the site (empty hides it). Fill after building the binaries.",
@@ -37,20 +34,83 @@
       "stripe_publishable_key": "pk_test_REPLACE_ME",
       "stripe_version": "2018-10-31"
     },
-    "stripe": { "enabled": true },
-    "paypal": { "enabled": true },
-    "paddle": { "enabled": true, "environment": "sandbox", "client_token": "test_REPLACE_ME" },
-    "binancepay": { "enabled": true },
-    "crypto": { "enabled": true }
+    "stripe": {
+      "enabled": true
+    },
+    "paypal": {
+      "enabled": true
+    },
+    "paddle": {
+      "enabled": true,
+      "environment": "sandbox",
+      "client_token": "test_REPLACE_ME"
+    },
+    "binancepay": {
+      "enabled": true
+    },
+    "crypto": {
+      "enabled": true
+    }
   },
   "_crypto_comment": "One entry per coin and network. 'symbol' picks the icon; 'stable' coins are priced 1:1 with USD; the others use the CoinGecko id for the live rate.",
   "crypto": {
-    "BTC":        { "symbol": "BTC",  "name": "Bitcoin",    "network": "Bitcoin",                   "address": "bc1qREPLACE_WITH_YOUR_BTC_ADDRESS", "coingecko": "bitcoin",     "decimals": 6, "uri": "bitcoin" },
-    "ETH":        { "symbol": "ETH",  "name": "Ether",      "network": "Ethereum (ERC-20)",         "address": "0xREPLACE_WITH_YOUR_ETH_ADDRESS",    "coingecko": "ethereum",    "decimals": 5, "uri": "ethereum" },
-    "BNB":        { "symbol": "BNB",  "name": "BNB",        "network": "BNB Smart Chain (BEP-20)",  "address": "0xREPLACE_WITH_YOUR_BSC_ADDRESS",    "coingecko": "binancecoin", "decimals": 4 },
-    "USDT-TRC20": { "symbol": "USDT", "name": "Tether USD", "network": "TRON (TRC-20)",             "address": "TREPLACE_WITH_YOUR_TRON_ADDRESS",    "stable": true, "decimals": 2 },
-    "USDT-BEP20": { "symbol": "USDT", "name": "Tether USD", "network": "BNB Smart Chain (BEP-20)",  "address": "0xREPLACE_WITH_YOUR_BSC_ADDRESS",    "stable": true, "decimals": 2 },
-    "USDC-ERC20": { "symbol": "USDC", "name": "USD Coin",   "network": "Ethereum (ERC-20)",         "address": "0xREPLACE_WITH_YOUR_ETH_ADDRESS",    "stable": true, "decimals": 2 },
-    "USDC-BEP20": { "symbol": "USDC", "name": "USD Coin",   "network": "BNB Smart Chain (BEP-20)",  "address": "0xREPLACE_WITH_YOUR_BSC_ADDRESS",    "stable": true, "decimals": 2 }
+    "BTC": {
+      "symbol": "BTC",
+      "name": "Bitcoin",
+      "network": "Bitcoin",
+      "address": "bc1qREPLACE_WITH_YOUR_BTC_ADDRESS",
+      "coingecko": "bitcoin",
+      "decimals": 6,
+      "uri": "bitcoin"
+    },
+    "ETH": {
+      "symbol": "ETH",
+      "name": "Ether",
+      "network": "Ethereum (ERC-20)",
+      "address": "0xREPLACE_WITH_YOUR_ETH_ADDRESS",
+      "coingecko": "ethereum",
+      "decimals": 5,
+      "uri": "ethereum"
+    },
+    "BNB": {
+      "symbol": "BNB",
+      "name": "BNB",
+      "network": "BNB Smart Chain (BEP-20)",
+      "address": "0xREPLACE_WITH_YOUR_BSC_ADDRESS",
+      "coingecko": "binancecoin",
+      "decimals": 4
+    },
+    "USDT-TRC20": {
+      "symbol": "USDT",
+      "name": "Tether USD",
+      "network": "TRON (TRC-20)",
+      "address": "TREPLACE_WITH_YOUR_TRON_ADDRESS",
+      "stable": true,
+      "decimals": 2
+    },
+    "USDT-BEP20": {
+      "symbol": "USDT",
+      "name": "Tether USD",
+      "network": "BNB Smart Chain (BEP-20)",
+      "address": "0xREPLACE_WITH_YOUR_BSC_ADDRESS",
+      "stable": true,
+      "decimals": 2
+    },
+    "USDC-ERC20": {
+      "symbol": "USDC",
+      "name": "USD Coin",
+      "network": "Ethereum (ERC-20)",
+      "address": "0xREPLACE_WITH_YOUR_ETH_ADDRESS",
+      "stable": true,
+      "decimals": 2
+    },
+    "USDC-BEP20": {
+      "symbol": "USDC",
+      "name": "USD Coin",
+      "network": "BNB Smart Chain (BEP-20)",
+      "address": "0xREPLACE_WITH_YOUR_BSC_ADDRESS",
+      "stable": true,
+      "decimals": 2
+    }
   }
 }

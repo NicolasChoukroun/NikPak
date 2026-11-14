@@ -169,14 +169,17 @@ if ($ok) {
     Remove-OldNikpakFiles -Root $PSScriptRoot -Version $Version -Dirs @('binaries', 'website\dist\downloads')
     # put the new package where the web site's download buttons read it, so a
     # later buildweb.ps1 / buildall.ps1 upload picks it up
-    Step 'Copying into website\dist\downloads'
-    $downloads = Join-Path $PSScriptRoot 'website\dist\downloads'
-    New-Item -ItemType Directory -Force -Path $downloads | Out-Null
-    Get-ChildItem $downloads -File |
-        Where-Object { $_.Name -like 'nikpak-*-macos.zip' } |
-        Remove-Item -Force
-    Get-ChildItem $Dist -File -Filter 'nikpak-*-macos.zip' | Copy-Item -Destination $downloads -Force
-    Write-Host '   copied to website\dist\downloads'
+    #
+    # **One zip per platform.** The macOS artifact is itself a zip of the app, so it is
+    # unpacked into Nikpak-<ver>-macOS.zip rather than nested inside it. Inside, the
+    # names are the ones a Mac user expects.
+    Step 'Packing the macOS download'
+    . (Join-Path $PSScriptRoot 'scripts\release-packaging.ps1')
+    $pkg = Publish-SiteDownloads -Product 'Nikpak' -Version $Version -Platform 'macOS' `
+        -Binaries $Dist -Downloads (Join-Path $PSScriptRoot 'website\dist\downloads') `
+        -FromArchive @(@{ Archive = 'nikpak-{v}-macos.zip'; Path = '' }) `
+        -Documentation (Join-Path $PSScriptRoot 'documents')
+    if (-not $pkg) { throw 'Nothing could be packed for macOS.' }
 }
 
 Step 'Summary'

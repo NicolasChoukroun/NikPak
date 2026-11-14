@@ -75,19 +75,39 @@ Step 'Adding the downloads to the website'
 $downloads = Join-Path $PSScriptRoot 'website\dist\downloads'
 New-Item -ItemType Directory -Force -Path $downloads | Out-Null
 Remove-OldNikpakFiles -Root $PSScriptRoot -Version $version -Dirs @('binaries', 'dist', 'website\dist\downloads')
+. (Join-Path $PSScriptRoot 'scripts\release-packaging.ps1')
 if (Test-Path 'binaries') {
-    Get-ChildItem 'binaries' -File | Copy-Item -Destination $downloads -Force
-    Write-Host "  copied $(@(Get-ChildItem 'binaries' -File).Count) file(s) to $downloads (NikPak $version)"
+    $binaries = Join-Path $PSScriptRoot 'binaries'
+    # Pack any platform's zip that is missing, so the page offers all three even after a
+    # single-platform build.
+    $packages = @(Get-PlatformPackages -Product 'Nikpak' -Version $version -Dir $binaries)
+    $inc = @{
+        'Windows' = @(@{ Pattern = 'nikpak-{v}-setup.exe' }, @{ Pattern = 'unnik-{v}-setup.exe' },
+                      @{ Pattern = 'nikpak.exe' }, @{ Pattern = 'unNik.exe' })
+        'macOS'   = @(@{ Pattern = 'nikpak-{v}-macos.zip' })
+        'Linux'   = @(@{ Pattern = 'nikpak-{v}-linux-*.tar.gz' }, @{ Pattern = 'nikpak_{v}_amd64.deb' },
+                      @{ Pattern = 'unnik_{v}_amd64.deb' })
+    }
+    foreach ($p in @('Windows', 'macOS', 'Linux')) {
+        if ($packages.Name -contains (Get-SitePackageName 'Nikpak' $version $p)) { continue }
+        $z = New-SitePackage -Product 'Nikpak' -Version $version -Platform $p -Binaries $binaries `
+                             -Include $inc[$p] -Documentation (Join-Path $PSScriptRoot 'documents')
+        if ($z) { $packages += (Get-Item -LiteralPath $z) }
+    }
+    $keep = @($packages.Name) + @('SHA256SUMS.txt')
+    foreach ($d in @(Remove-OtherDownloads -Downloads $downloads -Keep $keep)) {
+        Write-Host "  removed an older download: $d" -ForegroundColor DarkYellow
+    }
+    $n = Copy-Downloads -From $binaries -To $downloads -Names $keep
+    Write-Host "  $n download(s) in $downloads (NikPak $version)"
 } else {
     Write-Host '  binaries\ is empty: the download page will have no files' -ForegroundColor Yellow
 }
 
-# Every download button of site.json must have its file, or the site would offer a
+# Every download button of site.json must have its package, or the site would offer a
 # 404. The usual cause is publishing before buildmac.ps1 / buildunix.ps1 have run.
 $expected = @(
-    "nikpak-$version-setup.exe", "unnik-$version-setup.exe",
-    "nikpak-$version-macos.zip", "nikpak-$version-linux-x86_64.tar.gz",
-    "nikpak_${version}_amd64.deb", "unnik_${version}_amd64.deb"
+    "Nikpak-$version-Windows.zip", "Nikpak-$version-macOS.zip", "Nikpak-$version-Linux.zip"
 )
 $missing = @($expected | Where-Object { -not (Test-Path -LiteralPath (Join-Path $downloads $_)) })
 if ($missing.Count) {

@@ -227,6 +227,54 @@ if ($hasChanges) {
     $staged = @(Invoke-Git @('diff', '--cached', '--name-only'))
   }
 
+  # **Build output that is already tracked is taken out of the repository.** .gitignore only
+  # covers UNTRACKED files: an installer committed before the rule existed stays tracked, keeps
+  # being committed, and stays in the repository for good - one of them is what made GitHub
+  # refuse a push on 2026-11-12. `git rm --cached` untracks it: the file stays on disk, and this
+  # commit removes it from the tree. Done on every run, so the state cannot drift back.
+  $binaryDirs = @('binaries', 'binaries-old', 'old-nikpad-binaries', 'website/downloads', 'website/dist/downloads')
+  $stillTracked = @()
+  foreach ($d in $binaryDirs) {
+    if (@(Invoke-Git @('ls-files', '--', $d)).Count) { $stillTracked += $d }
+  }
+  if ($stillTracked.Count) {
+    $null = Invoke-Git (@('rm', '-r', '-q', '--cached', '--') + $stillTracked)
+    Write-Host ("   untracked build output already in git: {0}" -f ($stillTracked -join ', ')) -ForegroundColor Yellow
+    Write-Host '   (the files stay on disk; this commit takes them out of the repository)' -ForegroundColor DarkGray
+    $staged = @(Invoke-Git @('diff', '--cached', '--name-only'))
+  }
+
+  # **Nothing near GitHub's limit may leave this PC.** GitHub warns from 50 MB and refuses the
+  # whole push above 100 MB per file (GH001) - and it refuses it *after* the commit exists, so
+  # the only way out is to rewrite the commit. Cheaper to stop here, and to say what to do.
+  # **Only what is being ADDED or MODIFIED counts.** `git rm --cached` stages a *deletion*: the
+  # index drops the file but it is still on disk, so its size is real - a 173 MB download being
+  # taken OUT of the repository was reported as "too large to commit" and blocked the commit that
+  # was removing it. --diff-filter=AMR leaves deletions (D) out; a rename (R100\told\tnew) puts
+  # the new path last, which is the one that will be stored.
+  $tooBig = @()
+  foreach ($line in @(Invoke-Git @('diff', '--cached', '--name-status', '--diff-filter=AMR'))) {
+    $parts = @($line -split "`t")
+    if ($parts.Count -lt 2) { continue }
+    $p = $parts[$parts.Count - 1]
+    # git prints forward slashes; both Windows and PowerShell accept them in a path.
+    try { $size = (Get-Item -LiteralPath (Join-Path $Root $p) -ErrorAction Stop).Length } catch { continue }
+    if ($size -gt 45MB) { $tooBig += [pscustomobject]@{ Path = $p; MB = ($size / 1MB) } }
+  }
+  if ($tooBig.Count) {
+    foreach ($b in $tooBig) { Write-Host ("      {0}  {1:N1} MB" -f $b.Path, $b.MB) -ForegroundColor Red }
+    Fail @"
+   These file(s) are too large for GitHub: it refuses a push holding anything over 100 MB per
+   file (and warns from 50 MB). Build output does not belong in the repository at all - it is
+   published to the web site (by FTP), which is what people download from.
+
+       git rm -r --cached binaries
+       .\commit.ps1
+
+   binaries\ then stays on disk and out of git (.gitignore lists it). Nothing was committed.
+"@
+  }
+
   # Not dropped, only shown: the owner's own call. Big binary material in a commit is
   # normal here (the guide's pictures and PDF, the site's screenshots), but worth a line
   # so it is never a surprise afterwards - website\dist\downloads\ holds copies of the
@@ -308,7 +356,20 @@ function Invoke-GitPush([string[]]$PushArgs = @()) {
       if ($text -match 'GH013|push protection|secret scanning') {
         throw 'git push failed: GitHub push protection found a secret in a commit (see the message above)'
       }
-      if ($text -match 'non-fast-forward|fetch first|\[rejected\]') {
+      # **A refused push is not retried.** GitHub rejects a commit holding a file over 100 MB
+      # with a pre-receive hook, which looks like a server failure but is permanent: three
+      # attempts over 60 seconds cannot change it. Reported once, with the way out.
+      if ($text -match 'pre-receive hook declined|exceeds GitHub.s file size limit|GH001|Large files detected') {
+        throw @"
+git push failed: GitHub refused the push because a commit holds a file too large for it
+     (over 100 MB per file; it warns from 50 MB). Nothing was uploaded.
+     Those are build artifacts - keep them out of git:
+         git rm -r --cached binaries
+         .\commit.ps1
+     The installers are published to the web site by FTP instead.
+"@
+      }
+      if ($text -match 'non-fast-forward|fetch first|\[(?:remote )?rejected\]') {
         throw 'git push failed: GitHub has commits this computer does not have - run git pull first'
       }
       if ($try -lt 3) {

@@ -13,3 +13,11 @@ server/config.php
 shop-config.php
 # what the FTP upload last sent (scripts/ftp-changed.ps1)
 .ftp-state.json
+
+# Build output and published downloads: never committed. GitHub refuses a push holding
+# any file over 100 MB (a 170 MB Linux download is what broke a release on 2026-11-12);
+# the installers are published to the web site by FTP instead.
+binaries-old/
+*.exe
+*.zip
+website/dist/downloads/

@@ -311,6 +311,8 @@ def layout(L, page, body, extra_head="", scripts=""):
 {footer(L)}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="../assets/js/site.js" defer></script>
+<!-- counted downloads + the running total in the footer (assets/nk-downloads.js) -->
+<script src="../assets/nk-downloads.js" defer></script>
 {scripts}
 </body>
 </html>
@@ -355,17 +357,17 @@ def footer(L):
 # downloads, grouped by operating system: (os icon, group title, [(key, label, format), ...])
 # "key" is the entry in SITE["downloads"]; file names and sizes come from site.json.
 DL_GROUPS = [
+    # One download per platform: the zips buildall / buildmac / buildunix pack. The page
+    # used to offer six separate files - two installers, a tarball, two .debs - which is
+    # six chances to pick the wrong one.
     ("os_win", "Windows", [
-        ("windows", "NikPak", "Installer (.exe)"),
-        ("windows_unnik", "unNik", "Installer (.exe)"),
+        ("windows", "NikPak + unNik", "ZIP archive (.zip)"),
     ]),
     ("os_mac", "macOS", [
         ("macos", "NikPak + unNik", "ZIP archive (.zip)"),
     ]),
     ("os_linux", "Linux / Unix", [
-        ("linux", "NikPak", "Tarball (.tar.gz)"),
-        ("deb", "NikPak", "Debian / Ubuntu (.deb)"),
-        ("deb_unnik", "unNik", "Debian / Ubuntu (.deb)"),
+        ("linux", "NikPak + unNik", "ZIP archive (.zip)"),
     ]),
 ]
 

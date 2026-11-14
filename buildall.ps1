@@ -164,8 +164,36 @@ foreach ($f in $files) {
     Copy-Item -Force (Join-Path 'dist' $f) (Join-Path 'binaries' $f)
 }
 
+# --- 5b. The Windows download ---------------------------------------------------------
+# **One zip, not four loose files.** Nikpak-<ver>-Windows.zip holds both programs and
+# both setups, with the documentation and a README. The site offers these zips and
+# nothing else, so a flat downloads folder cannot show two files with one name.
+Step 'Packing the Windows download'
+. (Join-Path $PSScriptRoot 'scripts\release-packaging.ps1')
+$winReadme = @(
+    "Nikpak $ver for Windows",
+    "======================",
+    "",
+    "What is in this folder",
+    "  nikpak-$ver-setup.exe   the installer: NikPak and unNik.",
+    "  unnik-$ver-setup.exe    unNik on its own (freeware).",
+    "  nikpak.exe              NikPak, portable (no install needed).",
+    "  unNik.exe               unNik, portable."
+)
+$winZip = New-SitePackage -Product 'Nikpak' -Version $ver -Platform 'Windows' `
+    -Binaries (Join-Path $PSScriptRoot 'binaries') `
+    -Include @(
+        @{ Pattern = 'nikpak-{v}-setup.exe' },
+        @{ Pattern = 'unnik-{v}-setup.exe' },
+        @{ Pattern = 'nikpak.exe' },
+        @{ Pattern = 'unNik.exe' }
+    ) `
+    -Documentation (Join-Path $PSScriptRoot 'documents') `
+    -Readme $winReadme
+if (-not $winZip) { Fail 'The Windows download could not be packed (nothing matched in binaries\).' }
+
 # checksums of what is published
-$sums = foreach ($f in $files) {
+$sums = foreach ($f in @($files + (Split-Path -Path $winZip -Leaf))) {
     $h = (Get-FileHash -Algorithm SHA256 (Join-Path 'binaries' $f)).Hash.ToLower()
     "$h  $f"
 }
@@ -187,10 +215,18 @@ if ($LASTEXITCODE -ne 0) { Fail 'The website build failed (website\build.py).' }
 Step 'Adding the downloads to the website'
 $downloads = Join-Path $PSScriptRoot 'website\dist\downloads'
 New-Item -ItemType Directory -Force -Path $downloads | Out-Null
-# drop older versions from the downloads folder, then copy everything in binaries\
-Remove-OldNikpakFiles -Root $PSScriptRoot -Version $ver -Dirs @('website\dist\downloads')
-Get-ChildItem 'binaries' -File | Copy-Item -Destination $downloads -Force
-Write-Host "  copied to $downloads"
+# **The zips only.** This platform's, plus any other platform's of this version that
+# buildmac/buildunix have already staged. Everything else in the folder is an older
+# build or the older loose-file layout.
+$keep = @((Split-Path -Path $winZip -Leaf), 'SHA256SUMS.txt')
+foreach ($z in @(Get-PlatformPackages -Product 'Nikpak' -Version $ver -Dir (Join-Path $PSScriptRoot 'binaries'))) {
+    $keep += $z.Name
+}
+foreach ($d in @(Remove-OtherDownloads -Downloads $downloads -Keep $keep)) {
+    Write-Host "  removed an older download: $d" -ForegroundColor DarkYellow
+}
+$n = Copy-Downloads -From (Join-Path $PSScriptRoot 'binaries') -To $downloads -Names $keep
+Write-Host "  $n download(s) in $downloads"
 
 # --- 8. Upload the website (FTP) ------------------------------------------------------
 # Automatic upload of the PUBLIC site (with its downloads), overwriting the files
