@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 """Apply a per-language translation (tech/tr-<lang>.json: english_text -> translated marker)
 onto tech-body.html, writing tech-body.<lang>.html ."""
-import re, sys, json
+import os, re, sys, json
 from lxml import etree, html as lxml_html
+
+HERE = os.path.dirname(os.path.abspath(__file__))
 
 KINDS = ('h2','h3','h4','p','li','th','td','figcaption')
 
@@ -46,12 +48,12 @@ def marker_to_html(m):
 def norm(s): return re.sub(r'\s+',' ',s).strip()
 
 def main(lang):
-    data = open('tech-body.html','rb').read()
+    data = open(os.path.join(HERE,'tech-body.html'),'rb').read()
     parser = etree.HTMLParser(encoding='utf-8', recover=True)
     doc = etree.fromstring(data, parser)
     tr = {}
     if lang != 'en':
-        tr = json.load(open(f'tech/tr-{lang}.json', encoding='utf-8'))
+        tr = json.load(open(os.path.join(HERE,f'tr-{lang}.json'), encoding='utf-8'))
     applied = 0
     missing = []
     todo = []
@@ -70,7 +72,7 @@ def main(lang):
     if body is None:
         body = doc
     html = ''.join(etree.tostring(c, encoding='unicode', method='html') for c in body)
-    open(f'tech-body.{lang}.html','w',encoding='utf-8').write(html)
+    open(os.path.join(HERE,f'tech-body.{lang}.html'),'w',encoding='utf-8').write(html)
     print(f'{lang}: applied {applied} translations, missing {len(missing)}')
     if missing:
         for m in missing[:20]:

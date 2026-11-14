@@ -1,0 +1,105 @@
+<a href="#1-introduction" class="">1 はじめに</a>
+<a href="#1-1-design-goals" class="sub">1.1 設計目標</a>
+<a href="#1-2-results-at-a-glance" class="sub">1.2 結果の概要</a>
+<a href="#1-3-who-is-it-for" class="sub">1.3 対象読者</a>
+<a href="#1-4-how-to-read-this-guide" class="sub">1.4 本書の読み方</a>
+<a href="#1-5-community-and-contact" class="sub">1.5 コミュニティと連絡先</a>
+<a href="#2-feature-overview" class="">2 機能の概要</a>
+<a href="#2-1-capabilities" class="sub">2.1 機能</a>
+<a href="#2-2-nikpak-and-rar-side-by-side" class="sub">2.2 nikpak と RAR の比較</a>
+<a href="#3-command-line-reference" class="">3 コマンドラインリファレンス</a>
+<a href="#3-1-commands" class="sub">3.1 コマンド</a>
+<a href="#3-2-options" class="sub">3.2 オプション</a>
+<a href="#3-3-passwords-in-detail" class="sub">3.3 パスワードの詳細</a>
+<a href="#3-4-exit-codes" class="sub">3.4 終了コード</a>
+<a href="#3-5-examples" class="sub">3.5 例</a>
+<a href="#3-6-integration-with-total-commander-and-other-front-ends" class="sub">3.6 Total Commander およびその他のフロントエンドとの統合</a>
+<a href="#3-7-the-graphical-interface" class="sub">3.7 グラフィカルインターフェース</a>
+<a href="#3-8-licence-and-registration-shareware" class="sub">3.8 ライセンスと登録 (シェアウェア)</a>
+<a href="#3-9-unnik-the-free-archive-browser" class="sub">3.9 unNik — 無料のアーカイブブラウザー</a>
+<a href="#3-10-skins" class="sub">3.10 スキン</a>
+<a href="#3-11-the-file-manager-menu" class="sub">3.11 ファイルマネージャーのメニュー</a>
+<a href="#3-12-packages-create-package-and-open-package" class="sub">3.12 パッケージ: Create Package と Open Package</a>
+<a href="#3-13-split-volumes-and-self-extracting-exe" class="sub">3.13 分割ボリュームと自己解凍 .exe</a>
+<a href="#4-architecture" class="">4 アーキテクチャ</a>
+<a href="#4-1-data-flow-when-creating-an-archive" class="sub">4.1 アーカイブ作成時のデータフロー</a>
+<a href="#4-2-source-code-map" class="sub">4.2 ソースコードマップ</a>
+<a href="#4-3-creating-an-archive-step-by-step" class="sub">4.3 アーカイブ作成の手順</a>
+<a href="#4-4-extracting-an-archive-step-by-step" class="sub">4.4 アーカイブ展開の手順</a>
+<a href="#4-5-memory-and-threading" class="sub">4.5 メモリとスレッド</a>
+<a href="#5-the-nik-container-format" class="">5 .nik コンテナ形式</a>
+<a href="#5-1-header" class="sub">5.1 ヘッダー</a>
+<a href="#5-2-entry-records" class="sub">5.2 エントリレコード</a>
+<a href="#5-3-encrypted-body-framing" class="sub">5.3 暗号化本体のフレーミング</a>
+<a href="#5-4-why-a-solid-stream" class="sub">5.4 なぜソリッドストリームなのか?</a>
+<a href="#5-5-versioning" class="sub">5.5 バージョニング</a>
+<a href="#5-6-multi-engine-body-version-3" class="sub">5.6 マルチエンジン本体 (バージョン 3)</a>
+<a href="#5-7-the-package-container-nikpack2" class="sub">5.7 パッケージコンテナ (NIKPACK2)</a>
+<a href="#5-8-split-volumes-and-the-sfx-trailer" class="sub">5.8 分割ボリュームと SFX トレーラー</a>
+<a href="#6-the-compression-engine" class="">6 圧縮エンジン</a>
+<a href="#6-1-why-zstandard" class="sub">6.1 なぜ Zstandard なのか</a>
+<a href="#6-2-level-mapping" class="sub">6.2 レベルの対応</a>
+<a href="#6-3-large-window-and-long-distance-matching" class="sub">6.3 大きなウィンドウと長距離マッチング</a>
+<a href="#6-4-multi-threading" class="sub">6.4 マルチスレッド</a>
+<a href="#6-5-integrity-inside-the-stream" class="sub">6.5 ストリーム内の完全性</a>
+<a href="#6-6-store-mode" class="sub">6.6 保存モード</a>
+<a href="#6-7-the-maximum-level-lzma2-and-ppmd" class="sub">6.7 最高レベル: LZMA2 と PPMd</a>
+<a href="#7-media-intelligence" class="">7 メディアインテリジェンス</a>
+<a href="#7-1-detection-by-content" class="sub">7.1 内容による検出</a>
+<a href="#7-2-the-trial-choosing-the-best-filter-per-file" class="sub">7.2 試行: ファイルごとに最良のフィルターを選ぶ</a>
+<a href="#7-3-the-nac-audio-codec" class="sub">7.3 NAC 音声コーデック</a>
+<a href="#7-4-self-verification" class="sub">7.4 自己検証</a>
+<a href="#7-5-shuffle-and-shuffle-delta" class="sub">7.5 Shuffle と Shuffle+Delta</a>
+<a href="#7-6-protracker-mod-files" class="sub">7.6 ProTracker MOD ファイル</a>
+<a href="#7-7-bmp-images" class="sub">7.7 BMP 画像</a>
+<a href="#7-8-why-this-beats-rar" class="sub">7.8 なぜこれが RAR を上回るのか</a>
+<a href="#7-9-office-documents-pdf-and-gzip-deflate-recompression" class="sub">7.9 Office 文書、PDF、gzip: Deflate 再圧縮</a>
+<a href="#8-encryption" class="">8 暗号化</a>
+<a href="#8-1-threat-model" class="sub">8.1 脅威モデル</a>
+<a href="#8-2-from-password-to-key-argon2id" class="sub">8.2 パスワードから鍵へ: Argon2id</a>
+<a href="#8-3-xchacha20-poly1305-in-the-stream-construction" class="sub">8.3 STREAM 構築法における XChaCha20-Poly1305</a>
+<a href="#8-4-what-an-observer-can-and-cannot-see" class="sub">8.4 観察者に見えるもの、見えないもの</a>
+<a href="#8-5-password-handling" class="sub">8.5 パスワードの扱い</a>
+<a href="#8-6-attack-tests" class="sub">8.6 攻撃テスト</a>
+<a href="#9-quantum-resistance" class="">9 耐量子性</a>
+<a href="#9-1-what-quantum-computers-change" class="sub">9.1 量子コンピューターが変えるもの</a>
+<a href="#9-2-nikpak-s-position" class="sub">9.2 nikpak の立場</a>
+<a href="#9-3-what-about-the-password" class="sub">9.3 パスワードはどうなのか?</a>
+<a href="#9-4-harvest-now-decrypt-later" class="sub">9.4 「今収穫し、後で復号する」</a>
+<a href="#9-5-honest-limits-and-the-road-ahead" class="sub">9.5 正直な限界と今後の道</a>
+<a href="#10-hardening-and-robustness" class="">10 堅牢化と堅牢性</a>
+<a href="#10-1-safe-extraction" class="sub">10.1 安全な展開</a>
+<a href="#10-2-bounded-decoders" class="sub">10.2 境界付きデコーダー</a>
+<a href="#10-3-safe-creation-and-honest-errors" class="sub">10.3 安全な作成と正直なエラー</a>
+<a href="#11-benchmarks" class="">11 ベンチマーク</a>
+<a href="#11-1-method" class="sub">11.1 方法</a>
+<a href="#11-2-media-files" class="sub">11.2 メディアファイル</a>
+<a href="#11-3-general-data" class="sub">11.3 一般データ</a>
+<a href="#11-4-speed-on-a-single-large-media-file" class="sub">11.4 単一の大きなメディアファイルでの速度</a>
+<a href="#11-5-encryption-overhead" class="sub">11.5 暗号化のオーバーヘッド</a>
+<a href="#11-6-reproducing-the-results" class="sub">11.6 結果の再現</a>
+<a href="#11-7-second-run-nikpak-rar-7-7-zip-and-zip" class="sub">11.7 第 2 回実行: nikpak、RAR 7、7-Zip、ZIP</a>
+<a href="#12-nikpak-and-rar-compared" class="">12 nikpak と RAR の比較</a>
+<a href="#12-1-where-nikpak-is-ahead" class="sub">12.1 nikpak が優れている点</a>
+<a href="#12-2-where-rar-is-ahead" class="sub">12.2 RAR が優れている点</a>
+<a href="#12-3-quantum-resistance-in-perspective" class="sub">12.3 耐量子性を大局的に見る</a>
+<a href="#12-4-which-one-to-choose" class="sub">12.4 どちらを選ぶべきか</a>
+<a href="#12-5-and-7-zip-and-zip" class="sub">12.5 7-Zip と ZIP は?</a>
+<a href="#13-building-deploying-and-integrating" class="">13 ビルド、配備、統合</a>
+<a href="#13-1-windows-with-powershell" class="sub">13.1 PowerShell を使った Windows</a>
+<a href="#13-2-building-with-npm" class="sub">13.2 npm を使ったビルド</a>
+<a href="#13-3-a-self-contained-executable" class="sub">13.3 自己完結型の実行ファイル</a>
+<a href="#13-4-macos-and-linux" class="sub">13.4 macOS と Linux</a>
+<a href="#13-5-dependencies" class="sub">13.5 依存関係</a>
+<a href="#13-6-scripting" class="sub">13.6 スクリプト</a>
+<a href="#13-7-total-commander" class="sub">13.7 Total Commander</a>
+<a href="#14-testing-and-verification" class="">14 テストと検証</a>
+<a href="#14-1-unit-tests" class="sub">14.1 単体テスト</a>
+<a href="#14-2-end-to-end-tests" class="sub">14.2 エンドツーエンドテスト</a>
+<a href="#14-3-attack-tests" class="sub">14.3 攻撃テスト</a>
+<a href="#14-4-defects-found-by-testing" class="sub">14.4 テストで見つかった欠陥</a>
+<a href="#15-limitations-and-roadmap" class="">15 制限とロードマップ</a>
+<a href="#15-1-current-limitations" class="sub">15.1 現在の制限</a>
+<a href="#15-2-roadmap" class="sub">15.2 ロードマップ</a>
+<a href="#a-appendix-a-format-constants-and-limits" class="">A 付録 A: 形式の定数と制限</a>
+<a href="#b-appendix-b-glossary" class="">B 付録 B: 用語集</a>

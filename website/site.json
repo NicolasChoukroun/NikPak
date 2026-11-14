@@ -10,12 +10,9 @@
   },
   "download_sizes": {
     "_comment": "Display size of each download on the site (empty hides it). Fill after building the binaries.",
-    "windows": "",
+    "windows": "13.3 MB",
     "macos": "",
-    "linux": "",
-    "deb": "",
-    "windows_unnik": "",
-    "deb_unnik": ""
+    "linux": ""
   },
   "contact_email": "contact@nikkoid.com",
   "mail_from": "NikPak <noreply@nikkoid.com>",

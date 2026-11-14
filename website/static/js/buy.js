@@ -5,7 +5,7 @@
   var cfgEl = document.getElementById('buy-config');
   if (!cfgEl) return;
   var cfg = JSON.parse(cfgEl.textContent);
-  var T = cfg.t, lang = cfg.lang;
+  var T = window.NP ? NP.dict(cfg.t) : cfg.t, lang = cfg.lang;
   var form = document.getElementById('shop');
   var $ = function (id) { return document.getElementById(id); };
   var seatsIn = $('seats'), range = $('seats-range');
@@ -219,7 +219,7 @@
   ['holder', 'email'].forEach(function (id) { $(id).addEventListener('input', updateCrypto); });
   $('c-copy') && $('c-copy').addEventListener('click', function () {
     var t = $('c-address').textContent;
-    (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { window.nikpakToast && nikpakToast(cfg.copied); })
+    (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { window.nikpakToast && nikpakToast(window.NP ? NP.t('common.copied') : ''); })
       .catch(function () { var r = document.createRange(); r.selectNodeContents($('c-address')); var s = getSelection(); s.removeAllRanges(); s.addRange(r); });
   });
 

@@ -3,7 +3,7 @@
   'use strict';
   var cfgEl = document.getElementById('contact-config');
   if (!cfgEl) return;
-  var cfg = JSON.parse(cfgEl.textContent), T = cfg.t;
+  var cfg = JSON.parse(cfgEl.textContent), T = window.NP ? NP.dict(cfg.t) : cfg.t;
   var f = document.getElementById('contact');
   var $ = function (id) { return document.getElementById(id); };
   $('ts').value = String(Math.floor(Date.now() / 1000));

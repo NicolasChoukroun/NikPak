@@ -5,6 +5,39 @@ The newest version is at the top. Format: version – date – summary, then the
 
 ---
 
+## 1.13.3 – 14 November 2026 – the site publishes its downloads, in eleven languages
+
+### Website
+- **The site is one folder, like NikEdit's.** `website\` itself holds `index.html`,
+  `features.html`, … `assets\` and `downloads\`; there is no `dist\` and no per-language
+  folder (`en/index.html`, `fr/index.html` …). Eleven languages are switched in the
+  browser: each text carries `data-i18n` and `assets/js/site.js` fills it from
+  `assets/i18n/<lang>.json`. The technical guide's ten translations are fetched from
+  `assets/tech/` only when that language is chosen on that page.
+- **The download button has a file behind it.** `buildwin` packed
+  `Nikpak-<version>-Windows.zip` into `binaries\` and rebuilt the site, whose build wiped
+  `dist\` — so nothing ever reached the folder the button links to (`website\downloads\`).
+  Now every build script copies its zip there (`scripts\site-downloads.ps1`) as soon as
+  it is packed, and writes its real size into `site.json`. `buildweb.ps1` refuses to
+  publish while a platform's zip is missing.
+- **Japanese**, the eleventh language: every page, the download and purchase pages, and
+  the whole technical guide (1452 units).
+- **The "Our Apps" menu's group titles follow the page language**, as on the other
+  Nikkoid sites.
+
+### Build scripts (same behaviour as NikEdit)
+- `buildwin.ps1` now also **commits and pushes** the release source at the end, so
+  `buildmac.ps1` / `buildunix.ps1` do not refuse to start on a dirty tree; `-SkipCommit`
+  leaves the commit to you.
+- `buildmac.ps1` / `buildunix.ps1` **refuse** to start when the tree is dirty, when a
+  commit is not pushed, or when the pushed `Cargo.toml` carries another version (they
+  used to warn and carry on), publish their zip into the site's download folder, and
+  commit at the end.
+- `buildweb.ps1` refreshes the checksums and the sizes before deploying, and commits what
+  it rewrote.
+
+---
+
 ## 1.13.1 – 7 November 2026 – a dropped archive is unpacked, not compressed
 
 ### Licensed

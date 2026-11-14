@@ -1,30 +1,47 @@
 #!/usr/bin/env python3
-"""Builds the NikPak web site into dist/.
+"""Builds the NikPak web site - one set of pages, eleven languages, no dist\.
 
     python build.py
 
 Sources: site.json (public settings), i18n/<lang>.json (texts), static/ (css, js,
-images), php/ (contact form, shop, redirects). Every link points to a page file
-(en/index.html, fr/buy.html ...), never to a bare folder.
+images), php/ (contact form, shop, redirects). The output is written straight into
+this folder: index.html, features.html ... assets/ and downloads/.
+
+The site is one set of pages in this folder - there is no dist\. The visitor's
+language is switched in the browser (assets\js\site.js + assets\i18n\<lang>.json),
+exactly like the NikEdit site, so a page exists once, not eleven times. The zips
+the download buttons link to live in downloads\; the build scripts put them there
+(scripts\site-downloads.ps1) and publish_downloads() mirrors binaries\ when
+build.py is run on its own.
 """
+import base64
 import html
 import json
 import os
 import re
 import shutil
+import stat
 import sys
+import time
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-DIST = os.path.join(ROOT, "dist")
+# **The site IS this folder** - index.html, features.html, assets\, downloads\, next to
+# the sources they are generated from. There is no dist\: one set of pages, and the
+# visitor's language is switched in the browser (assets\js\site.js), exactly like the
+# NikEdit site. The build scripts upload this folder and put the zips in downloads\.
+OUT = ROOT
+ASSETS = os.path.join(OUT, "assets")
+DOWNLOADS = os.path.join(OUT, "downloads")
 
-# Same order as the language menu of the app (src/i18n.rs)
-LANGS = ["en", "zh", "hi", "es", "ar", "fr", "bn", "pt", "ru", "id"]
-HTML_LANG = {"en": "en", "zh": "zh-Hans", "hi": "hi", "es": "es", "ar": "ar", "fr": "fr", "bn": "bn", "pt": "pt", "ru": "ru", "id": "id"}
+# Same order as the language menu of the app (src/i18n.rs), plus Japanese.
+LANGS = ["en", "zh", "hi", "es", "ar", "fr", "bn", "pt", "ru", "id", "ja"]
+HTML_LANG = {"en": "en", "zh": "zh-Hans", "hi": "hi", "es": "es", "ar": "ar", "fr": "fr", "bn": "bn", "pt": "pt", "ru": "ru", "id": "id", "ja": "ja"}
 FONTS = {
     "zh": "&family=Noto+Sans+SC:wght@300;400;500",
     "hi": "&family=Noto+Sans+Devanagari:wght@300;400;500;600",
     "bn": "&family=Noto+Sans+Bengali:wght@300;400;500;600",
     "ar": "&family=Noto+Sans+Arabic:wght@300;400;500;600",
+    "ja": "&family=Noto+Sans+JP:wght@300;400;500;600",
 }
 PAGES = ["index", "features", "benchmarks", "guide", "tech", "skins", "buy", "contact", "changelog", "thanks"]
 # Top navigation. A string is a plain link; a tuple is a dropdown:
@@ -36,7 +53,8 @@ TITLE_KEY = {"index": "t_home", "features": "t_features", "benchmarks": "t_bench
 
 # Number format per language: (thousands separator, decimal separator)
 NUMFMT = {"en": (",", "."), "zh": (",", "."), "hi": (",", "."), "bn": (",", "."), "ar": (",", "."),
-          "es": (".", ","), "pt": (".", ","), "id": (".", ","), "fr": ("\u202f", ","), "ru": ("\u202f", ",")}
+          "es": (".", ","), "pt": (".", ","), "id": (".", ","), "fr": ("\u202f", ","), "ru": ("\u202f", ","),
+          "ja": (",", ".")}
 
 TIERS = [(1, 19), (10, 15), (25, 12), (50, 9), (100, 7), (200, 6), (500, 5)]
 
@@ -68,6 +86,7 @@ GENERAL = [  # tool, size, %, creation s, extraction s, is nikpak
 
 # ---- Changelog (CHANGELOG.md, newest first): version, date, one-line summary ----
 CHANGELOG = [
+    ("1.13.3", "14 November 2026", "The site publishes its downloads (with their real sizes), Japanese as the eleventh language, and a build that commits and pushes itself."),
     ("1.13.1", "7 November 2026", "A dropped archive is unpacked, not compressed; split volumes and the .exe need a licence; time-to-completion estimates."),
     ("1.13.0", "6 November 2026", "Multi-core compression: -m5 splits into blocks compressed on separate threads, and per-file work runs in a pipeline."),
     ("1.12.0", "6 November 2026", "Split volumes (photos.nik + photos.n01 …) and self-extracting .exe archives."),
@@ -114,6 +133,40 @@ EN = load("i18n/en.json")
 MISSING = []
 
 
+# ---- one set of pages, eleven languages --------------------------------
+# Every text the page takes from i18n\ is rendered once, in English, wrapped in these
+# private-use markers. tag_i18n() then turns each one into a data-i18n attribute, and
+# assets\js\site.js fills it from assets\i18n\<lang>.json when the visitor picks a
+# language. This is how the NikEdit site works; the difference is only that the
+# strings here are generated from i18n\*.json instead of typed by hand.
+MARK = False
+M0, M1, M2 = "\ue000", "\ue001", "\ue002"
+MARK_RE = re.compile(M0 + r"([^" + M1 + r"]*)" + M1 + r"(.*?)" + M2, re.S)
+
+
+def _marker(key, text, kw=None):
+    payload = key
+    if kw:
+        raw = json.dumps(kw, ensure_ascii=False, sort_keys=True).encode("utf-8")
+        payload += "|" + base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
+    return M0 + payload + M1 + text + M2
+
+
+def plain(s):
+    """The text of a string that may carry markers (for <title>, attributes, JSON)."""
+    return MARK_RE.sub(lambda m: m.group(2), str(s))
+
+
+def _mark_tree(path, v):
+    if isinstance(v, dict):
+        return {k: _mark_tree(f"{path}.{k}", x) for k, x in v.items()}
+    if isinstance(v, list):
+        return [_mark_tree(f"{path}[{i}]", x) for i, x in enumerate(v)]
+    if isinstance(v, str):
+        return _marker(path, v)
+    return v
+
+
 class Lang:
     def __init__(self, code):
         self.code = code
@@ -121,7 +174,7 @@ class Lang:
         self.d = load("i18n/" + code + ".json") if os.path.exists(path) else {}
         self.th, self.dec = NUMFMT[code]
 
-    def raw(self, key):
+    def _get(self, key):
         def get(d):
             for part in key.split("."):
                 if not isinstance(d, dict) or part not in d:
@@ -137,11 +190,15 @@ class Lang:
             raise KeyError(key)
         return v
 
+    def raw(self, key):
+        v = self._get(key)
+        return _mark_tree(key, v) if MARK else v
+
     def __call__(self, key, **kw):
-        v = self.raw(key)
+        v = self._get(key)
         for k, val in kw.items():
             v = v.replace("{" + k + "}", str(val))
-        return v
+        return _marker(key, v, kw) if MARK else v
 
     def n(self, x, digits=0):
         s = f"{x:,.{digits}f}"
@@ -156,6 +213,105 @@ class Lang:
 
 def esc(s):
     return html.escape(str(s), quote=True)
+
+
+# ---- markers -> data-i18n ---------------------------------------------
+_TAG_SPLIT = re.compile(r"(<[^>]*>)")
+_ATTR_RE = re.compile(r'([a-zA-Z_:][-a-zA-Z0-9_:.]*)\s*=\s*"([^"]*)"')
+# elements whose content cannot hold a <span>: the marker is unwrapped and the key
+# is put on the element itself (only <title> is generated with one; the rest is safety)
+_NO_SPAN = ("title", "option", "textarea", "script", "style")
+
+
+def _vars_of(payload):
+    _, _, b64 = payload.partition("|")
+    if not b64:
+        return None
+    try:
+        pad = "=" * (-len(b64) % 4)
+        return json.loads(base64.urlsafe_b64decode(b64 + pad).decode("utf-8"))
+    except Exception:
+        return None
+
+
+def _to_spans(text):
+    def one(m):
+        payload, inner = m.group(1), m.group(2)
+        key = payload.split("|", 1)[0]
+        attrs = ' data-i18n="%s"' % key
+        kw = _vars_of(payload)
+        if kw:
+            attrs += " data-i18n-vars='%s'" % esc(json.dumps(kw, ensure_ascii=False))
+        return "<span%s>%s</span>" % (attrs, inner)
+    return MARK_RE.sub(one, text)
+
+
+def _tag_attributes(tag):
+    extra = []
+
+    def one(m):
+        name, val = m.group(1), m.group(2)
+        if M0 not in val:
+            return m.group(0)
+        keys = []
+
+        def sub(mm):
+            keys.append(mm.group(1).split("|", 1)[0])
+            return mm.group(2)
+
+        new = MARK_RE.sub(sub, val)
+        for k in keys:
+            extra.append('data-i18n-%s="%s"' % (name, k))
+        return '%s="%s"' % (name, new)
+
+    tag = _ATTR_RE.sub(one, tag)
+    if extra:
+        tag = tag[:-1].rstrip() + " " + " ".join(extra) + ">"
+    return tag
+
+
+_TOKEN_RE = re.compile(M0 + r"[^" + M1 + r"]*" + M1 + r".*?" + M2 + r"|<[^>]*>", re.S)
+
+
+def tag_i18n(doc):
+    """Turn the translation markers of a finished page into data-i18n attributes.
+
+    Scanned with one pattern that matches a whole marker before the tags inside it:
+    many strings are HTML themselves (`**bold**` becomes <b>), and splitting on tags
+    first tore those markers apart - which is how a page ended up half-translated.
+    """
+    out = []
+    last = 0
+    raw_el = None
+    for m in _TOKEN_RE.finditer(doc):
+        if m.start() > last:
+            chunk = doc[last:m.start()]
+            if M0 in chunk:
+                chunk = _to_spans(chunk) if not raw_el else MARK_RE.sub(lambda x: x.group(2), chunk)
+            out.append(chunk)
+        tok = m.group(0)
+        last = m.end()
+        if tok.startswith(M0):
+            # a marker in text position; inside <option>/<title> a span is not allowed
+            out.append(MARK_RE.sub(lambda x: x.group(2), tok) if raw_el else _to_spans(tok))
+            continue
+        name_m = re.match(r"<\s*(/?)\s*([a-zA-Z0-9]+)", tok)
+        name = ((name_m.group(2) if name_m else "") or "").lower()
+        closing = bool(name_m and name_m.group(1))
+        if closing and name == raw_el:
+            raw_el = None
+        elif not closing:
+            if M0 in tok:
+                tok = _tag_attributes(tok)
+            if name in _NO_SPAN:
+                raw_el = name
+        out.append(tok)
+    if last < len(doc):
+        chunk = doc[last:]
+        if M0 in chunk:
+            chunk = _to_spans(chunk) if not raw_el else MARK_RE.sub(lambda x: x.group(2), chunk)
+        out.append(chunk)
+    return "".join(out)
 
 
 # ---------------------------------------------------------------- icons
@@ -209,6 +365,7 @@ FLAGS = {
     "pt": '<rect width="30" height="20" fill="#009C3B"/><path d="M15 2.5 27 10 15 17.5 3 10z" fill="#FFDF00"/><circle cx="15" cy="10" r="4.2" fill="#002776"/><path d="M11 9.4c2.6-.6 5.4-.2 8 1.2" stroke="#fff" stroke-width=".7" fill="none"/>',
     "ru": '<rect width="30" height="20" fill="#fff"/><rect y="6.67" width="30" height="6.67" fill="#0039A6"/><rect y="13.33" width="30" height="6.67" fill="#D52B1E"/>',
     "id": '<rect width="30" height="20" fill="#fff"/><rect width="30" height="10" fill="#CE1126"/>',
+    "ja": '<rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#BC002D"/>',
 }
 
 
@@ -218,16 +375,31 @@ def flag(code):
 
 LANG_NAMES = {}
 
+# "Our Apps" menu: the three group titles follow the language of the page (the app
+# names are brands and stay as they are) - the same rule as the other Nikkoid sites.
+APP_CATS = {
+    "en": ("Tools", "Audio", "Games"),
+    "zh": ("工具", "音频", "游戏"),
+    "hi": ("टूल", "ऑडियो", "गेम"),
+    "es": ("Herramientas", "Audio", "Juegos"),
+    "ar": ("الأدوات", "الصوتيات", "الألعاب"),
+    "fr": ("Outils", "Audio", "Jeux"),
+    "bn": ("টুল", "অডিও", "গেম"),
+    "pt": ("Ferramentas", "Áudio", "Jogos"),
+    "ru": ("Инструменты", "Аудио", "Игры"),
+    "id": ("Alat", "Audio", "Permainan"),
+    "ja": ("ツール", "オーディオ", "ゲーム"),
+}
+
 
 # ---------------------------------------------------------------- layout
 def layout(L, page, body, extra_head="", scripts=""):
     code = L.code
-    title = L("meta." + TITLE_KEY[page])
-    full_title = title if page == "index" else f"{title} · NikPak"
-    fonts = "https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&family=JetBrains+Mono:wght@400" + FONTS.get(code, "") + "&display=swap"
+    title_key = "meta." + TITLE_KEY[page]
+    title = plain(L(title_key))
+    suffix = "" if page == "index" else " · NikPak"
+    fonts = "https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&family=JetBrains+Mono:wght@400" + "".join(FONTS.values()) + "&display=swap"
     dom = SITE["domain"].rstrip("/")
-    alts = "".join(f'<link rel="alternate" hreflang="{HTML_LANG[c]}" href="{dom}/{c}/{page}.html">' for c in LANGS)
-    alts += f'<link rel="alternate" hreflang="x-default" href="{dom}/en/{page}.html">'
     nav = []
     for item in NAV:
         if isinstance(item, str):
@@ -244,39 +416,34 @@ def layout(L, page, body, extra_head="", scripts=""):
             nav.append(
                 f'<details class="navdrop"{on}><summary>{esc(L("nav." + NAV_KEY[label_p]))}<i class="caret"></i></summary>'
                 f'<div class="navdrop-menu">{"".join(links)}</div></details>')
-    langs = []
-    for c in LANGS:
-        cur = ' aria-current="true"' if c == code else ""
-        langs.append(f'<a href="../{c}/{page}.html" hreflang="{HTML_LANG[c]}" lang="{HTML_LANG[c]}" data-lang="{c}"{cur}>{flag(c)}<span>{esc(LANG_NAMES[c])}</span></a>')
     robots = '<meta name="robots" content="noindex">' if page == "thanks" else ""
     return f"""<!doctype html>
-<html lang="{HTML_LANG[code]}" dir="{L('meta.dir')}" class="no-js">
+<html lang="en" dir="ltr" class="no-js">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{esc(full_title)}</title>
-<meta name="description" content="{esc(L('meta.desc'))}">
+<title data-i18n="{title_key}" data-suffix="{esc(suffix)}">{esc(title + suffix)}</title>
+<meta name="description" data-i18n-content="meta.desc" content="{esc(plain(L('meta.desc')))}">
 <meta name="theme-color" content="#102658">
-{robots}<link rel="canonical" href="{dom}/{code}/{page}.html">
-{alts}
-<meta property="og:title" content="{esc(full_title)}">
-<meta property="og:description" content="{esc(L('meta.desc'))}">
+{robots}<link rel="canonical" href="{dom}/{page}.html">
+<meta property="og:title" content="{esc(title + suffix)}">
+<meta property="og:description" content="{esc(plain(L('meta.desc')))}">
 <meta property="og:type" content="website">
-<meta property="og:url" content="{dom}/{code}/{page}.html">
+<meta property="og:url" content="{dom}/{page}.html">
 <meta property="og:image" content="{dom}/assets/img/nikpak-drop.webp">
-<link rel="icon" href="../assets/favicon.ico" sizes="any">
-<link rel="icon" href="../assets/img/favicon.png" type="image/png">
+<link rel="icon" href="assets/favicon.ico" sizes="any">
+<link rel="icon" href="assets/img/favicon.png" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="{fonts}">
-<link rel="stylesheet" href="../assets/css/site.css">
+<link rel="stylesheet" href="assets/css/site.css">
 {extra_head}
 </head>
-<body data-page="{page}" data-lang="{code}">
+<body data-page="{page}">
 <a class="skip" href="#main">{esc(L('nav.skip'))}</a>
 <header class="top" id="top">
   <div class="wrap">
-    <a class="brand" href="index.html"><img src="../assets/img/favicon.png" alt="" width="30" height="30">NikPak</a>
+    <a class="brand" href="index.html"><img src="assets/img/favicon.png" alt="" width="30" height="30">NikPak</a>
     <details class="apps">
       <summary aria-label="Our Apps"><svg class="apps-ico" viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><rect x="1.5" y="1.5" width="5" height="5" rx="1.3" fill="currentColor"/><rect x="9.5" y="1.5" width="5" height="5" rx="1.3" fill="currentColor"/><rect x="1.5" y="9.5" width="5" height="5" rx="1.3" fill="currentColor"/><rect x="9.5" y="9.5" width="5" height="5" rx="1.3" fill="currentColor"/></svg><span class="apps-name">Our Apps</span><svg class="chev" viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
       <nav class="apps-menu" aria-label="Our Apps">
@@ -299,8 +466,8 @@ def layout(L, page, body, extra_head="", scripts=""):
     </details>
     <nav class="nav" aria-label="{esc(L('nav.menu'))}">{''.join(nav)}</nav>
     <div class="lang" id="lang">
-      <button type="button" aria-haspopup="true" aria-expanded="false" aria-label="{esc(L('nav.language'))}">{flag(code)}<span>{esc(LANG_NAMES[code])}</span><i class="caret"></i></button>
-      <div class="lang-menu" role="menu"><span class="label">{esc(L('nav.language'))}</span>{''.join(langs)}</div>
+      <button type="button" aria-haspopup="true" aria-expanded="false" aria-label="{esc(L('nav.language'))}"><span id="langFlag"></span><span id="langName">English</span><i class="caret"></i></button>
+      <div class="lang-menu" id="langMenu" role="menu"><span class="label">{esc(L('nav.language'))}</span></div>
     </div>
     <button type="button" class="menu-toggle" aria-label="{esc(L('nav.menu'))}" aria-expanded="false">{icon('menu')}</button>
   </div>
@@ -310,9 +477,10 @@ def layout(L, page, body, extra_head="", scripts=""):
 </main>
 {footer(L)}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-<script src="../assets/js/site.js" defer></script>
+<script src="assets/js/np-i18n.js"></script>
+<script src="assets/js/site.js" defer></script>
 <!-- counted downloads + the running total in the footer (assets/nk-downloads.js) -->
-<script src="../assets/nk-downloads.js" defer></script>
+<script src="assets/nk-downloads.js" defer></script>
 {scripts}
 </body>
 </html>
@@ -324,7 +492,7 @@ def footer(L):
   <div class="wrap">
     <div class="cols">
       <div>
-        <a class="brand" href="index.html"><img src="../assets/img/favicon.png" alt="" width="30" height="30">NikPak</a>
+        <a class="brand" href="index.html"><img src="assets/img/favicon.png" alt="" width="30" height="30">NikPak</a>
         <p class="dim" style="margin-top:12px">{esc(L('common.tagline'))}</p>
         <p class="dim">{esc(L('common.made_with'))}</p>
       </div>
@@ -341,7 +509,7 @@ def footer(L):
         <a href="tech.html">{esc(L('nav.tech_full'))}</a>
         <a href="changelog.html">{esc(L('nav.changelog'))}</a>
         <a href="contact.html">{esc(L('nav.contact'))}</a>
-        <a href="../LICENSE.txt">{esc(L('common.licence_terms'))}</a>
+        <a href="LICENSE.txt">{esc(L('common.licence_terms'))}</a>
       </div>
       <div>
         <span class="label">{esc(L('common.community'))}</span>
@@ -392,7 +560,7 @@ def download_btn(L):
             if size:
                 meta += " · " + size
             rows.append(
-                f'<a class="dl" href="../{esc(fn)}" download>'
+                f'<a class="dl" href="{esc(fn)}" download>'
                 f'<span class="dl-what"><span>{esc(label)} · {esc(fmt)}</span><small>{esc(meta)}</small></span>'
                 f'<span class="dl-get">{icon("download")}</span></a>')
         os_code = "win" if os_icon == "os_win" else ("mac" if os_icon == "os_mac" else "linux")
@@ -568,7 +736,7 @@ def page_index(L):
       <p>{esc(L('home.win_text'))}</p>
       {checks([esc(x) for x in L.raw('home.win_points')])}
     </div>
-    <div class="shots"><img class="shot" src="../assets/img/nikpak-drop.webp" alt="NikPak" width="500" height="560" loading="lazy"><img class="shot" src="../assets/img/nikpak-compress.webp" alt="NikPak" width="500" height="560" loading="lazy"></div>
+    <div class="shots"><img class="shot" src="assets/img/nikpak-drop.webp" alt="NikPak" width="500" height="560" loading="lazy"><img class="shot" src="assets/img/nikpak-compress.webp" alt="NikPak" width="500" height="560" loading="lazy"></div>
   </div>
 </section>
 <section>
@@ -578,7 +746,7 @@ def page_index(L):
       <p>{esc(L('home.unnik_text'))}</p>
       {checks([esc(x) for x in L.raw('home.unnik_points')])}
     </div>
-    <figure><img class="shot" src="../assets/img/unnik-browser.webp" alt="unNik" width="1120" height="720" loading="lazy"></figure>
+    <figure><img class="shot" src="assets/img/unnik-browser.webp" alt="unNik" width="1120" height="720" loading="lazy"></figure>
   </div>
 </section>
 <section>
@@ -598,7 +766,7 @@ def page_index(L):
       <p>{esc(L('home.lang_text'))}</p>
       <p class="dim" style="font-size:1.05rem;line-height:2">{' · '.join(f'<span lang="{HTML_LANG[c]}">{esc(LANG_NAMES[c])}</span>' for c in LANGS)}</p>
     </div>
-    <figure><img class="shot" src="../assets/img/lang-quad.webp" alt="" width="1066" height="1186" loading="lazy" style="max-width:520px"></figure>
+    <figure><img class="shot" src="assets/img/lang-quad.webp" alt="" width="1066" height="1186" loading="lazy" style="max-width:520px"></figure>
   </div>
 </section>
 <section>
@@ -672,12 +840,12 @@ def page_features(L):
         ("media", f("media_t"), f'<p>{esc(f("media_p1"))}</p><p>{esc(f("media_p2"))}</p>{checks(L.raw("features.media_list"))}'),
         ("office", f("office_t"), f'<p>{esc(f("office_p"))}</p>'),
         ("levels", f("engine_t"), f'<p>{esc(f("engine_p"))}</p><div class="table-wrap"><table><thead><tr><th>{esc(f("lv_col_level"))}</th><th>{esc(f("lv_col_use"))}</th></tr></thead><tbody>{levels}</tbody></table></div>'),
-        ("volumes", f("volumes_t"), f'<p>{esc(f("volumes_p1"))}</p><p>{esc(f("volumes_p2"))}</p><div class="shots"><img class="shot" src="../assets/img/nikpak-split.webp" alt="Split volumes" width="500" height="560" loading="lazy"><img class="shot" src="../assets/img/nikpak-extract.webp" alt="The Extract box" width="500" height="560" loading="lazy"></div>'),
+        ("volumes", f("volumes_t"), f'<p>{esc(f("volumes_p1"))}</p><p>{esc(f("volumes_p2"))}</p><div class="shots"><img class="shot" src="assets/img/nikpak-split.webp" alt="Split volumes" width="500" height="560" loading="lazy"><img class="shot" src="assets/img/nikpak-extract.webp" alt="The Extract box" width="500" height="560" loading="lazy"></div>'),
         ("cores", f("cores_t"), f'<p>{esc(f("cores_p"))}</p>'),
-        ("packages", f("packages_t"), f'<p>{esc(f("packages_p"))}</p><div class="shots"><img class="shot" src="../assets/img/nikpak-package.webp" alt="Create Package" width="500" height="560" loading="lazy"></div>'),
+        ("packages", f("packages_t"), f'<p>{esc(f("packages_p"))}</p><div class="shots"><img class="shot" src="assets/img/nikpak-package.webp" alt="Create Package" width="500" height="560" loading="lazy"></div>'),
         ("encryption", f("crypto_t"), f'<p>{esc(f("crypto_p"))}</p>{checks([esc(x) for x in L.raw("features.crypto_list")])}{cmp}'),
         ("safety", f("safety_t"), checks([esc(x) for x in L.raw("features.safety_list")])),
-        ("apps", f("apps_t"), f'<p>{esc(f("apps_p"))}</p><div class="shots"><img class="shot" src="../assets/img/nikpak-choose.webp" alt="NikPak" width="500" height="560" loading="lazy"><img class="shot" src="../assets/img/nikpak-about.webp" alt="NikPak" width="500" height="560" loading="lazy"></div><figure style="margin-top:24px"><img class="shot" src="../assets/img/unnik-dialogs2.webp" alt="unNik" width="1393" height="559" loading="lazy"></figure>'),
+        ("apps", f("apps_t"), f'<p>{esc(f("apps_p"))}</p><div class="shots"><img class="shot" src="assets/img/nikpak-choose.webp" alt="NikPak" width="500" height="560" loading="lazy"><img class="shot" src="assets/img/nikpak-about.webp" alt="NikPak" width="500" height="560" loading="lazy"></div><figure style="margin-top:24px"><img class="shot" src="assets/img/unnik-dialogs2.webp" alt="unNik" width="1393" height="559" loading="lazy"></figure>'),
         ("menu", f("menu_t"), f'<p>{esc(f("menu_p"))}</p>'),
         ("cli", f("cli_t"), f'<p>{esc(f("cli_p"))} <a href="tech.html#3-command-line-reference">{esc(L("nav.tech"))} →</a></p>'),
         ("skins", f("skins_t"), f'<p>{esc(f("skins_p"))} <a href="skins.html">{esc(L("home.skins_link"))} →</a></p><a class="skin-strip" href="skins.html" aria-label="{esc(L("home.skins_link"))}">{skin_strip()}</a>'),
@@ -736,12 +904,12 @@ def page_guide(L):
     ex = "\n".join(f'{esc(e.ljust(w))}<span class="c"># {esc(c)}</span>' for e, c in zip(EXAMPLES, comments))
     sections = [
         ("install", g("install_t"), f'<p>{g("install_p1")}</p><p>{esc(g("install_p2"))}</p><p>{g("install_unix")}</p>{download_btn(L)}'),
-        ("nikpak", g("win_t"), f'{ol_steps(L.raw("guide.win_steps"))}<div class="shots" style="margin:26px 0"><img class="shot" src="../assets/img/nikpak-drop.webp" alt="" width="500" height="560" loading="lazy"><img class="shot" src="../assets/img/nikpak-compress.webp" alt="" width="500" height="560" loading="lazy"></div><h3>{esc(g("win_more_t"))}</h3>{ul(L.raw("guide.win_more"))}<div class="note">{g("admin_note")}</div>'),
-        ("skins", g("skins_t"), f'<p>{esc(g("skins_p"))}</p>{ol_steps(L.raw("guide.skins_steps"))}<div class="shots wide" style="margin:22px 0"><img class="shot" src="../assets/img/skins-menu.webp" alt="" loading="lazy"><img class="shot" src="../assets/img/skins-menu-bright.webp" alt="" loading="lazy"></div><div class="note">{g("skins_note")}</div><p><a class="btn" href="skins.html">{esc(L("home.skins_link"))}</a></p>'),
-        ("unnik", g("unnik_t"), f'<p>{esc(g("unnik_p"))}</p><figure style="margin:20px 0"><img class="shot" src="../assets/img/unnik-pair.webp" alt="unNik" width="1393" height="560" loading="lazy"></figure>{ul(L.raw("guide.unnik_list"))}<h3>{esc(g("keys_t"))}</h3><div class="table-wrap"><table><thead><tr><th>{esc(g("keys_col_key"))}</th><th>{esc(g("keys_col_action"))}</th></tr></thead><tbody>{keys}</tbody></table></div>'),
+        ("nikpak", g("win_t"), f'{ol_steps(L.raw("guide.win_steps"))}<div class="shots" style="margin:26px 0"><img class="shot" src="assets/img/nikpak-drop.webp" alt="" width="500" height="560" loading="lazy"><img class="shot" src="assets/img/nikpak-compress.webp" alt="" width="500" height="560" loading="lazy"></div><h3>{esc(g("win_more_t"))}</h3>{ul(L.raw("guide.win_more"))}<div class="note">{g("admin_note")}</div>'),
+        ("skins", g("skins_t"), f'<p>{esc(g("skins_p"))}</p>{ol_steps(L.raw("guide.skins_steps"))}<div class="shots wide" style="margin:22px 0"><img class="shot" src="assets/img/skins-menu.webp" alt="" loading="lazy"><img class="shot" src="assets/img/skins-menu-bright.webp" alt="" loading="lazy"></div><div class="note">{g("skins_note")}</div><p><a class="btn" href="skins.html">{esc(L("home.skins_link"))}</a></p>'),
+        ("unnik", g("unnik_t"), f'<p>{esc(g("unnik_p"))}</p><figure style="margin:20px 0"><img class="shot" src="assets/img/unnik-pair.webp" alt="unNik" width="1393" height="560" loading="lazy"></figure>{ul(L.raw("guide.unnik_list"))}<h3>{esc(g("keys_t"))}</h3><div class="table-wrap"><table><thead><tr><th>{esc(g("keys_col_key"))}</th><th>{esc(g("keys_col_action"))}</th></tr></thead><tbody>{keys}</tbody></table></div>'),
         ("terms", g("terms_t"), f'<p>{esc(g("terms_p"))}</p>{ul(L.raw("guide.terms_list"))}<div class="note">{esc(g("terms_note"))}</div>'),
         ("menu", g("menu_t"), f'<p>{esc(g("menu_p"))}</p>{ul(L.raw("guide.menu_list"))}<div class="note">{g("menu_note")}</div>'),
-        ("register", g("reg_t"), f'{ol_steps(L.raw("guide.reg_steps"))}<div class="shots" style="margin:22px 0"><img class="shot" src="../assets/img/nikpak-reminder.webp" alt="" width="500" height="560" loading="lazy"><img class="shot" src="../assets/img/nikpak-register.webp" alt="" width="500" height="560" loading="lazy"></div><p>{g("reg_p")}</p><pre>nikpak register "Jane Doe" jane@example.com NPK1-...\nnikpak license\nnikpak unregister</pre>'),
+        ("register", g("reg_t"), f'{ol_steps(L.raw("guide.reg_steps"))}<div class="shots" style="margin:22px 0"><img class="shot" src="assets/img/nikpak-reminder.webp" alt="" width="500" height="560" loading="lazy"><img class="shot" src="assets/img/nikpak-register.webp" alt="" width="500" height="560" loading="lazy"></div><p>{g("reg_p")}</p><pre>nikpak register "Jane Doe" jane@example.com NPK1-...\nnikpak license\nnikpak unregister</pre>'),
         ("cli", g("cli_t"), f'<p>{g("cli_p")}</p><h3>{esc(g("cmd_t"))}</h3><div class="table-wrap"><table><thead><tr><th>{esc(g("col_cmd"))}</th><th>{esc(g("col_meaning"))}</th></tr></thead><tbody>{cmds}</tbody></table></div><h3>{esc(g("opt_t"))}</h3><div class="table-wrap"><table><thead><tr><th>{esc(g("col_rar"))}</th><th>{esc(g("col_zip"))}</th><th>{esc(g("col_meaning"))}</th></tr></thead><tbody>{opts}</tbody></table></div><h3>{esc(g("ex_t"))}</h3><pre>{ex}</pre>'),
         ("passwords", g("pwd_t"), f'<p>{g("pwd_p")}</p>{ul(L.raw("guide.pwd_list"))}<div class="note">{g("pwd_note")}</div>'),
         ("exit-codes", g("exit_t"), f'<div class="table-wrap"><table><thead><tr><th class="num">{esc(g("col_code"))}</th><th>{esc(g("col_meaning"))}</th><th>{esc(g("col_cause"))}</th></tr></thead><tbody>{exits}</tbody></table></div>'),
@@ -752,15 +920,20 @@ def page_guide(L):
     return layout(L, "guide", body)
 
 
+def rebase_tech(html_text):
+    """The guide's bodies were written when the page sat in a language folder
+    (../assets/img/tech/x.png). The page is at the site root now."""
+    html_text = html_text.replace('"../assets/img/tech/', '"assets/img/tech/')
+    return html_text
+
+
 def page_tech(L):
-    toc_path = os.path.join(ROOT, f"tech-toc.{L.code}.html")
-    if not os.path.exists(toc_path):
-        toc_path = os.path.join(ROOT, "tech-toc.html")
+    # English is baked into tech.html; the other ten are fetched from assets/tech/
+    # when the visitor picks a language (assets/js/site.js does the swap).
+    toc_path = os.path.join(ROOT, "tech", "tech-toc.html")
     toc = open(toc_path, encoding="utf-8").read()
-    body_path = os.path.join(ROOT, f"tech-body.{L.code}.html")
-    if not os.path.exists(body_path):
-        body_path = os.path.join(ROOT, "tech-body.html")
-    content = open(body_path, encoding="utf-8").read()
+    body_path = os.path.join(ROOT, "tech", "tech-body.html")
+    content = rebase_tech(open(body_path, encoding="utf-8").read())
     head = page_head(L, L("nav.tech_full"), L("guide.tech_sub"))
     body = f'<div class="wrap doc tech-doc"><aside class="toc"><span class="label">{esc(L("guide.toc"))}</span>{toc}</aside><div class="tech-content">{content}</div></div>'
     return layout(L, "tech", head + body)
@@ -802,10 +975,12 @@ def page_buy(L):
         "payments": {k: v for k, v in P.items()},
         "crypto": SITE["crypto"],
         "tiers": TIERS,
-        "t": {k: L("buy." + k) for k in ["pay_btn", "continue_btn", "redirecting", "fill_first", "pay_error", "gpay_unavailable",
-                                         "rate_loading", "rate_note", "rate_error", "stable_note", "network_warn", "saving",
-                                         "mail_subject", "mail_body", "personal", "company"]},
-        "copied": L("common.copied"),
+        # keys, not text: buy.js asks NP for them, so they follow the language the
+        # visitor picks (window.NP.dict)
+        "t": {k: "buy." + k for k in ["pay_btn", "continue_btn", "redirecting", "fill_first", "pay_error", "gpay_unavailable",
+                                      "rate_loading", "rate_note", "rate_error", "stable_note", "network_warn", "saving",
+                                      "mail_subject", "mail_body", "personal", "company"]},
+        "copied": "common.copied",
     }
     cfg_json = json.dumps(cfg, ensure_ascii=False).replace("</", "<\\/")
     body = page_head(L, b("title"), b("sub")) + f"""
@@ -878,7 +1053,7 @@ def page_buy(L):
   </section>
 </div>
 <script type="application/json" id="buy-config">{cfg_json}</script>"""
-    scripts = '<script src="../assets/js/qrcode.min.js" defer></script>\n<script src="../assets/js/buy.js" defer></script>'
+    scripts = '<script src="assets/js/qrcode.min.js" defer></script>\n<script src="assets/js/buy.js" defer></script>'
     if P.get("googlepay", {}).get("enabled"):
         scripts += '\n<script async src="https://pay.google.com/gp/p/js/pay.js" onload="window.nikpakGPayLoaded&&window.nikpakGPayLoaded()"></script>'
     return layout(L, "buy", body, scripts=scripts)
@@ -889,14 +1064,14 @@ def page_contact(L):
     email = SITE["contact_email"]
     topics = "".join(f'<option value="{k}">{esc(v)}</option>' for k, v in L.raw("contact.topics").items())
     coins = "".join(f'<option value="{esc(s)}">{esc(v["symbol"])} · {esc(v["network"])}</option>' for s, v in SITE["crypto"].items())
-    cfg = {"lang": L.code, "email": email, "t": {k: c(k) for k in ["sending", "sent", "error", "invalid", "send"]}, "topics_en": EN["contact"]["topics"]}
+    cfg = {"lang": L.code, "email": email, "t": {k: "contact." + k for k in ["sending", "sent", "error", "invalid", "send"]}, "topics_en": EN["contact"]["topics"]}
     cfg_json = json.dumps(cfg, ensure_ascii=False).replace("</", "<\\/")
     body = page_head(L, c("title"), c("sub")) + f"""
 <div class="wrap shop" style="padding-bottom:40px">
   <div class="panel">
     <div class="alert ok" id="c-ok" role="status">{esc(c('sent'))}</div>
     <div class="alert err" id="c-err" role="alert"></div>
-    <form class="form" id="contact" method="post" action="../contact.php" novalidate>
+    <form class="form" id="contact" method="post" action="contact.php" novalidate>
       <input type="hidden" name="lang" value="{L.code}">
       <input type="hidden" name="ts" id="ts" value="">
       <div class="hp" aria-hidden="true"><label>Website <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
@@ -932,7 +1107,7 @@ def page_contact(L):
   </div>
 </div>
 <script type="application/json" id="contact-config">{cfg_json}</script>"""
-    return layout(L, "contact", body, scripts='<script src="../assets/js/contact.js" defer></script>')
+    return layout(L, "contact", body, scripts='<script src="assets/js/contact.js" defer></script>')
 
 
 def page_thanks(L):
@@ -978,7 +1153,7 @@ def skin_file(s, suffix):
 def skin_strip():
     names = {s["id"]: s["name"] for s in SKINS}
     by_id = {s["id"]: s for s in SKINS}
-    return "".join(f'<img src="../assets/img/skins/{skin_file(by_id[i], "-thumb")}" alt="{esc(names[i])}" title="{esc(names[i])}" width="250" height="280" loading="lazy">' for i in SKIN_STRIP)
+    return "".join(f'<img src="assets/img/skins/{skin_file(by_id[i], "-thumb")}" alt="{esc(names[i])}" title="{esc(names[i])}" width="250" height="280" loading="lazy">' for i in SKIN_STRIP)
 
 
 SKIN_EXAMPLE = """{
@@ -1009,8 +1184,8 @@ def page_skins(L):
         tag = k("tag_dark") if s["dark"] else k("tag_bright")
         tiles.append(
             f'<figure class="skin-tile reveal" data-dark="{1 if s["dark"] else 0}">'
-            f'<a href="../assets/img/skins/{skin_file(s, "")}" data-name="{esc(s["name"])}">'
-            f'<img src="../assets/img/skins/{skin_file(s, "-thumb")}" alt="NikPak · {esc(s["name"])}" width="250" height="280" loading="lazy"></a>'
+            f'<a href="assets/img/skins/{skin_file(s, "")}" data-name="{esc(s["name"])}">'
+            f'<img src="assets/img/skins/{skin_file(s, "-thumb")}" alt="NikPak · {esc(s["name"])}" width="250" height="280" loading="lazy"></a>'
             f'<figcaption><span lang="en">{esc(s["name"])}</span><span class="tags"><i class="tag {"d" if s["dark"] else "b"}">{esc(tag)}</i></span></figcaption></figure>')
     chips = (f'<div class="chips" role="group" aria-label="{esc(k("gallery_t"))}">'
              f'<button type="button" class="chip" data-filter="all" aria-pressed="true">{esc(k("all"))} <b>{len(SKINS)}</b></button>'
@@ -1023,7 +1198,7 @@ def page_skins(L):
       <h2>{esc(k('how_t'))}</h2>
       {checks(L.raw('skins.how_list'))}
     </div>
-    <div class="shots wide"><img class="shot" src="../assets/img/skins-menu.webp" alt="" loading="lazy"><img class="shot" src="../assets/img/skins-menu-bright.webp" alt="" loading="lazy"></div>
+    <div class="shots wide"><img class="shot" src="assets/img/skins-menu.webp" alt="" loading="lazy"><img class="shot" src="assets/img/skins-menu-bright.webp" alt="" loading="lazy"></div>
   </div>
 </section>
 <section id="gallery">
@@ -1039,7 +1214,7 @@ def page_skins(L):
       <h2>{esc(k('unnik_t'))}</h2>
       <p>{esc(k('unnik_p'))}</p>
     </div>
-    <figure><img class="shot" src="../assets/img/unnik-skins.webp" alt="unNik" width="1120" height="720" loading="lazy"></figure>
+    <figure><img class="shot" src="assets/img/unnik-skins.webp" alt="unNik" width="1120" height="720" loading="lazy"></figure>
   </div>
 </section>
 <section id="custom">
@@ -1075,44 +1250,6 @@ BUILDERS = {"index": page_index, "features": page_features, "benchmarks": page_b
             "thanks": page_thanks}
 
 
-def root_index():
-    links = "".join(f'<a href="{c}/index.html" hreflang="{HTML_LANG[c]}" lang="{HTML_LANG[c]}">{flag(c)}<span>{esc(LANG_NAMES[c])}</span></a>' for c in LANGS)
-    codes = json.dumps(LANGS)
-    return f"""<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>NikPak</title>
-<meta name="description" content="{esc(EN['meta']['desc'])}">
-<link rel="icon" href="assets/favicon.ico" sizes="any">
-<link rel="stylesheet" href="assets/css/site.css">
-<script>
-(function () {{
-  var codes = {codes}, pick = null;
-  try {{ pick = localStorage.getItem('nikpak_lang'); }} catch (e) {{}}
-  if (codes.indexOf(pick) < 0) {{
-    pick = 'en';
-    var ls = navigator.languages || [navigator.language || 'en'];
-    for (var i = 0; i < ls.length; i++) {{
-      var c = String(ls[i]).toLowerCase().split('-')[0];
-      if (codes.indexOf(c) >= 0) {{ pick = c; break; }}
-    }}
-  }}
-  location.replace(pick + '/index.html' + location.search + location.hash);
-}})();
-</script>
-</head>
-<body>
-<main class="wrap" style="padding:80px 16px;max-width:520px">
-  <div class="panel"><h1 class="glow-title center" style="font-size:2.4rem">NikPak</h1>
-  <div class="lang-menu" style="display:block;position:static;box-shadow:none">{links}</div></div>
-</main>
-</body>
-</html>
-"""
-
-
 def paddle_page(pd):
     env = "sandbox" if pd.get("environment", "sandbox") == "sandbox" else "production"
     codes = json.dumps(LANGS)
@@ -1129,7 +1266,7 @@ def paddle_page(pd):
 <body>
 <main class="wrap" style="padding:80px 16px;max-width:560px">
   <div class="panel center"><h1 class="glow-title" style="font-size:2.2rem">NikPak</h1><div class="rule"></div><p class="dim" style="margin-top:18px">Paddle…</p>
-  <p><a class="btn" id="back" href="en/buy.html">←</a></p></div>
+  <p><a class="btn" id="back" href="buy.html">←</a></p></div>
 </main>
 <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
 <script>
@@ -1137,12 +1274,12 @@ def paddle_page(pd):
   var q = new URLSearchParams(location.search), codes = {codes};
   var lang = codes.indexOf(q.get('lang')) >= 0 ? q.get('lang') : 'en';
   var base = location.href.split('pay.html')[0];
-  document.getElementById('back').href = lang + '/buy.html';
+  document.getElementById('back').href = 'buy.html';
   {"Paddle.Environment.set('sandbox');" if env == "sandbox" else ""}
   Paddle.Initialize({{
     token: {json.dumps(pd.get("client_token", ""))},
-    checkout: {{ settings: {{ displayMode: 'overlay', theme: 'dark', locale: lang, successUrl: base + lang + '/thanks.html?status=ok&provider=paddle' }} }},
-    eventCallback: function (e) {{ if (e && e.name === 'checkout.closed') location.href = base + lang + '/thanks.html?status=cancel&provider=paddle'; }}
+    checkout: {{ settings: {{ displayMode: 'overlay', theme: 'dark', locale: lang, successUrl: base + 'thanks.html?status=ok&provider=paddle&lang=' + lang }} }},
+    eventCallback: function (e) {{ if (e && e.name === 'checkout.closed') location.href = base + 'thanks.html?status=cancel&provider=paddle&lang=' + lang; }}
   }});
 }})();
 </script>
@@ -1151,57 +1288,219 @@ def paddle_page(pd):
 """
 
 
+
+
+def make_writable(path):
+    try:
+        os.chmod(path, stat.S_IWRITE | stat.S_IREAD | stat.S_IEXEC)
+    except OSError:
+        pass
+
+
+def remove_tree(path):
+    """Delete a folder, clearing the read-only flag Windows puts on copied files."""
+    if not os.path.exists(path):
+        return
+    for root, dirs, files in os.walk(path):
+        for name in dirs + files:
+            make_writable(os.path.join(root, name))
+    try:
+        shutil.rmtree(path)
+    except OSError:
+        # a folder Windows still holds (Explorer, a preview): delete what can be
+        # deleted and leave the rest - it is not part of the site any more
+        shutil.rmtree(path, ignore_errors=True)
+
+
+def drop_old_layout():
+    """Delete the per-language folders of the old layout (dist\en\index.html, ...)."""
+    removed = 0
+    for c in LANGS:
+        d = os.path.join(OUT, c)
+        if os.path.isdir(d):
+            remove_tree(d)
+            if not os.path.isdir(d):
+                removed += 1
+    old = os.path.join(OUT, "dist")
+    if os.path.isdir(old):
+        remove_tree(old)
+        if not os.path.isdir(old):
+            removed += 1
+    for name in os.listdir(OUT):
+        if name.startswith("dist.old-") or name == "dist.build":
+            remove_tree(os.path.join(OUT, name))
+            removed += 1
+    return removed
+
+
+def write_client_i18n():
+    """assets/js/np-i18n.js: languages, flags, the site version and e-mail for the JS."""
+    flags = {c: FLAGS[c] for c in LANGS}
+    names = {c: LANG_NAMES[c] for c in LANGS}
+    cats = {c: list(APP_CATS[c]) for c in LANGS}
+    payload = {
+        "langs": [{"code": c, "native": names[c], "html": HTML_LANG[c]} for c in LANGS],
+        "flags": flags,
+        "cats": cats,
+        "version": SITE["version"],
+        "email": SITE["contact_email"],
+        "domain": SITE["domain"],
+    }
+    js = "/* generated by website/build.py - do not edit */\nwindow.NP_SITE = " + json.dumps(payload, ensure_ascii=False) + ";\n"
+    path = os.path.join(ASSETS, "js", "np-i18n.js")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(js)
+    return path
+
+
+def write_client_dicts():
+    """assets/i18n/<lang>.json: what assets/js/site.js swaps in when a language is picked."""
+    d = os.path.join(ASSETS, "i18n")
+    os.makedirs(d, exist_ok=True)
+    n = 0
+    for c in LANGS:
+        src = os.path.join(ROOT, "i18n", c + ".json")
+        if not os.path.exists(src):
+            continue
+        data = load("i18n/" + c + ".json")
+        with open(os.path.join(d, c + ".json"), "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False)
+        n += 1
+    return n
+
+
+def write_tech_bodies():
+    """assets/tech/<lang>.html: the technical guide, in each language, fetched on demand.
+
+    English is in tech.html itself; the other ten are only downloaded when the
+    visitor picks that language on that page.
+    """
+    d = os.path.join(ASSETS, "tech")
+    os.makedirs(d, exist_ok=True)
+    n = 0
+    for c in LANGS:
+        if c == "en":
+            continue
+        body = os.path.join(ROOT, "tech", "tech-body.%s.html" % c)
+        toc = os.path.join(ROOT, "tech", "tech-toc.%s.html" % c)
+        if not os.path.exists(body):
+            continue
+        with open(body, encoding="utf-8") as f:
+            text = rebase_tech(f.read())
+        with open(os.path.join(d, c + ".html"), "w", encoding="utf-8") as f:
+            f.write(text)
+        if os.path.exists(toc):
+            with open(toc, encoding="utf-8") as f:
+                t = f.read()
+            with open(os.path.join(d, c + "-toc.html"), "w", encoding="utf-8") as f:
+                f.write(t)
+        n += 1
+    return n
+
+
+def publish_downloads():
+    """Copy the zips the build scripts left in binaries\ into downloads\ - the folder
+    the download buttons link to. This is what keeps the site and binaries in step
+    when build.py is run on its own."""
+    src = os.path.join(ROOT, "..", "binaries")
+    os.makedirs(DOWNLOADS, exist_ok=True)
+    if not os.path.isdir(src):
+        return []
+    want = []
+    v = SITE["version"]
+    for key in SITE["downloads"]:
+        if key.startswith("_"):
+            continue
+        name = os.path.basename(SITE["downloads"][key].replace("{v}", v))
+        want.append(name)
+    copied = []
+    for name in want:
+        f = os.path.join(src, name)
+        if os.path.exists(f):
+            shutil.copyfile(f, os.path.join(DOWNLOADS, name))
+            copied.append(name)
+    # **Nothing is deleted here.** A zip that is already in downloads\ is the
+    # published download: the pruning of old ones belongs to scripts\site-downloads.ps1,
+    # which only runs once it has the new file in hand.
+    return copied
+
+
 def main():
-    global LANG_NAMES
+    global MARK, LANG_NAMES
     for c in LANGS:
         LANG_NAMES[c] = Lang(c)("meta.lang_name") if os.path.exists(os.path.join(ROOT, "i18n", c + ".json")) else c
-    if os.path.isdir(DIST):
-        shutil.rmtree(DIST)
-    os.makedirs(DIST)
-    shutil.copytree(os.path.join(ROOT, "static"), os.path.join(DIST, "assets"))
-    shutil.copytree(os.path.join(ROOT, "php"), DIST, dirs_exist_ok=True)
-    # the update manifest, published at the root: the app asks for /version.json
-    shutil.copy(os.path.join(ROOT, "version.json"), os.path.join(DIST, "version.json"))
-    os.makedirs(os.path.join(DIST, "downloads"), exist_ok=True)
-    with open(os.path.join(DIST, "downloads", "PUT-THE-SETUP-HERE.txt"), "w", encoding="utf-8") as f:
-        f.write("Upload these files into this folder (see site.json, downloads):\n" + "".join(f"  {os.path.basename(download_file(k))}\n" for _, _, items in DL_GROUPS for k, _, _ in items))
+    os.makedirs(ASSETS, exist_ok=True)
+    # assets\ = static\ (css, js, img) refreshed in place: nothing else in the folder
+    # is touched, so downloads\ and the pages survive a rebuild
+    src_assets = os.path.join(ROOT, "static")
+    for root, _, files in os.walk(src_assets):
+        rel = os.path.relpath(root, src_assets)
+        dst_dir = os.path.join(ASSETS, rel) if rel != "." else ASSETS
+        os.makedirs(dst_dir, exist_ok=True)
+        for f in files:
+            shutil.copyfile(os.path.join(root, f), os.path.join(dst_dir, f))
+    shutil.copytree(os.path.join(ROOT, "php"), OUT, dirs_exist_ok=True)
+    # version.json already sits at the root of this folder: it is published as is
     lic = os.path.join(ROOT, "..", "LICENSE.txt")
     if os.path.exists(lic):
-        shutil.copy(lic, os.path.join(DIST, "LICENSE.txt"))
+        shutil.copy(lic, os.path.join(OUT, "LICENSE.txt"))
     # settings shared with the PHP scripts (languages, contact e-mail, prices)
-    with open(os.path.join(DIST, "site-public.json"), "w", encoding="utf-8") as f:
+    with open(os.path.join(OUT, "site-public.json"), "w", encoding="utf-8") as f:
         json.dump({"langs": LANGS, "contact_email": SITE["contact_email"], "mail_from": SITE.get("mail_from", ""), "domain": SITE["domain"],
                    "crypto": SITE["crypto"], "payments": {k: bool(v.get("enabled")) for k, v in SITE["payments"].items()}}, f, ensure_ascii=False, indent=1)
+
+    # **one set of pages.** The text is English and each translatable string carries
+    # data-i18n; assets/js/site.js fills it from assets/i18n/<lang>.json.
+    MARK = True
+    L = Lang("en")
     count = 0
-    for c in LANGS:
-        if not os.path.exists(os.path.join(ROOT, "i18n", c + ".json")):
-            print(f"warning: i18n/{c}.json missing, using English", file=sys.stderr)
-        L = Lang(c)
-        os.makedirs(os.path.join(DIST, c), exist_ok=True)
-        for p in PAGES:
-            with open(os.path.join(DIST, c, p + ".html"), "w", encoding="utf-8") as f:
-                f.write(BUILDERS[p](L))
-            count += 1
-    with open(os.path.join(DIST, "index.html"), "w", encoding="utf-8") as f:
-        f.write(root_index())
+    for p in PAGES:
+        html_text = tag_i18n(BUILDERS[p](L))
+        left = html_text.count(M0)
+        if left:
+            print("warning: %d untagged text(s) in %s.html" % (left, p), file=sys.stderr)
+        with open(os.path.join(OUT, p + ".html"), "w", encoding="utf-8") as f:
+            f.write(html_text)
+        count += 1
+    MARK = False
+    print("  %d pages" % count)
+    print("  %d language dictionaries" % write_client_dicts())
+    print("  %d technical guides" % write_tech_bodies())
+    write_client_i18n()
+
     # Paddle "default payment link": Paddle opens its checkout here for ?_ptxn=txn_...
     pd = SITE["payments"].get("paddle", {})
     if pd.get("enabled"):
-        with open(os.path.join(DIST, "pay.html"), "w", encoding="utf-8") as f:
+        with open(os.path.join(OUT, "pay.html"), "w", encoding="utf-8") as f:
             f.write(paddle_page(pd))
-    # sitemap
+    # sitemap: one URL per page (the language is a choice made in the browser)
     dom = SITE["domain"].rstrip("/")
-    urls = "".join(f"<url><loc>{dom}/{c}/{p}.html</loc></url>" for c in LANGS for p in PAGES if p != "thanks")
-    with open(os.path.join(DIST, "sitemap.xml"), "w", encoding="utf-8") as f:
+    urls = "".join(f"<url><loc>{dom}/{p}.html</loc></url>" for p in PAGES if p != "thanks")
+    with open(os.path.join(OUT, "sitemap.xml"), "w", encoding="utf-8") as f:
         f.write(f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>\n')
-    with open(os.path.join(DIST, "robots.txt"), "w", encoding="utf-8") as f:
+    with open(os.path.join(OUT, "robots.txt"), "w", encoding="utf-8") as f:
         f.write(f"User-agent: *\nDisallow: /shop/\nSitemap: {dom}/sitemap.xml\n")
+
+    gone = drop_old_layout()
+    if gone:
+        print("  removed %d folder(s) of the old per-language layout" % gone)
+    copied = publish_downloads()
+    have = sorted(f for f in os.listdir(DOWNLOADS) if f.endswith(".zip"))
+    if copied:
+        print("  downloads: " + ", ".join(copied) + " (from binaries\\)")
+    if have:
+        print("  website/downloads: " + ", ".join(have))
+    else:
+        print("  website/downloads is EMPTY: the buttons will 404 - run buildwin.ps1 (Windows),"
+              " buildmac.ps1 (macOS), buildunix.ps1 (Linux)", file=sys.stderr)
+
     miss = sorted(set(MISSING))
     if miss:
         print(f"{len(miss)} texts fall back to English:", file=sys.stderr)
         for c, k in miss[:40]:
             print(f"  {c}: {k}", file=sys.stderr)
-    print(f"built {count} pages in {DIST}")
+    print(f"built {count} pages in {OUT}")
 
 
 if __name__ == "__main__":

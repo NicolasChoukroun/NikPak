@@ -4,13 +4,21 @@
 
 .DESCRIPTION
   No build, no Inno - just the web site. It:
-    1. runs  python website\build.py  which rebuilds website\dist (public pages only);
-    2. removes installers of older versions from binaries\ and copies only the current
-       version's files into website\dist\downloads\;
-    3. uploads website\dist to the web host by FTP (overwriting), 10 files at a time,
+    1. collects the packages: every platform's zip of this version from binaries\,
+       packing one from its loose files when the zip is missing;
+    2. writes the size of each download into website\site.json, which is where the
+       page reads the figure it prints under the button;
+    3. runs  python website\build.py  which rebuilds website (public pages only);
+    4. copies the zips into website\downloads\ and regenerates SHA256SUMS.txt -
+       **after** the build, which wipes dist\;
+    5. refuses to publish while a download button has no file behind it - the state
+       that made the site offer 404s after a Windows-only build;
+    6. uploads website to the web host by FTP (overwriting), 10 files at a time,
        with one inline progress line;
-    4. removes downloads of older versions from the server, so only the latest build
-       is ever offered.
+    7. removes downloads of older versions from the server, so only the latest build
+       is ever offered;
+    8. commits and pushes the source (steps 2, 4 and 6 edit it), so the next
+       buildmac.ps1 / buildunix.ps1 does not refuse to start.
 
   Run it after buildwin.ps1 + buildmac.ps1 + buildunix.ps1 when every platform is
   built: it publishes the current version on the web site without rebuilding anything.
@@ -19,14 +27,28 @@
   website\version.json all carry the same version. A mismatch stops the run, so the
   site can never advertise a download that does not exist (or hide a newer release).
 
+.PARAMETER SkipCommit
+  Do not commit and push the source at the end (run .\commit.ps1 yourself).
+
+.PARAMETER AllowMissingDownloads
+  Publish even though a platform's zip is missing (an emergency re-upload: those
+  buttons will lead to a 404 until the platform is built).
+
 .EXAMPLE
   .\buildweb.ps1
+  .\buildweb.ps1 -SkipCommit
   powershell -ExecutionPolicy Bypass -File buildweb.ps1      (if scripts are blocked)
 #>
+param(
+    [switch]$SkipCommit,
+    [switch]$AllowMissingDownloads
+)
 
 $ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath $PSScriptRoot
 . (Join-Path $PSScriptRoot 'scripts\version.ps1')
+. (Join-Path $PSScriptRoot 'scripts\site-downloads.ps1')
+. (Join-Path $PSScriptRoot 'scripts\release-commit.ps1')
 
 function Step([string]$msg) { Write-Host ''; Write-Host "== $msg" -ForegroundColor Cyan }
 function Fail([string]$msg) { Write-Host ''; Write-Host $msg -ForegroundColor Red; exit 1 }
@@ -62,62 +84,74 @@ foreach ($cand in @(@('python'), @('py', '-3'), @('python3'))) {
     }
 }
 if (-not $pythonExe) { Fail ("Python 3 was not found (it rebuilds the website). Install it once:`n    winget install Python.Python.3.12") }
+  # The eleven manuals, before the pack: release-packaging copies every *.pdf
+  # from documents\manuals into the zip's Documentation folder.
+  & (Join-Path $PSScriptRoot 'scripts\build-docs.ps1')
 
-# --- 2. The website (python website\build.py) ------------------------------------
-Step 'Building the website (website\build.py)'
-& $pythonExe @pythonArgs (Join-Path $PSScriptRoot 'website\build.py')
-if ($LASTEXITCODE -ne 0) { Fail 'The website build failed (website\build.py).' }
-
-# --- 3. Website downloads --------------------------------------------------------
-# Only the current version is ever published: installers of older versions are removed
-# from binaries\ and from the downloads folder first, so stale builds are never uploaded.
-Step 'Adding the downloads to the website'
-$downloads = Join-Path $PSScriptRoot 'website\dist\downloads'
-New-Item -ItemType Directory -Force -Path $downloads | Out-Null
-Remove-OldNikpakFiles -Root $PSScriptRoot -Version $version -Dirs @('binaries', 'dist', 'website\dist\downloads')
+# --- 2. The packages --------------------------------------------------------------
+# The zips come from binaries\, where buildwin / buildmac / buildunix left them. A
+# platform whose zip is missing is packed from its loose files when those are still
+# there (a leg that ran before the zips scheme), and otherwise reported below.
+Step 'Collecting the packages'
+Remove-OldNikpakFiles -Root $PSScriptRoot -Version $version -Dirs @('binaries', 'dist', 'website\downloads')
 . (Join-Path $PSScriptRoot 'scripts\release-packaging.ps1')
 if (Test-Path 'binaries') {
     $binaries = Join-Path $PSScriptRoot 'binaries'
-    # Pack any platform's zip that is missing, so the page offers all three even after a
-    # single-platform build.
     $packages = @(Get-PlatformPackages -Product 'Nikpak' -Version $version -Dir $binaries)
     $inc = @{
         'Windows' = @(@{ Pattern = 'nikpak-{v}-setup.exe' }, @{ Pattern = 'unnik-{v}-setup.exe' },
                       @{ Pattern = 'nikpak.exe' }, @{ Pattern = 'unNik.exe' })
         'macOS'   = @(@{ Pattern = 'nikpak-{v}-macos.zip' })
-        'Linux'   = @(@{ Pattern = 'nikpak-{v}-linux-*.tar.gz' }, @{ Pattern = 'nikpak_{v}_amd64.deb' },
-                      @{ Pattern = 'unnik_{v}_amd64.deb' })
+        'Linux'   = @(@{ Pattern = 'nikpak-{v}-linux-*.tar.gz' })
     }
     foreach ($p in @('Windows', 'macOS', 'Linux')) {
         if ($packages.Name -contains (Get-SitePackageName 'Nikpak' $version $p)) { continue }
         $z = New-SitePackage -Product 'Nikpak' -Version $version -Platform $p -Binaries $binaries `
-                             -Include $inc[$p] -Documentation (Join-Path $PSScriptRoot 'documents')
+                             -Include $inc[$p] -Documentation (Join-Path $PSScriptRoot 'documents\manuals')
         if ($z) { $packages += (Get-Item -LiteralPath $z) }
     }
-    $keep = @($packages.Name) + @('SHA256SUMS.txt')
-    foreach ($d in @(Remove-OtherDownloads -Downloads $downloads -Keep $keep)) {
-        Write-Host "  removed an older download: $d" -ForegroundColor DarkYellow
-    }
-    $n = Copy-Downloads -From $binaries -To $downloads -Names $keep
-    Write-Host "  $n download(s) in $downloads (NikPak $version)"
 } else {
-    Write-Host '  binaries\ is empty: the download page will have no files' -ForegroundColor Yellow
+    Write-Host '  binaries\ is empty: there is nothing to publish' -ForegroundColor Yellow
 }
 
-# Every download button of site.json must have its package, or the site would offer a
-# 404. The usual cause is publishing before buildmac.ps1 / buildunix.ps1 have run.
-$expected = @(
-    "Nikpak-$version-Windows.zip", "Nikpak-$version-macOS.zip", "Nikpak-$version-Linux.zip"
-)
-$missing = @($expected | Where-Object { -not (Test-Path -LiteralPath (Join-Path $downloads $_)) })
-if ($missing.Count) {
+# --- 2b. The sizes the page prints ------------------------------------------------
+# Read from binaries\ (the file that will be copied in a moment), and written BEFORE
+# the site is built: the page reads them from site.json, and the build wipes dist\ -
+# so a size computed from the site's own copies would be computed from files the
+# build is about to delete.
+Step 'Download sizes'
+Set-DownloadSizes -Root $PSScriptRoot | Out-Null
+
+# --- 3. The website (python website\build.py) ------------------------------------
+Step 'Building the website (website\build.py)'
+& $pythonExe @pythonArgs (Join-Path $PSScriptRoot 'website\build.py')
+if ($LASTEXITCODE -ne 0) { Fail 'The website build failed (website\build.py).' }
+
+# --- 3b. Website downloads -------------------------------------------------------
+# Only the current version is ever published: anything else in the folder - an older
+# build, a loose installer from the old layout - is removed, so stale files are never
+# uploaded. This runs AFTER build.py, which wipes dist\.
+Step 'Adding the downloads to the website'
+$downloads = Get-SiteDownloadsPath -Root $PSScriptRoot
+$published = @(Publish-SiteDownloadsToSite -Root $PSScriptRoot -Version $version)
+Write-Host ("  {0} download(s) in {1} (NikPak {2})" -f $published.Count, $downloads, $version)
+foreach ($p in $published) { Write-Host "     $p" }
+
+# Every download button of site.json must have its file, or the site offers a 404.
+# This is a hard stop by default - publishing a page whose buttons lead nowhere is the
+# exact failure this script is meant to prevent.
+$complete = $true
+try { Assert-SiteDownloadsComplete -Root $PSScriptRoot -Version $version }
+catch {
+    $complete = $false
     Write-Host ''
-    Write-Host '  WARNING: these downloads of the current version are missing,' -ForegroundColor Yellow
-    Write-Host '  so their buttons will lead to a 404 on the site:' -ForegroundColor Yellow
-    foreach ($m in $missing) { Write-Host "     $m" -ForegroundColor Yellow }
-    Write-Host '  Build them first: buildmac.ps1 / buildunix.ps1 (or buildwin.ps1 for the setups).' -ForegroundColor Yellow
-    Write-Host '  Continuing in 5 s - press Ctrl+C to stop.' -ForegroundColor DarkYellow
-    Start-Sleep -Seconds 5
+    Write-Host $_.Exception.Message -ForegroundColor Red
+    if (-not $AllowMissingDownloads) {
+        Fail ("Not publishing: the site on the server is unchanged.`n" +
+              "Build the missing platform(s), then run .\buildweb.ps1 again.`n" +
+              "(-AllowMissingDownloads publishes anyway - those buttons will be 404s.)")
+    }
+    Write-Host '  Publishing anyway (-AllowMissingDownloads).' -ForegroundColor Yellow
 }
 
 # --- 4. Upload the website (FTP) -------------------------------------------------
@@ -186,12 +220,13 @@ function Write-FtpProgress([int]$done, [int]$count, [long]$sent, [long]$total, [
 Step 'Uploading the website (FTP)'
 Write-Host '  public site only - the admin part stays offline' -ForegroundColor DarkGray
 $creds = New-Object System.Net.NetworkCredential($FtpUser, $FtpPass)
-$localDir = (Resolve-Path 'website\dist').Path
+$localDir = (Resolve-Path 'website').Path
 $remoteRel = $FtpBasePath.Trim('/')
 Ensure-FtpPath "ftp://$FtpHost" $remoteRel $creds
 $ftpUrl = "ftp://$FtpHost/$remoteRel"
 Write-Host "  $localDir  ->  $ftpUrl"
-$files = @(Get-ChildItem -LiteralPath $localDir -Recurse -File)
+# the published site, not its sources (i18n\, static\, tech\, build.py, site.json)
+$files = @(Get-SiteFilesToPublish -Root $PSScriptRoot)
 $fileCount = $files.Count
 $totalBytes = [long]0
 if ($fileCount -gt 0) { $totalBytes = [long](($files | Measure-Object -Property Length -Sum).Sum) }
@@ -328,4 +363,52 @@ try {
     Write-Host "  $removed old download(s) removed from the server" -ForegroundColor $c
 } catch {
     Write-Host "  could not list/clean $remoteDownloads : $($_.Exception.Message)" -ForegroundColor Yellow
+}
+
+# --- 5b. Remove the old per-language folders on the server ------------------------
+# The site used to be published as en/index.html, fr/index.html ...; it is one set of
+# pages now, with the language chosen in the browser. The old folders would keep
+# serving the previous release for ever, so they are deleted (best effort: a host may
+# refuse, which is only reported).
+Step 'Removing the old per-language folders on the server'
+function Remove-FtpDir([string]$url, $creds) {
+    try {
+        $names = Get-FtpNames $url $creds
+    } catch { return }
+    foreach ($n in $names) {
+        $name = ($n -split '/')[-1].Trim()
+        if ($name -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]*$') { continue }
+        $child = "$url/$name"
+        if ($n -match '^d' -or $n -match '/$') { Remove-FtpDir $child $creds; continue }
+        # LIST detail lines start with a mode; a bare name is a file
+        if ($n -match '^[d-][rwx-]{9}') {
+            if ($n.StartsWith('d')) { Remove-FtpDir $child $creds }
+            else {
+                try { $r = New-FtpRequest $child $creds ([System.Net.WebRequestMethods+Ftp]::DeleteFile); $r.GetResponse().Close() } catch { }
+            }
+            continue
+        }
+        try { $r = New-FtpRequest $child $creds ([System.Net.WebRequestMethods+Ftp]::DeleteFile); $r.GetResponse().Close() } catch { }
+    }
+    try { $r = New-FtpRequest $url $creds ([System.Net.WebRequestMethods+Ftp]::RemoveDirectory); $r.GetResponse().Close() } catch { }
+}
+$removedDirs = 0
+foreach ($c in @('en','zh','hi','es','ar','fr','bn','pt','ru','id','ja')) {
+    $u = "ftp://$FtpHost/" + (($FtpBasePath.Trim('/') + '/' + $c).TrimStart('/'))
+    try { $null = Get-FtpNames $u $creds; Remove-FtpDir $u $creds; $removedDirs++; Write-Host "  removed /$c/" -ForegroundColor DarkYellow } catch { }
+}
+Write-Host ("  {0} old language folder(s) removed (if the host allowed it)" -f $removedDirs)
+
+# --- 6. Commit and push the source ----------------------------------------------
+# Steps 2 and 3 rewrote website, website\site.json (the sizes) and the downloads
+# checksums. A publish that leaves the tree dirty makes the next buildmac.ps1 /
+# buildunix.ps1 refuse to start - the failure nicol hit on 2026-11-14.
+Step 'Committing the release source'
+$GitStatus = Complete-ReleaseSource -Root $PSScriptRoot -SkipCommit:$SkipCommit
+
+Step 'Done'
+Write-Host ("  NikPak {0} is published (site {1})" -f $version, $(if ($complete) { 'complete' } else { 'with missing downloads' })) -ForegroundColor Green
+Write-Host ("  git: " + $GitStatus)
+if ($GitStatus -like 'FAILED*' -or $GitStatus -like 'skipped*') {
+    Write-Host '       run .\commit.ps1 before the next buildmac.ps1 / buildunix.ps1' -ForegroundColor Yellow
 }

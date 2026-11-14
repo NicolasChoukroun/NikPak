@@ -1,11 +1,174 @@
-/* NikPak web site: menu, language picker, reveal effects, the animated app window, charts */
+/* NikPak web site: language, menu, reveal effects, the animated app window, charts.
+   One set of pages, eleven languages: the text is English in the HTML and carries
+   data-i18n, and this file swaps it from assets/i18n/<lang>.json - the same model as
+   the NikEdit site. */
 (function () {
   'use strict';
   var doc = document.documentElement;
   doc.classList.remove('no-js');
-  var lang = document.body.getAttribute('data-lang');
-  try { localStorage.setItem('nikpak_lang', lang); } catch (e) {}
-  document.cookie = 'nikpak_lang=' + lang + ';path=/;max-age=31536000;SameSite=Lax';
+
+  var S = window.NP_SITE || { langs: [{ code: 'en', native: 'English', html: 'en' }], flags: {}, cats: {}, version: '', email: '' };
+  var LANGS = S.langs, base = location.pathname.replace(/[^/]*$/, '');
+  var LSK = 'nikpak_lang';
+  var lang = 'en', dict = null, english = null;
+
+  function get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+  function pick() {
+    var v = get(LSK);
+    if (v && LANGS.some(function (l) { return l.code === v; })) return v;
+    var ls = navigator.languages || [navigator.language || 'en'];
+    for (var i = 0; i < ls.length; i++) {
+      var c = String(ls[i]).toLowerCase().split('-')[0];
+      if (LANGS.some(function (l) { return l.code === c; })) return c;
+    }
+    return 'en';
+  }
+
+  /* a.b[3].c -> value */
+  function lookup(d, key) {
+    var parts = key.replace(/\[(\d+)\]/g, '.$1').split('.'), v = d;
+    for (var i = 0; i < parts.length; i++) {
+      if (v == null) return null;
+      v = v[parts[i]];
+    }
+    return v;
+  }
+
+  function t(key, vars) {
+    var src = dict || english || {};
+    var v = lookup(src, key);
+    if (v == null && english) v = lookup(english, key);
+    if (v == null) return null;
+    v = String(v);
+    if (vars) Object.keys(vars).forEach(function (k) { v = v.split('{' + k + '}').join(vars[k]); });
+    v = v.split('{}').join(vars && vars['0'] != null ? vars['0'] : '');
+    v = v.split('{v}').join(S.version || '');
+    v = v.split('{email}').join(S.email || '');
+    return v;
+  }
+
+  function varsOf(el) {
+    var raw = el.getAttribute('data-i18n-vars');
+    if (!raw) return null;
+    try { return JSON.parse(raw); } catch (e) { return null; }
+  }
+
+  function apply() {
+    document.documentElement.lang = (LANGS.filter(function (l) { return l.code === lang; })[0] || {}).html || lang;
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    document.body.setAttribute('data-lang', lang);
+
+    document.querySelectorAll('[data-i18n]').forEach(function (el) {
+      var v = t(el.getAttribute('data-i18n'), varsOf(el));
+      if (v == null) return;
+      if (el.tagName === 'TITLE') {
+        el.textContent = v + (el.getAttribute('data-suffix') || '');
+        return;
+      }
+      el.innerHTML = v;
+    });
+    // attributes: data-i18n-content, data-i18n-placeholder, data-i18n-aria-label ...
+    document.querySelectorAll('*').forEach(function (el) {
+      if (!el.attributes) return;
+      for (var i = 0; i < el.attributes.length; i++) {
+        var a = el.attributes[i];
+        if (a.name.indexOf('data-i18n-') !== 0 || a.name === 'data-i18n-vars' || a.name === 'data-i18n') continue;
+        var v = t(a.value);
+        if (v != null) el.setAttribute(a.name.slice(10), v);
+      }
+    });
+    var cats = (S.cats && S.cats[lang]) || (S.cats && S.cats.en) || [];
+    document.querySelectorAll('.apps-menu .apps-cat').forEach(function (el, i) {
+      if (cats[i]) el.textContent = cats[i];
+    });
+    var fl = document.getElementById('langFlag');
+    if (fl && S.flags[lang]) fl.innerHTML = S.flags[lang];
+    var nm = document.getElementById('langName');
+    if (nm) nm.textContent = (LANGS.filter(function (l) { return l.code === lang; })[0] || {}).native || lang;
+    document.querySelectorAll('.lang-item').forEach(function (b) {
+      b.classList.toggle('active', b.getAttribute('data-code') === lang);
+      b.setAttribute('aria-current', b.getAttribute('data-code') === lang ? 'true' : 'false');
+    });
+    if (document.body.getAttribute('data-page') === 'tech') loadTech();
+    document.dispatchEvent(new CustomEvent('nikpak:lang'));
+  }
+
+  /* the technical guide: English is in tech.html, the other ten are fetched */
+  function loadTech() {
+    var box = document.querySelector('.tech-content');
+    if (!box) return;
+    if (lang === 'en') {
+      if (box.getAttribute('data-en') != null) box.innerHTML = box.getAttribute('data-en');
+      return;
+    }
+    if (box.getAttribute('data-en') == null) box.setAttribute('data-en', box.innerHTML);
+    fetch(base + 'assets/tech/' + lang + '.html').then(function (r) {
+      if (!r.ok) throw 0; return r.text();
+    }).then(function (html) {
+      box.innerHTML = html;
+      var aside = document.querySelector('aside.toc');
+      if (aside) {
+        var label = aside.querySelector('.label');
+        return fetch(base + 'assets/tech/' + lang + '-toc.html').then(function (r) {
+          if (!r.ok) throw 0; return r.text();
+        }).then(function (toc) {
+          aside.innerHTML = (label ? label.outerHTML : '') + toc;
+        });
+      }
+    }).catch(function () { /* keep the English text */ });
+  }
+
+  function buildMenu() {
+    var menu = document.getElementById('langMenu');
+    if (!menu) return;
+    LANGS.forEach(function (l) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'lang-item';
+      b.setAttribute('data-code', l.code);
+      b.setAttribute('role', 'menuitem');
+      b.innerHTML = (S.flags[l.code] || '') + '<span>' + l.native + '</span>';
+      b.addEventListener('click', function () {
+        lang = l.code; set(LSK, lang); apply(); closeLang();
+      });
+      menu.appendChild(b);
+    });
+  }
+
+  function closeLang() {
+    var lp = document.getElementById('lang');
+    if (!lp) return;
+    lp.classList.remove('open');
+    var b = lp.querySelector('button');
+    if (b) b.setAttribute('aria-expanded', 'false');
+  }
+
+  window.NP = {
+    t: t,
+    lang: function () { return lang; },
+    dict: function (keys) {
+      // {name: "buy.pay_btn"} -> {name: "<the text in the current language>"}
+      var o = {};
+      Object.keys(keys || {}).forEach(function (k) {
+        Object.defineProperty(o, k, { get: function () { return t(keys[k]) || ''; }, enumerable: true });
+      });
+      return o;
+    }
+  };
+
+  function start() {
+    buildMenu();
+    lang = pick();
+    try { localStorage.setItem(LSK, lang); } catch (e) {}
+    var path = base + 'assets/i18n/' + lang + '.json';
+    if (lang === 'en') { apply(); return; }
+    fetch(path).then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) { dict = d; apply(); })
+      .catch(function () { apply(); });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 
   // mobile menu
   var top = document.getElementById('top');
@@ -24,15 +187,8 @@
       var open = lp.classList.toggle('open');
       b.setAttribute('aria-expanded', open ? 'true' : 'false');
     });
-    document.addEventListener('click', function () { lp.classList.remove('open'); b.setAttribute('aria-expanded', 'false'); });
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { lp.classList.remove('open'); b.setAttribute('aria-expanded', 'false'); } });
-    // keep the query string (seats, topic...) and the anchor when switching language
-    lp.querySelectorAll('.lang-menu a').forEach(function (a) {
-      a.addEventListener('click', function () {
-        try { localStorage.setItem('nikpak_lang', a.getAttribute('data-lang')); } catch (e) {}
-        a.href = a.getAttribute('href').split('?')[0].split('#')[0] + location.search + location.hash;
-      });
-    });
+    document.addEventListener('click', function () { closeLang(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeLang(); });
   }
 
   // toast
@@ -205,39 +361,4 @@
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') drops.forEach(function (d) { d.open = false; });
   });
-})();
-
-/* "Our Apps": the three group titles follow the language of the page (the app names are brands) */
-(function () {
-  var T = {
-    en: 'Tools|Audio|Games',
-    zh: '工具|音频|游戏',
-    hi: 'टूल|ऑडियो|गेम',
-    es: 'Herramientas|Audio|Juegos',
-    fr: 'Outils|Audio|Jeux',
-    ar: 'الأدوات|الصوتيات|الألعاب',
-    bn: 'টুল|অডিও|গেম',
-    pt: 'Ferramentas|Áudio|Jogos',
-    ru: 'Инструменты|Аудио|Игры',
-    id: 'Alat|Audio|Permainan',
-    ur: 'ٹولز|آڈیو|گیمز',
-    de: 'Werkzeuge|Audio|Spiele',
-    ja: 'ツール|オーディオ|ゲーム',
-    tr: 'Araçlar|Ses|Oyunlar',
-    ko: '도구|오디오|게임',
-    vi: 'Công cụ|Âm thanh|Trò chơi',
-    it: 'Strumenti|Audio|Giochi',
-    pl: 'Narzędzia|Audio|Gry',
-    uk: 'Інструменти|Аудіо|Ігри',
-    nl: 'Hulpmiddelen|Audio|Spellen',
-    th: 'เครื่องมือ|เสียง|เกม'
-  };
-  function paint() {
-    var l = ((document.documentElement.getAttribute('lang') || (document.body && document.body.getAttribute('data-lang')) || 'en') + '').toLowerCase().split('-')[0];
-    var t = (T[l] || T.en).split('|');
-    var cats = document.querySelectorAll('.apps-menu .apps-cat');
-    for (var i = 0; i < cats.length && i < t.length; i++) cats[i].textContent = t[i];
-  }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', paint); else paint();
-  if (window.MutationObserver) new MutationObserver(paint).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
 })();

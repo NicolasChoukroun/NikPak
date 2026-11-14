@@ -7,9 +7,9 @@
     binaries\unnik-<version>-setup.exe     unNik setup (unNik alone, freeware)
     binaries\SHA256SUMS.txt                checksums (for download sites)
 
-  It also rebuilds the website (python website\build.py, so website\dist is
-  always current), copies the built files into website\dist\downloads\, and
-  uploads the public website\dist\ to the web host by FTP (overwriting),
+  It also rebuilds the website (python website\build.py - the pages are generated
+  straight into website\, next to the downloads), and uploads the public site to the
+  web host by FTP (overwriting),
   unless -NoUpload. The admin part is NOT uploaded: it stays offline.
 
   Usage (from the nikpak folder, in PowerShell):
@@ -23,7 +23,7 @@
 
   The version is read from Cargo.toml (or taken from -Version), written into
   Cargo.lock, website\site.json and website\version.json, and every file in
-  binaries\, dist\ and website\dist\downloads\ that carries another version is
+  binaries\, dist\ and website\downloads\ that carries another version is
   deleted - only the version being built stays.
   buildwin.ps1 adds the per-build bump; use it for a normal delivery.
 
@@ -31,12 +31,13 @@
   Python 3.8+ (winget install Rustlang.Rustup / JRSoftware.InnoSetup /
   Python.Python.3.12).
 #>
-param([switch]$Test, [switch]$Clean, [switch]$NoUpload, [string]$Version)
+param([switch]$Test, [switch]$Clean, [switch]$NoUpload, [switch]$SkipCommit, [string]$Version)
 
 $ErrorActionPreference = 'Stop'
 Set-Location -Path $PSScriptRoot
 . (Join-Path $PSScriptRoot 'scripts\version.ps1')
 $started = Get-Date
+$GitStatus = 'not committed'
 
 function Fail($msg) {
     Write-Host ''
@@ -163,6 +164,9 @@ $files = @('nikpak.exe', 'unNik.exe', "nikpak-$ver-setup.exe", "unnik-$ver-setup
 foreach ($f in $files) {
     Copy-Item -Force (Join-Path 'dist' $f) (Join-Path 'binaries' $f)
 }
+  # The eleven manuals, before the pack: release-packaging copies every *.pdf
+  # from documents\manuals into the zip's Documentation folder.
+  & (Join-Path $PSScriptRoot 'scripts\build-docs.ps1')
 
 # --- 5b. The Windows download ---------------------------------------------------------
 # **One zip, not four loose files.** Nikpak-<ver>-Windows.zip holds both programs and
@@ -188,7 +192,7 @@ $winZip = New-SitePackage -Product 'Nikpak' -Version $ver -Platform 'Windows' `
         @{ Pattern = 'nikpak.exe' },
         @{ Pattern = 'unNik.exe' }
     ) `
-    -Documentation (Join-Path $PSScriptRoot 'documents') `
+    -Documentation (Join-Path $PSScriptRoot 'documents\manuals') `
     -Readme $winReadme
 if (-not $winZip) { Fail 'The Windows download could not be packed (nothing matched in binaries\).' }
 
@@ -199,41 +203,75 @@ $sums = foreach ($f in @($files + (Split-Path -Path $winZip -Leaf))) {
 }
 Set-Content -Path 'binaries\SHA256SUMS.txt' -Value $sums -Encoding ascii
 
+# --- 5c. Put the zip where the download button reads it -------------------------------
+# **Straight after packing, before anything else can fail.** website\downloads\ IS the
+# folder the button links to; a build that packs a zip into binaries\ and stops has
+# published nothing (that is what happened on 2026-11-14).
+Step 'Publishing the Windows download'
+. (Join-Path $PSScriptRoot 'scripts\site-downloads.ps1')
+$published = @(Publish-SiteDownloadsToSite -Root $PSScriptRoot -Version $ver)
+foreach ($n in $published) { Write-Host "  website\downloads\$n" -ForegroundColor Green }
+
+# --- 5d. The sizes the download page prints -------------------------------------------
+# Written into website\site.json BEFORE the site is built (the page reads the figure
+# from there), and taken from the zips in binaries\ - the file that is published in a
+# moment.
+Step 'Download sizes'
+Set-DownloadSizes -Root $PSScriptRoot | Out-Null
+
 # --- 6. The website (python website\build.py) -----------------------------------------
-# Rebuilds website\dist from i18n\, static\ and php\. It wipes dist\ first, so it
-# must run BEFORE the downloads are copied into dist\downloads\ below.
+# Rebuilds the pages from i18n\, static\ and php\ straight into website\. It does
+# not touch downloads\, so the zip published above stays where the button finds it.
 Step 'Building the website (website\build.py)'
 # $pythonExe / $pythonArgs were found in step 1.
 & $pythonExe @pythonArgs (Join-Path $PSScriptRoot 'website\build.py')
 if ($LASTEXITCODE -ne 0) { Fail 'The website build failed (website\build.py).' }
 
 # --- 7. Website downloads -------------------------------------------------------------
-# Every published build goes into website\dist\downloads\ so the site's download
-# buttons (build.py / site.json) always point at real files. The Windows files come
-# from this run; the macOS / Linux / .deb packages are added by buildmac.ps1 and
-# buildunix.ps1, which copy their downloads here too.
-Step 'Adding the downloads to the website'
-$downloads = Join-Path $PSScriptRoot 'website\dist\downloads'
-New-Item -ItemType Directory -Force -Path $downloads | Out-Null
-# **The zips only.** This platform's, plus any other platform's of this version that
-# buildmac/buildunix have already staged. Everything else in the folder is an older
-# build or the older loose-file layout.
-$keep = @((Split-Path -Path $winZip -Leaf), 'SHA256SUMS.txt')
-foreach ($z in @(Get-PlatformPackages -Product 'Nikpak' -Version $ver -Dir (Join-Path $PSScriptRoot 'binaries'))) {
-    $keep += $z.Name
+# Every published build goes into website\downloads\ so the site's download
+# buttons (build.py / site.json) always point at real files. The Windows zip comes
+# from this run; the macOS / Linux zips are added by buildmac.ps1 and buildunix.ps1,
+# which publish theirs the same way.
+#
+# **This step must come AFTER step 6.** website\build.py rebuilds dist/ from
+# scratch, so a zip copied in before it is wiped out again - which is exactly how a
+# buildwin run on 2026-11-14 left the site's download folder empty while the zip sat
+# in binaries\.
+Step 'Downloads of this release'
+$now = @(Publish-SiteDownloadsToSite -Root $PSScriptRoot -Version $ver)
+Write-Host ("  {0} download(s) in {1}:" -f $now.Count, (Get-SiteDownloadsPath -Root $PSScriptRoot))
+foreach ($p in $now) { Write-Host "     $p" }
+# The Windows button must work now; the macOS / Linux ones only after those builds
+# have run, so they are reported (not fatal) - buildweb.ps1 is where all three are
+# required, and it refuses to publish a site with a dangling button.
+foreach ($k in @('macos', 'linux')) {
+    $rel = Get-NikpakDownloadFile -Root $PSScriptRoot -Key $k
+    if ($rel -and -not (Test-Path -LiteralPath (Join-Path (Get-SiteDownloadsPath -Root $PSScriptRoot) (Split-Path -Path $rel -Leaf)))) {
+        Write-Host ("  WARNING: the {0} download is not built yet - run .\{1} for {2}" -f
+                    $k, $(if ($k -eq 'macos') { 'buildmac.ps1' } else { 'buildunix.ps1' }), $ver) -ForegroundColor Yellow
+    }
 }
-foreach ($d in @(Remove-OtherDownloads -Downloads $downloads -Keep $keep)) {
-    Write-Host "  removed an older download: $d" -ForegroundColor DarkYellow
-}
-$n = Copy-Downloads -From (Join-Path $PSScriptRoot 'binaries') -To $downloads -Names $keep
-Write-Host "  $n download(s) in $downloads"
+
+# --- 7b. Commit and push the release source -------------------------------------------
+# The build has just edited the tree: the version (Cargo.toml, Cargo.lock, site.json,
+# version.json), the download sizes in site.json and the rebuilt website. Leaving
+# that uncommitted is what makes buildmac.ps1 / buildunix.ps1 refuse to start ("this
+# folder has uncommitted changes") - the failure nicol hit on 2026-11-14.
+#
+# commit.ps1 does what he would type: it keeps build output and keys\ out, refuses a
+# file near GitHub's limit and retries a push GitHub drops. A failed commit does not
+# fail the build (the binaries exist and are about to be published) - it is reported
+# in the summary in red.
+Step 'Committing the release source'
+. (Join-Path $PSScriptRoot 'scripts\release-commit.ps1')
+$GitStatus = Complete-ReleaseSource -Root $PSScriptRoot -SkipCommit:$SkipCommit
 
 # --- 8. Upload the website (FTP) ------------------------------------------------------
 # Automatic upload of the PUBLIC site (with its downloads), overwriting the files
 # on the server.
 #
 # The admin part stays OFFLINE on purpose: it is never uploaded by this script.
-# Only website\dist (the public pages) goes out. Do not add an admin folder to
+# Only website (the public pages) goes out. Do not add an admin folder to
 # $FtpUploads below.
 #
 # The credentials live in ftp-config.ps1 (git-ignored). If it is missing, copy
@@ -244,7 +282,7 @@ $FtpUploads = @()
 if (Test-Path -LiteralPath $FtpConfig) {
     . $FtpConfig
     $FtpUploads = @(
-        @{ Local = (Join-Path $PSScriptRoot 'website\dist'); Remote = $FtpBasePath }
+        @{ Local = (Join-Path $PSScriptRoot 'website'); Remote = $FtpBasePath }
     )
 }
 
@@ -307,6 +345,15 @@ if (-not $NoUpload) {
     if (-not $FtpUploads.Count) {
         throw "Missing $FtpConfig - copy ftp-config.example.ps1 to ftp-config.ps1 and fill in the FTP host, user, password and base path (or build with -NoUpload)."
     }
+    # Publishing is the one moment a download button can start pointing at nothing.
+    # Say it here, before the upload, and let the operator stop it.
+    try { Assert-SiteDownloadsComplete -Root $PSScriptRoot -Version $ver }
+    catch {
+        Write-Host ''
+        Write-Host $_.Exception.Message -ForegroundColor Yellow
+        Write-Host '  Continuing in 10 s - press Ctrl+C to stop and build the other platforms first.' -ForegroundColor DarkYellow
+        Start-Sleep -Seconds 10
+    }
     Write-Host '  public site only - the admin part stays offline' -ForegroundColor DarkGray
     $creds = New-Object System.Net.NetworkCredential($FtpUser, $FtpPass)
     foreach ($u in $FtpUploads) {
@@ -319,7 +366,8 @@ if (-not $NoUpload) {
         Ensure-FtpPath "ftp://$FtpHost" $remoteRel $creds
         $ftpUrl = "ftp://$FtpHost/$remoteRel"
         Write-Host "  $localDir  ->  $ftpUrl"
-        $upFiles = @(Get-ChildItem -LiteralPath $localDir -Recurse -File)
+        # the published site, not its sources (i18n\, static\, tech\, build.py, site.json)
+        $upFiles = @(Get-SiteFilesToPublish -Root $PSScriptRoot)
         $fileCount = $upFiles.Count
         $totalBytes = [long]0
         if ($fileCount -gt 0) { $totalBytes = [long](($upFiles | Measure-Object -Property Length -Sum).Sum) }
@@ -429,10 +477,16 @@ Write-Host ''
 Write-Host "Done in $([math]::Round(((Get-Date) - $started).TotalMinutes, 1)) min - NikPak $ver" -ForegroundColor Green
 Write-Host ''
 Write-Host 'Files generated:' -ForegroundColor Cyan
-foreach ($f in $files + 'SHA256SUMS.txt') {
+foreach ($f in @($files + 'SHA256SUMS.txt' + (Split-Path -Path $winZip -Leaf) + $published)) {
     $p = Join-Path $PSScriptRoot "binaries\$f"
+    if (-not (Test-Path -LiteralPath $p)) { continue }
     $mb = [math]::Round((Get-Item $p).Length / 1MB, 2)
     Write-Host ("  {0,8} MB  {1}" -f $mb, $p) -ForegroundColor Green
+}
+Write-Host ''
+Write-Host ("Git:      " + $GitStatus)
+if ($GitStatus -like 'FAILED*' -or $GitStatus -like 'skipped*') {
+    Write-Host '          buildmac.ps1 / buildunix.ps1 will refuse to start until this is committed and pushed' -ForegroundColor Yellow
 }
 Write-Host ''
 Write-Host 'Before publishing, sign the .exe files with your code-signing certificate (SmartScreen).'

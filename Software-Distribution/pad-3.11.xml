@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XML_DIZ_INFO>
+  <MASTER_PAD_VERSION_INFO>
+    <MASTER_PAD_VERSION>3.11</MASTER_PAD_VERSION>
+    <MASTER_PAD_EDITOR>build_pads.py (Nikkoid)</MASTER_PAD_EDITOR>
+    <MASTER_PAD_INFO>Portable Application Description, or PAD, is a data set standard of the Association of Software Professionals (ASP, https://www.asp-software.org) that lets a publisher describe a program once and every download site read the same description.</MASTER_PAD_INFO>
+  </MASTER_PAD_VERSION_INFO>
+  <Company_Info>
+    <Company_Name>Nikkoid LLC</Company_Name>
+    <Address_1></Address_1>
+    <Address_2></Address_2>
+    <City_Town>Paris</City_Town>
+    <State_Province></State_Province>
+    <Zip_Postal_Code></Zip_Postal_Code>
+    <Country>France</Country>
+    <Company_WebSite_URL>https://nikkoid.com</Company_WebSite_URL>
+    <Contact_Info>
+      <Author_First_Name>Nicolas</Author_First_Name>
+      <Author_Last_Name>Choukroun</Author_Last_Name>
+      <Author_Email>nikko@nikkoid.com</Author_Email>
+      <Contact_First_Name>Nicolas</Contact_First_Name>
+      <Contact_Last_Name>Choukroun</Contact_Last_Name>
+      <Contact_Email>nikko@nikkoid.com</Contact_Email>
+    </Contact_Info>
+    <Support_Info>
+      <Sales_Email>sales@nikkoid.com</Sales_Email>
+      <Support_Email>support@nikkoid.com</Support_Email>
+      <General_Email>contact@nikkoid.com</General_Email>
+      <Sales_Phone></Sales_Phone>
+      <Support_Phone></Support_Phone>
+      <General_Phone></General_Phone>
+      <Fax_Phone></Fax_Phone>
+    </Support_Info>
+  </Company_Info>
+  <Program_Info>
+    <Program_Name>NikPak</Program_Name>
+    <Program_Version>1.13.2</Program_Version>
+    <Program_Release_Month>11</Program_Release_Month>
+    <Program_Release_Day>14</Program_Release_Day>
+    <Program_Release_Year>2026</Program_Release_Year>
+    <Program_Cost_Dollars>19.00</Program_Cost_Dollars>
+    <Program_Cost_Other_Code></Program_Cost_Other_Code>
+    <Program_Cost_Other></Program_Cost_Other>
+    <Program_Type>Shareware</Program_Type>
+    <Program_Category_Class>System Utilities::File Compression</Program_Category_Class>
+    <Program_Specific_Category>Utilities</Program_Specific_Category>
+    <Program_Release_Status>Minor Update</Program_Release_Status>
+    <Program_Install_Support>Install and Uninstall</Program_Install_Support>
+    <Program_OS_Support>WinOther,Linux,Mac OS X</Program_OS_Support>
+    <Program_Language>English,Arabic,Bengali,Chinese,French,German,Hindi,Indonesian,Japanese,Portuguese,Russian,Spanish</Program_Language>
+    <Program_Change_Info>The archived folder can now be dropped straight onto the window to unpack it. Split volumes and self-extracting .exe archives need a registered copy.</Program_Change_Info>
+    <Program_System_Requirements>Windows 10/11 x64, macOS 11+, or 64-bit Linux (glibc 2.31+); 4 GB RAM; 200 MB disk.</Program_System_Requirements>
+    <Limitations>Free for private individuals with no time limit: an unregistered copy shows a registration reminder, and split volumes and self-extracting .exe archives need a licence. Companies need one licence per seat. unNik, the archive browser, is free for everyone.</Limitations>
+    <File_Info>
+      <File_Size_Bytes>17581485</File_Size_Bytes>
+      <File_Size_K>17169</File_Size_K>
+      <File_Size_MB>16.77</File_Size_MB>
+    </File_Info>
+    <Expire_Info>
+      <Has_Expire_Info>N</Has_Expire_Info>
+      <Expire_Count></Expire_Count>
+      <Expire_Based_On></Expire_Based_On>
+      <Expire_Other_Info></Expire_Other_Info>
+      <Expire_Month></Expire_Month>
+      <Expire_Day></Expire_Day>
+      <Expire_Year></Expire_Year>
+    </Expire_Info>
+  </Program_Info>
+  <Web_Info>
+    <Application_URLs>
+      <Application_Info_URL>http://nikpak.nikkoid.com/</Application_Info_URL>
+      <Application_Order_URL>http://nikpak.nikkoid.com/buy.php</Application_Order_URL>
+      <Application_Screenshot_URL>http://nikpak.nikkoid.com/pad/screenshots/nikpak-1024x768.png</Application_Screenshot_URL>
+      <Application_Icon_URL>http://nikpak.nikkoid.com/pad/icon-64.png</Application_Icon_URL>
+      <Application_XML_File_URL>http://nikpak.nikkoid.com/pad.xml</Application_XML_File_URL>
+    </Application_URLs>
+    <Download_URLs>
+      <Primary_Download_URL>http://nikpak.nikkoid.com/downloads/Nikpak-1.13.2-Windows.zip</Primary_Download_URL>
+      <Secondary_Download_URL>http://nikpak.nikkoid.com/downloads/Nikpak-1.13.2-macOS.zip</Secondary_Download_URL>
+      <Additional_Download_URL_1>http://nikpak.nikkoid.com/downloads/Nikpak-1.13.2-Linux.zip</Additional_Download_URL_1>
+      <Additional_Download_URL_2></Additional_Download_URL_2>
+    </Download_URLs>
+  </Web_Info>
+  <Program_Descriptions>
+    <English>
+      <Keywords>archiver, file compression, encrypted archive, zstd, LZMA2, PPMd, self-extracting archive, split volumes, password protected archive, nik archive, unNik, compression utility, backup, Shareware, Windows, macOS, Linux</Keywords>
+      <Char_Desc_45>Encrypted archiver with Zstd, LZMA2 and PPMd</Char_Desc_45>
+      <Char_Desc_80>Fast encrypted archiver: Zstd, LZMA2, PPMd, split volumes, self-extracting .exe</Char_Desc_80>
+      <Char_Desc_250>NikPak is a fast archiver for Windows, macOS and Linux. It compresses with Zstandard, LZMA2 and PPMd, encrypts with Argon2id and XChaCha20-Poly1305, splits archives into volumes and builds self-extracting .exe files.</Char_Desc_250>
+      <Char_Desc_450>NikPak is a fast archiver for Windows, macOS and Linux. It compresses with Zstandard, LZMA2 and PPMd and recompresses the Deflate streams inside Office files, PDF and gzip for better ratios. Archives are encrypted with Argon2id and XChaCha20-Poly1305, can be split into volumes or built as a self-extracting .exe, and may carry a cover picture.</Char_Desc_450>
+      <Char_Desc_2000>NikPak is a fast, encrypted archiver for the .nik archive format, for Windows, macOS and Linux.
+
+It compresses with Zstandard, LZMA2 and PPMd, choosing per block: binary data goes through LZMA2, text through PPMd, and lower levels use multi-threaded Zstandard. Office documents (docx, xlsx, pptx), PDF and .gz files are already Deflate-compressed inside, so NikPak decodes those inner streams, compresses the plain content better and rebuilds the original streams bit for bit on extraction.
+
+Files are compressed on all cores, and an archive can be split into volumes or turned into a self-extracting .exe that unpacks on a machine with nothing installed. Encryption is Argon2id key derivation with XChaCha20-Poly1305 authenticated encryption. You can attach a cover picture and a legal statement that everyone must accept before extracting.
+
+The package also contains unNik, a free archive browser that opens .nik archives on any machine: browse folders, search, view text and extract. unNik is free for everyone, forever, with no registration.
+
+NikPak is shareware: free for private individuals without a time limit, with one licence per seat for companies. It is written in Rust and ships as a native window on Windows, macOS and Linux.</Char_Desc_2000>
+    </English>
+  </Program_Descriptions>
+  <Permissions>
+    <Distribution_Permissions>You may copy and distribute this package unaltered, with all files included and unchanged, and you may link to the publisher's download page. You may not charge for it, bundle it with other software, or distribute a modified build without written permission.</Distribution_Permissions>
+    <EULA>NikPak is shareware, copyright 2026 Nicolas Choukroun, distributed and licensed by Nikkoid LLC. A private individual may use the unregistered copy free of charge, without time limit, for personal and non-commercial purposes; the program shows a reminder that asks you to register, and a personal licence costs USD 19. Companies and organisations need one licence per seat. Split volumes and self-extracting archives are licensed features. unNik, the archive browser included in the package, is free for everyone with no registration. The program is provided as is, without warranty of any kind; to the maximum extent permitted by law the publisher is not liable for any loss arising from its use. You may not reverse engineer, decompile or modify the program, nor remove its licence checks.</EULA>
+  </Permissions>
+</XML_DIZ_INFO>

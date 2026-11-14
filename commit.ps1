@@ -18,7 +18,7 @@
 
   Build output never reaches the commit: target\, dist\, binaries\, keys\ and the Python
   caches are unstaged again after they have been picked up (see -Force). keys\ holds the
-  private licence key and must never be pushed. website\dist\ IS committed on purpose -
+  private licence key and must never be pushed. website\ IS committed on purpose -
   it is the built site - so it is only reported, never dropped.
 
 .PARAMETER Message
@@ -210,7 +210,7 @@ if ($hasChanges) {
   # missing; committing them is how a repository grows without bound - and keys\ holds the
   # private licence key, which must never leave this PC. They are taken out of the commit
   # again (the files stay on disk, and nothing is deleted).
-  # website\dist\ is NOT in this list: the built site is committed on purpose.
+  # website\ is NOT in this list: the built site is committed on purpose.
   $junkPatterns = @(
     '^target/', '^dist/', '^binaries/', '^keys/',
     '(^|/)__pycache__/', '\.pyc$',
@@ -232,7 +232,7 @@ if ($hasChanges) {
   # being committed, and stays in the repository for good - one of them is what made GitHub
   # refuse a push on 2026-11-12. `git rm --cached` untracks it: the file stays on disk, and this
   # commit removes it from the tree. Done on every run, so the state cannot drift back.
-  $binaryDirs = @('binaries', 'binaries-old', 'old-nikpad-binaries', 'website/downloads', 'website/dist/downloads')
+  $binaryDirs = @('binaries', 'binaries-old', 'old-nikpad-binaries', 'website/downloads', 'website/downloads')
   $stillTracked = @()
   foreach ($d in $binaryDirs) {
     if (@(Invoke-Git @('ls-files', '--', $d)).Count) { $stillTracked += $d }
@@ -277,16 +277,16 @@ if ($hasChanges) {
 
   # Not dropped, only shown: the owner's own call. Big binary material in a commit is
   # normal here (the guide's pictures and PDF, the site's screenshots), but worth a line
-  # so it is never a surprise afterwards - website\dist\downloads\ holds copies of the
+  # so it is never a surprise afterwards - website\downloads\ holds copies of the
   # installers, several MB each.
-  $notable = @($staged | Where-Object { $_ -match '^(binaries/|documents/|screenshots/|_to_delete/|_backup-|website/dist/downloads/)' })
+  $notable = @($staged | Where-Object { $_ -match '^(binaries/|documents/|screenshots/|_to_delete/|_backup-|website/downloads/)' })
   if ($notable.Count) {
     $bytes = 0
     foreach ($p in $notable) {
       # git prints forward slashes; both Windows and PowerShell accept them in a path
       try { $bytes += (Get-Item -LiteralPath (Join-Path $Root $p)).Length } catch { }
     }
-    Write-Host ("   including {0} large file(s) - documents\, screenshots\, website\dist\downloads\  ({1:n1} MB)" -f $notable.Count, ($bytes / 1MB)) -ForegroundColor Yellow
+    Write-Host ("   including {0} large file(s) - documents\, screenshots\, website\downloads\  ({1:n1} MB)" -f $notable.Count, ($bytes / 1MB)) -ForegroundColor Yellow
   }
 
   if (-not $staged.Count) {

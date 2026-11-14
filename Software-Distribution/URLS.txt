@@ -1,0 +1,14 @@
+product:  NikPak
+version:  1.13.2
+info:     https://nikpak.nikkoid.com/
+order:    https://nikpak.nikkoid.com/buy.php
+pad:      https://nikpak.nikkoid.com/pad.xml
+icon:     https://nikpak.nikkoid.com/pad/icon-64.png
+shot:     https://nikpak.nikkoid.com/pad/screenshots/nikpak-1024x768.png
+windows:  https://nikpak.nikkoid.com/downloads/Nikpak-1.13.2-Windows.zip
+macos:    https://nikpak.nikkoid.com/downloads/Nikpak-1.13.2-macOS.zip
+linux:    https://nikpak.nikkoid.com/downloads/Nikpak-1.13.2-Linux.zip
+
+support:  support@nikkoid.com
+sales:    sales@nikkoid.com
+author:   Nicolas Choukroun, Nikkoid LLC

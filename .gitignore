@@ -20,4 +20,11 @@ shop-config.php
 binaries-old/
 *.exe
 *.zip
-website/dist/downloads/
+# The site is website\ itself (one page set, language chosen in the browser): the zips
+# in website\downloads\ are published by FTP, not by git.
+website/downloads/
+# leftovers of the old per-language / dist layout, if an old build left them
+website/dist/
+# Python caches (website\build.py, website\tech\apply_lang.py)
+__pycache__/
+*.pyc

@@ -11,28 +11,41 @@
     1. The project on GitHub (NicolasChoukroun/nikpak) with your latest changes pushed.
     2. GitHub CLI: https://cli.github.com, then once:  gh auth login
 
-  The script keeps only the latest macOS package: it clears the macOS files from binaries\
-  first, and leaves the Windows / Linux files untouched.
+  GitHub builds the PUSHED commit, not the files on this PC, so this script refuses to
+  start when the folder has uncommitted changes, when HEAD is not pushed, or when the
+  pushed Cargo.toml carries another version. It verifies that the downloaded package
+  carries this version before it reaches binaries\ and the site.
+
+  It ends by putting Nikpak-<ver>-macOS.zip where the site's download button reads it,
+  writing its size into website\site.json, and committing + pushing what it changed
+  (commit.ps1), so buildunix.ps1 does not find a dirty tree.
 
 .PARAMETER Ref
   Branch or tag to build on GitHub (default: the current branch).
+
+.PARAMETER SkipCommit
+  Do not commit and push at the end (run .\commit.ps1 yourself).
 
 .EXAMPLE
   .\buildmac.ps1
   .\buildmac.ps1 -Ref v1.6.2
   powershell -ExecutionPolicy Bypass -File buildmac.ps1      (if scripts are blocked)
 #>
-param([string]$Ref = '')
+param([string]$Ref = '', [switch]$SkipCommit)
 
 $ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath $PSScriptRoot
 . (Join-Path $PSScriptRoot 'scripts\version.ps1')
+. (Join-Path $PSScriptRoot 'scripts\site-downloads.ps1')
+. (Join-Path $PSScriptRoot 'scripts\release-commit.ps1')
 # The macOS package must carry the same number as the Windows build: both read Cargo.toml.
 $Version = Get-NikpakVersion $PSScriptRoot
 $Dist = Join-Path $PSScriptRoot 'binaries'
+$Downloads = Get-SiteDownloadsPath -Root $PSScriptRoot
 $Workflow = '.github\workflows\build.yml'
 $Platforms = 'macos'
 $Artifacts = @('nikpak-macos')
+$GitStatus = ''
 
 function Step([string]$msg) { Write-Host ''; Write-Host "== $msg" -ForegroundColor Cyan }
 
@@ -86,22 +99,11 @@ function Start-RemoteBuild {
   Step 'macOS: starting the build on GitHub Actions'
   $branch = $Ref
   if (-not $branch) { $branch = (& git rev-parse --abbrev-ref HEAD).Trim() }
-  if (& git status --porcelain) { Write-Warning 'You have uncommitted changes: GitHub builds what is pushed, not the files on this PC.' }
-  $null = & git fetch --quiet origin $branch 2>$null
-  if (-not $LASTEXITCODE) {
-    $ahead = (& git rev-list --count "origin/$branch..HEAD" 2>$null)
-    if ($ahead -and [int]$ahead -gt 0) { Write-Warning "$ahead commit(s) are not pushed yet (git push): GitHub will build the older version." }
-    # Refuse to build a different version than the one on this PC (buildwin.ps1 bumped it):
-    # a stale push would give a macOS package that does not match the Windows build.
-    $remoteToml = & git show ('origin/{0}:Cargo.toml' -f $branch) 2>$null
-    if ($LASTEXITCODE -eq 0 -and $remoteToml) {
-      $m = [regex]::Match(($remoteToml -join "`n"), '(?m)^\s*version\s*=\s*"([^"]+)"')
-      if ($m.Success -and $m.Groups[1].Value -ne $Version) {
-        $msg = "GitHub has version $($m.Groups[1].Value) on '$branch', but this PC has $Version."
-        $msg += " Commit and push Cargo.toml first:  git add -A; git commit -m 'NikPak $Version'; git push"
-        throw $msg
-      }
-    }
+  # GitHub builds the pushed commit: refuse to start on a dirty or unpushed tree, or when
+  # origin carries another version. A warning here used to be ignored, and the macOS
+  # package then did not match the Windows one.
+  if (-not $Ref) {
+    Assert-PushedReleaseSource -Root $PSScriptRoot -Version $Version -Branch $branch -Platform 'macOS'
   }
   $since = (Get-Date).ToUniversalTime().AddSeconds(-15)
   $null = & gh workflow run build.yml --ref $branch -f platforms=$Platforms
@@ -161,25 +163,36 @@ try {
   $ok = $true
 }
 catch { Write-Host $_.Exception.Message -ForegroundColor Red }
+  # The eleven manuals, before the pack: release-packaging copies every *.pdf
+  # from documents\manuals into the zip's Documentation folder.
+  & (Join-Path $PSScriptRoot 'scripts\build-docs.ps1')
 
 if ($ok) {
     # the new build is safe on disk: now drop every other version (old installers,
     # downloads) so only the current one stays
     Step 'Removing older versions'
-    Remove-OldNikpakFiles -Root $PSScriptRoot -Version $Version -Dirs @('binaries', 'website\dist\downloads')
-    # put the new package where the web site's download buttons read it, so a
-    # later buildweb.ps1 / buildall.ps1 upload picks it up
-    #
+    Remove-OldNikpakFiles -Root $PSScriptRoot -Version $Version -Dirs @('binaries', 'website\downloads')
     # **One zip per platform.** The macOS artifact is itself a zip of the app, so it is
     # unpacked into Nikpak-<ver>-macOS.zip rather than nested inside it. Inside, the
     # names are the ones a Mac user expects.
     Step 'Packing the macOS download'
     . (Join-Path $PSScriptRoot 'scripts\release-packaging.ps1')
-    $pkg = Publish-SiteDownloads -Product 'Nikpak' -Version $Version -Platform 'macOS' `
-        -Binaries $Dist -Downloads (Join-Path $PSScriptRoot 'website\dist\downloads') `
+    $pkg = New-SitePackage -Product 'Nikpak' -Version $Version -Platform 'macOS' `
+        -Binaries $Dist `
         -FromArchive @(@{ Archive = 'nikpak-{v}-macos.zip'; Path = '' }) `
-        -Documentation (Join-Path $PSScriptRoot 'documents')
+        -Documentation (Join-Path $PSScriptRoot 'documents\manuals')
     if (-not $pkg) { throw 'Nothing could be packed for macOS.' }
+
+    # where the site's download button reads it, with its real size on the page
+    Step 'Publishing the macOS download'
+    $published = @(Publish-SiteDownloadsToSite -Root $PSScriptRoot -Version $Version)
+    Write-Host ("   {0} download(s) in {1}" -f $published.Count, $Downloads)
+    Set-DownloadSizes -Root $PSScriptRoot | Out-Null
+
+    # the build edited binaries\, the site's downloads and site.json: commit and push,
+    # or buildunix.ps1 refuses to start on a dirty tree
+    Step 'Committing the release source'
+    $GitStatus = Complete-ReleaseSource -Root $PSScriptRoot -SkipCommit:$SkipCommit
 }
 
 Step 'Summary'
@@ -189,3 +202,10 @@ $files = Get-ChildItem $Dist -File |
   Where-Object { $_.Name -like 'nikpak-*-macos.zip' } | Sort-Object Name
 if (-not $files) { Write-Host '   (nothing in binaries\ yet)' }
 foreach ($f in $files) { Write-Host ('   {0,-72} {1,8:N1} MB' -f $f.FullName, ($f.Length / 1MB)) }
+Write-Host ("   site: {0}" -f (Join-Path $Downloads ("Nikpak-$Version-macOS.zip")))
+if ($GitStatus) {
+  Write-Host ("   git:  " + $GitStatus)
+  if ($GitStatus -like 'FAILED*' -or $GitStatus -like 'skipped*') {
+    Write-Host '         run .\commit.ps1 before the next remote build' -ForegroundColor Yellow
+  }
+}

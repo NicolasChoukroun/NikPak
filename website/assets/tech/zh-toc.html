@@ -1,0 +1,105 @@
+<a href="#1-introduction">1 引言</a>
+<a href="#1-1-design-goals" class="sub">1.1 设计目标</a>
+<a href="#1-2-results-at-a-glance" class="sub">1.2 结果速览</a>
+<a href="#1-3-who-is-it-for" class="sub">1.3 它是为谁准备的？</a>
+<a href="#1-4-how-to-read-this-guide" class="sub">1.4 如何阅读本指南</a>
+<a href="#1-5-community-and-contact" class="sub">1.5 社区与联系方式</a>
+<a href="#2-feature-overview">2 功能概览</a>
+<a href="#2-1-capabilities" class="sub">2.1 功能</a>
+<a href="#2-2-nikpak-and-rar-side-by-side" class="sub">2.2 nikpak 与 RAR 对比</a>
+<a href="#3-command-line-reference">3 命令行参考</a>
+<a href="#3-1-commands" class="sub">3.1 命令</a>
+<a href="#3-2-options" class="sub">3.2 选项</a>
+<a href="#3-3-passwords-in-detail" class="sub">3.3 密码详解</a>
+<a href="#3-4-exit-codes" class="sub">3.4 退出码</a>
+<a href="#3-5-examples" class="sub">3.5 示例</a>
+<a href="#3-6-integration-with-total-commander-and-other-front-ends" class="sub">3.6 与 Total Commander 及其他前端的集成</a>
+<a href="#3-7-the-graphical-interface" class="sub">3.7 图形界面</a>
+<a href="#3-8-licence-and-registration-shareware" class="sub">3.8 许可证与注册（共享软件）</a>
+<a href="#3-9-unnik-the-free-archive-browser" class="sub">3.9 unNik，免费的压缩包浏览器</a>
+<a href="#3-10-skins" class="sub">3.10 皮肤</a>
+<a href="#3-11-the-file-manager-menu" class="sub">3.11 文件管理器菜单</a>
+<a href="#3-12-packages-create-package-and-open-package" class="sub">3.12 软件包：创建软件包与打开软件包</a>
+<a href="#3-13-split-volumes-and-self-extracting-exe" class="sub">3.13 分卷与自解压 .exe</a>
+<a href="#4-architecture">4 架构</a>
+<a href="#4-1-data-flow-when-creating-an-archive" class="sub">4.1 创建压缩包时的数据流</a>
+<a href="#4-2-source-code-map" class="sub">4.2 源代码图</a>
+<a href="#4-3-creating-an-archive-step-by-step" class="sub">4.3 逐步创建压缩包</a>
+<a href="#4-4-extracting-an-archive-step-by-step" class="sub">4.4 逐步解压压缩包</a>
+<a href="#4-5-memory-and-threading" class="sub">4.5 内存与线程</a>
+<a href="#5-the-nik-container-format">5 .nik 容器格式</a>
+<a href="#5-1-header" class="sub">5.1 文件头</a>
+<a href="#5-2-entry-records" class="sub">5.2 条目记录</a>
+<a href="#5-3-encrypted-body-framing" class="sub">5.3 加密主体分帧</a>
+<a href="#5-4-why-a-solid-stream" class="sub">5.4 为什么是固实流？</a>
+<a href="#5-5-versioning" class="sub">5.5 版本化</a>
+<a href="#5-6-multi-engine-body-version-3" class="sub">5.6 多引擎主体（版本 3）</a>
+<a href="#5-7-the-package-container-nikpack2" class="sub">5.7 软件包容器（NIKPACK2）</a>
+<a href="#5-8-split-volumes-and-the-sfx-trailer" class="sub">5.8 分卷与 SFX 尾部块</a>
+<a href="#6-the-compression-engine">6 压缩引擎</a>
+<a href="#6-1-why-zstandard" class="sub">6.1 为什么选择 Zstandard</a>
+<a href="#6-2-level-mapping" class="sub">6.2 级别映射</a>
+<a href="#6-3-large-window-and-long-distance-matching" class="sub">6.3 大窗口与长距离匹配</a>
+<a href="#6-4-multi-threading" class="sub">6.4 多线程</a>
+<a href="#6-5-integrity-inside-the-stream" class="sub">6.5 流内的完整性</a>
+<a href="#6-6-store-mode" class="sub">6.6 存储模式</a>
+<a href="#6-7-the-maximum-level-lzma2-and-ppmd" class="sub">6.7 最高级别：LZMA2 和 PPMd</a>
+<a href="#7-media-intelligence">7 媒体智能</a>
+<a href="#7-1-detection-by-content" class="sub">7.1 按内容检测</a>
+<a href="#7-2-the-trial-choosing-the-best-filter-per-file" class="sub">7.2 试算：为每个文件选择最佳过滤器</a>
+<a href="#7-3-the-nac-audio-codec" class="sub">7.3 NAC 音频编解码器</a>
+<a href="#7-4-self-verification" class="sub">7.4 自验证</a>
+<a href="#7-5-shuffle-and-shuffle-delta" class="sub">7.5 Shuffle 和 Shuffle+Delta</a>
+<a href="#7-6-protracker-mod-files" class="sub">7.6 ProTracker MOD 文件</a>
+<a href="#7-7-bmp-images" class="sub">7.7 BMP 图像</a>
+<a href="#7-8-why-this-beats-rar" class="sub">7.8 为什么这能胜过 RAR</a>
+<a href="#7-9-office-documents-pdf-and-gzip-deflate-recompression" class="sub">7.9 Office 文档、PDF 和 gzip：Deflate 再压缩</a>
+<a href="#8-encryption">8 加密</a>
+<a href="#8-1-threat-model" class="sub">8.1 威胁模型</a>
+<a href="#8-2-from-password-to-key-argon2id" class="sub">8.2 从密码到密钥：Argon2id</a>
+<a href="#8-3-xchacha20-poly1305-in-the-stream-construction" class="sub">8.3 STREAM 构造中的 XChaCha20-Poly1305</a>
+<a href="#8-4-what-an-observer-can-and-cannot-see" class="sub">8.4 观察者能看到和不能看到什么</a>
+<a href="#8-5-password-handling" class="sub">8.5 密码处理</a>
+<a href="#8-6-attack-tests" class="sub">8.6 攻击测试</a>
+<a href="#9-quantum-resistance">9 抗量子</a>
+<a href="#9-1-what-quantum-computers-change" class="sub">9.1 量子计算机改变什么</a>
+<a href="#9-2-nikpak-s-position" class="sub">9.2 nikpak 的立场</a>
+<a href="#9-3-what-about-the-password" class="sub">9.3 密码怎么办？</a>
+<a href="#9-4-harvest-now-decrypt-later" class="sub">9.4“先收割，后解密”</a>
+<a href="#9-5-honest-limits-and-the-road-ahead" class="sub">9.5 如实的局限与前路</a>
+<a href="#10-hardening-and-robustness">10 加固与健壮性</a>
+<a href="#10-1-safe-extraction" class="sub">10.1 安全解压</a>
+<a href="#10-2-bounded-decoders" class="sub">10.2 有界解码器</a>
+<a href="#10-3-safe-creation-and-honest-errors" class="sub">10.3 安全创建与如实的错误</a>
+<a href="#11-benchmarks">11 基准测试</a>
+<a href="#11-1-method" class="sub">11.1 方法</a>
+<a href="#11-2-media-files" class="sub">11.2 媒体文件</a>
+<a href="#11-3-general-data" class="sub">11.3 通用数据</a>
+<a href="#11-4-speed-on-a-single-large-media-file" class="sub">11.4 单个大媒体文件上的速度</a>
+<a href="#11-5-encryption-overhead" class="sub">11.5 加密开销</a>
+<a href="#11-6-reproducing-the-results" class="sub">11.6 复现结果</a>
+<a href="#11-7-second-run-nikpak-rar-7-7-zip-and-zip" class="sub">11.7 第二轮：nikpak、RAR 7、7-Zip 和 ZIP</a>
+<a href="#12-nikpak-and-rar-compared">12 nikpak 与 RAR 比较</a>
+<a href="#12-1-where-nikpak-is-ahead" class="sub">12.1 nikpak 领先之处</a>
+<a href="#12-2-where-rar-is-ahead" class="sub">12.2 RAR 领先之处</a>
+<a href="#12-3-quantum-resistance-in-perspective" class="sub">12.3 抗量子纵观</a>
+<a href="#12-4-which-one-to-choose" class="sub">12.4 该选哪个</a>
+<a href="#12-5-and-7-zip-and-zip" class="sub">12.5 那 7-Zip 和 ZIP 呢？</a>
+<a href="#13-building-deploying-and-integrating">13 构建、部署与集成</a>
+<a href="#13-1-windows-with-powershell" class="sub">13.1 用 PowerShell 在 Windows 上构建</a>
+<a href="#13-2-building-with-npm" class="sub">13.2 用 npm 构建</a>
+<a href="#13-3-a-self-contained-executable" class="sub">13.3 自包含可执行文件</a>
+<a href="#13-4-macos-and-linux" class="sub">13.4 macOS 和 Linux</a>
+<a href="#13-5-dependencies" class="sub">13.5 依赖</a>
+<a href="#13-6-scripting" class="sub">13.6 脚本化</a>
+<a href="#13-7-total-commander" class="sub">13.7 Total Commander</a>
+<a href="#14-testing-and-verification">14 测试与验证</a>
+<a href="#14-1-unit-tests" class="sub">14.1 单元测试</a>
+<a href="#14-2-end-to-end-tests" class="sub">14.2 端到端测试</a>
+<a href="#14-3-attack-tests" class="sub">14.3 攻击测试</a>
+<a href="#14-4-defects-found-by-testing" class="sub">14.4 测试发现的缺陷</a>
+<a href="#15-limitations-and-roadmap">15 局限与路线图</a>
+<a href="#15-1-current-limitations" class="sub">15.1 当前局限</a>
+<a href="#15-2-roadmap" class="sub">15.2 路线图</a>
+<a href="#a-appendix-a-format-constants-and-limits">A 附录 A：格式常量与限制</a>
+<a href="#b-appendix-b-glossary">B 附录 B：术语表</a>

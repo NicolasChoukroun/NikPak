@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>NikPak · Paddle</title>
+<link rel="icon" href="assets/favicon.ico" sizes="any">
+<link rel="stylesheet" href="assets/css/site.css">
+</head>
+<body>
+<main class="wrap" style="padding:80px 16px;max-width:560px">
+  <div class="panel center"><h1 class="glow-title" style="font-size:2.2rem">NikPak</h1><div class="rule"></div><p class="dim" style="margin-top:18px">Paddle…</p>
+  <p><a class="btn" id="back" href="buy.html">←</a></p></div>
+</main>
+<script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
+<script>
+(function () {
+  var q = new URLSearchParams(location.search), codes = ["en", "zh", "hi", "es", "ar", "fr", "bn", "pt", "ru", "id", "ja"];
+  var lang = codes.indexOf(q.get('lang')) >= 0 ? q.get('lang') : 'en';
+  var base = location.href.split('pay.html')[0];
+  document.getElementById('back').href = 'buy.html';
+  Paddle.Environment.set('sandbox');
+  Paddle.Initialize({
+    token: "test_REPLACE_ME",
+    checkout: { settings: { displayMode: 'overlay', theme: 'dark', locale: lang, successUrl: base + 'thanks.html?status=ok&provider=paddle&lang=' + lang } },
+    eventCallback: function (e) { if (e && e.name === 'checkout.closed') location.href = base + 'thanks.html?status=cancel&provider=paddle&lang=' + lang; }
+  });
+})();
+</script>
+</body>
+</html>

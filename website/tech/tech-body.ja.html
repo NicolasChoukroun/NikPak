@@ -1,0 +1,772 @@
+<h2 class="ch" id="1-introduction">1 はじめに</h2>
+<p><b>nikpak</b> は <code>.nik</code> 形式のコマンドラインアーカイバです。設計の出発点は四つあります。既存のツールより小さく圧縮すること、より高速に処理すること、現代的な暗号技術でデータを保護すること、そして単一の小さな実行ファイルとして Windows、macOS、Linux でそのまま動作することです。</p>
+<h3 class="se" id="1-1-design-goals">1.1 設計目標</h3>
+<ul><li><b>コンパクト。</b> 実際に大量にアーカイブされるデータで RAR 7 を上回ること。音声、画像、トラッカーミュージックは内容から判別され、専用の可逆コーデックで圧縮されます。それ以外は調整済みのマルチスレッド Zstandard ストリームで処理されます。</li><li><b>高速。</b> 圧縮と展開は CPU ではなくディスクによって制限されるべきです。高速レベル -m2 では、nikpak は 1 コアで約 200 MB のソースファイルを 1 秒未満でアーカイブします。</li><li><b>安全。</b> メモリハードな鍵導出関数を用いた認証付き暗号、常に隠されるファイル名、常に検出される改ざん、そして宛先フォルダーの外へ書き込むよう欺くことができない展開ツール。</li><li><b>耐量子。</b> 使用されるのは 256 ビットの対称暗号だけです。nikpak のどこにも RSA、楕円曲線、Diffie-Hellman のコードはないため、Shor のアルゴリズムが破るものは何もありません。</li><li><b>ポータブルでスクリプト化可能。</b> 静的にリンクされた 1 つの実行ファイル、RAR 互換のコマンドライン、予測可能な終了コード、そしてすべてのオプションを記載した <code>-help</code>。</li></ul>
+<h3 class="se" id="1-2-results-at-a-glance">1.2 結果の概要</h3>
+<table class="tech-table"><thead><tr><th><b>測定項目</b></th><th><b>結果</b></th><th><b>比較対象</b></th></tr></thead><tbody><tr><td>BMP 写真</td><td><b>38.8 % 小さい</b></td><td>RAR 7.00 -m5</td></tr><tr><td>ステレオ音楽、44.1 kHz 16 ビット</td><td><b>14.6 % 小さい</b> (FLAC -8 と同等)</td><td>RAR 7.00 -m5</td></tr><tr><td>ProTracker MOD ファイル</td><td><b>13.3 % 小さい</b></td><td>RAR 7.00 -m5</td></tr><tr><td>モノラル音声、8 ビットおよび 16 ビット</td><td><b>12.2 % および 15.3 % 小さい</b></td><td>RAR 7.00 -m5</td></tr><tr><td>197 MB のソースファイル、最高レベル</td><td><b>5.5 % 小さい</b> (24.4 MB 対 25.9 MB)</td><td>RAR 7.00 -m5 -s -md256m</td></tr><tr><td>同じデータ、高速レベル -m2</td><td><b>0.9 秒</b></td><td>RAR 7.00 -m3 ソリッド: 16.7 秒</td></tr><tr><td>暗号化</td><td>Argon2id + XChaCha20-Poly1305</td><td>RAR5: AES-256-CBC + PBKDF2</td></tr><tr><td>全 10 テストセット、最高レベル、7-Zip との比較</td><td>2.4〜31.7 % 小さい</td><td>7-Zip 23.01 -mx9 (11.7 節)</td></tr><tr><td>Office ファイル (doc、docx、xls、xlsx、csv、pdf)</td><td>31.7 % 小さい</td><td>7-Zip 23.01 -mx9 (11.7 節)</td></tr><tr><td>全 10 テストセット、最高レベル、ZIP との比較</td><td>19.9〜60.4 % 小さい</td><td>ZIP -9、Info-ZIP 3.0 (11.7 節)</td></tr><tr><td>実行ファイル</td><td>1 ファイル、依存関係なし。ウィンドウ付きで約 9 MB、コマンドラインのみで 2.3 MB</td><td>Windows、macOS、Linux</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<table class="tech-table"><tbody><tr><td><b>数値の求め方</b> すべての測定は、RAR 7.00 と nikpak 1.1.0 を入れた 1 台のマシン (Linux x86-64 仮想マシン、CPU 1 コア) で行われました。すべてのアーカイブは再度展開され、元のファイルとバイト単位で比較されました。完全な方法、使用したコーパス、および RAR の方が高速なケースについては第 11 章で説明します。</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="1-3-who-is-it-for">1.3 対象読者</h3>
+<p>nikpak は、大量のメディアやソースコードをアーカイブし、サイズと速度を重視する人、スクリプトから扱えて妥当な終了コードと文書化された形式を備えたアーカイバを求める開発者、そしてクローズドな実装を信頼せずに強力な暗号化を必要とするすべての人を対象としています。コマンドラインは RAR の慣習に従っているため、Total Commander などのフロントエンドからほとんど、あるいはまったく再設定なしで操作できます。</p>
+<h3 class="se" id="1-4-how-to-read-this-guide">1.4 本書の読み方</h3>
+<p>第 2 章と第 3 章では、nikpak が何をするのか、どのように使うのかを説明します。第 4 章から第 7 章では、アーキテクチャ、ファイル形式、圧縮エンジン、メディアコーデックを解説します。第 8 章から第 10 章では、暗号化、耐量子性、堅牢化を取り上げます。第 11 章でベンチマークを示し、第 12 章で nikpak と RAR を率直に比較し、第 13 章から第 15 章でビルド、テスト、ロードマップを扱います。</p>
+<h3 class="se" id="1-5-community-and-contact">1.5 コミュニティと連絡先</h3>
+<p>ニュース、質問、アイデア、バグ報告: nikpak の作者には次から連絡できます。</p>
+<ul><li><b>Telegram </b>https://t.me/cryptonikko</li><li><b>X </b>https://x.com/cryptonikkoid</li><li><b>Discord </b>https://discord.com/users/1537826350759415811</li></ul>
+<p>同じ 3 つのリンクは、nikpak ウィンドウの下部、保存先フォルダーの下 (3.7 節)、および nikpak -help の末尾に、丸い色付きのボタンとして表示されます。</p>
+<h2 class="ch" id="2-feature-overview">2 機能の概要</h2>
+<h3 class="se" id="2-1-capabilities">2.1 機能</h3>
+<table class="tech-table"><thead><tr><th><b>分野</b></th><th><b>nikpak が提供するもの</b></th></tr></thead><tbody><tr><td>圧縮</td><td>-m1 から -m4 までの Zstandard (マルチスレッド、ソリッド)。128 MiB のウィンドウを使用し、-m4 では長距離マッチングも行います。-m5 ではマルチエンジン本体を使用し、バイナリデータには LZMA2、テキストには PPMd を試行によって選択します。ファイルは 7-Zip と同様に種類別に並べられます。</td></tr><tr><td>メディアインテリジェンス</td><td>WAV、AIFF、ProTracker MOD、BMP の内容ベースの検出。4 つのフィルター (NAC、Shuffle、Shuffle+Delta、MED) からファイルごとに試行。自動的に通常の圧縮にフォールバックします。</td></tr><tr><td>Office、PDF、gzip</td><td>Deflate 再圧縮 (preflate): docx、xlsx、pptx、odt、ods、epub、jar、zip、pdf、gz ファイル内の Deflate ストリームをデコードし、はるかに小さく圧縮して、展開時にビット単位で再構築します (-m4、-m5)。</td></tr><tr><td>暗号化</td><td>Argon2id (64 MiB) による鍵導出、64 KiB の認証付きチャンクでの XChaCha20-Poly1305。名前、サイズ、日付、パーミッションが暗号化されます。</td></tr><tr><td>パスワード</td><td>確認付きの対話プロンプト、環境変数、標準入力、コマンドライン。指定がない場合は強力なランダムパスワードを自動生成します。</td></tr><tr><td>完全性</td><td>各ファイルの元データの CRC32。暗号化アーカイブには AEAD 認証。エントリ数を含む終端マーカー。自己検証する音声コーデック。</td></tr><tr><td>コマンドライン</td><td>RAR 形式のコマンド (a x e l v lb t p d)、単一ファイル・フォルダー・ワイルドカードの展開、スイッチ、zip 形式のエイリアス、ワイルドカード、@listfiles、除外、上書きポリシー、クワイエットモード、明示的な終了コード。</td></tr><tr><td>安全性</td><td>Zip-slip 対策、シンボリックリンクの拒否、setuid の除去、境界付きデコーダー、アトミックなアーカイブ書き込み、Rust によるメモリ安全性。</td></tr><tr><td>移植性</td><td>Windows (PowerShell、cmd)、macOS、Linux。単一の静的実行ファイル。すべてのプラットフォームでバイト単位で同一の結果。</td></tr><tr><td>グラフィカルインターフェース</td><td>引数なしで起動すると、nikpak は最小限のドロップウィンドウを開きます。ファイルやフォルダーをドロップ (または選択) すると最良の圧縮で圧縮されます。進行リング、記憶された保存先フォルダー (3.7 節)。</td></tr><tr><td>アーカイブブラウザー</td><td>unNik.exe、誰でも無料で利用可能: フォルダーの閲覧、検索、テキストおよびバイナリファイルの表示、選択項目の展開、.nik アーカイブ内のファイル削除 (3.9 節)。</td></tr><tr><td>スキン</td><td>55 種類のウィンドウスキン (14 種類の描画シーンスキンを含む)。ウィンドウの横に並ぶ [Apply Skin] と [Cancel] を備えたスキンボックス。独自の Nikkomander .skin.json ファイルをインポート可能 (3.10 節)。</td></tr><tr><td>パッケージ</td><td>Create Package と Open Package: 表紙、説明、購入者が承認する必要のあるエンドユーザーライセンスを含む、暗号化された販売可能な <code>.nik</code>。保存先フォルダーは記憶されます (3.12 節)。</td></tr><tr><td>ファイルマネージャーのメニュー</td><td>Explorer、Dolphin、Nemo、Nautilus、Finder の「NikPak」サブメニュー: アーカイブに追加、ここに展開、専用フォルダーに展開、unNik で開く。複数項目の選択に対して 1 つのアーカイブを作成 (3.11 節)。</td></tr><tr><td><b>分割ボリューム</b></td><td>アーカイブは任意のサイズのボリュームに分割できます — <code>photos.nik</code> + <code>photos.n01</code> … — ディスクやアップロード制限に対応。リーダーはボリュームを自動的に追跡します。</td></tr><tr><td><b>自己解凍 .exe</b></td><td><code>-sfx</code> は <code>photos.exe</code> を書き出します。アーカイブを追加された unNik で、何もインストールせずに展開できます。</td></tr><tr><td><b>マルチコア</b></td><td><code>-m5</code> ではアーカイブがコアごとに 1 ブロックへ分割され、並列に圧縮されます。ファイル単位の処理はすべてのレベルでパイプライン化されます。</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="2-2-nikpak-and-rar-side-by-side">2.2 nikpak と RAR の比較</h3>
+<p>以下の表は、このプロジェクトで測定した nikpak 1.1 と RAR 7 を比較し、RAR が優れている点を率直に示しています。個々の項目については第 12 章で論じます。</p>
+<table class="tech-table"><thead><tr><th>
+				<br>
+
+				</th><th><b>nikpak 1.1</b></th><th><b>RAR 7</b></th></tr></thead><tbody><tr><td>メディア圧縮</td><td>ファイルごとに試行して選ばれる専用の可逆コーデック</td><td>組み込みフィルターを備えた汎用アルゴリズム</td></tr><tr><td>ソースコード、最高レベル</td><td><b>24.4 MB</b> (より小さい)、45.6 秒</td><td>25.9 MB、26.7〜36.2 秒</td></tr><tr><td>高速レベルでの速度</td><td><b>0.9 秒</b> 197 MB (-m2)</td><td>9.7〜16.7 秒 (-m3)</td></tr><tr><td>暗号化</td><td>Argon2id + XChaCha20-Poly1305 (認証付き)</td><td>AES-256-CBC + PBKDF2-HMAC-SHA256</td></tr><tr><td>ファイル名は常に暗号化</td><td><b>はい</b></td><td>-hp 使用時のみ</td></tr><tr><td>メモリハードなパスワードハッシュ</td><td><b>はい</b> (64 MiB)</td><td>いいえ</td></tr><tr><td>ランダムパスワード生成</td><td><b>内蔵</b></td><td>内蔵されていない</td></tr><tr><td>ソースコード、言語</td><td><b>全ソース公開</b>、Rust (メモリ安全)</td><td>プロプライエタリ、C++</td></tr><tr><td>リカバリレコード、ボリューム、SFX、その場での更新</td><td>未対応</td><td><b>はい (WinRAR)</b></td></tr><tr><td>実績</td><td>新しく、まだ監査されていない</td><td><b>数十年</b></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h2 class="ch" id="3-command-line-reference">3 コマンドラインリファレンス</h2>
+<p>nikpak は RAR ユーザーに馴染みのある構文に従います: <code>nikpak [options] [files...]</code>。オプションはアーカイブ名の前でも後でも指定でき、<code>--</code> でオプション解析を終了します。</p>
+<h3 class="se" id="3-1-commands">3.1 コマンド</h3>
+<table class="tech-table"><thead><tr><th><b>コマンド</b></th><th><b>意味</b></th></tr></thead><tbody><tr><td><code>a</code></td><td>新しいアーカイブを作成します。名前に拡張子がない場合は <code>.nik</code> が付加されます。フォルダーは常に再帰的に処理されます。</td></tr><tr><td><code>x</code></td><td>フルパスで展開します。すべて、またはアーカイブ名の後に指定した名前・フォルダー・ワイルドカードのみ (nikpak x backup.nik Docs/report.pdf は 1 ファイルを展開します)。末尾のパス区切り (または <code>-d dir</code>) が保存先を指定します。</td></tr><tr><td><code>e</code></td><td>パスなしで展開します。すべてのファイルが保存先フォルダーに直接置かれます。</td></tr><tr><td><code>l</code></td><td>内容を一覧表示します (すべて、または一致する名前のみ): 属性、サイズ、日付 (UTC)、名前、合計。</td></tr><tr><td><code>v</code></td><td>詳細一覧: 各ファイルの CRC32 を追加表示します。</td></tr><tr><td><code>lb</code></td><td>ベア一覧: 1 行に 1 名前。スクリプトや GUI フロントエンド向けに設計されています。</td></tr><tr><td><code>t</code></td><td>テスト: すべてを解凍し、すべての CRC32 をチェックし、暗号化アーカイブでは認証を検証します。</td></tr><tr><td><code>p</code></td><td>ファイルを標準出力に出力します。すべて、または指定したもの (nikpak p notes.nik todo.txt | more)。</td></tr><tr><td><code>d</code></td><td>アーカイブからファイルまたはフォルダー (フォルダーはその内容ごと) を削除します。アーカイブはそれらを含めずに書き直されます。暗号化アーカイブはパスワードを保持します。名前の指定が必須です。</td></tr><tr><td><code>mt</code></td><td>メディアテスト: WAV/AIFF/MOD/BMP ファイルを検出し、各メディアフィルターが達成するサイズを表示します。何も書き込みません。</td></tr><tr><td><code>(none)</code></td><td>引数なしで起動した場合 (たとえば nikpak.exe をダブルクリックした場合)、nikpak は代わりにウィンドウを開きます (3.7 節)。</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="3-2-options">3.2 オプション</h3>
+<table class="tech-table"><thead><tr><th><b>RAR 形式</b></th><th><b>zip 形式</b></th><th><b>意味</b></th></tr></thead><tbody><tr><td><code>-p</code></td><td><code>-e</code></td><td>暗号化 / 復号。パスワードを尋ねます。空の入力ではランダムパスワードを生成して表示します。</td></tr><tr><td><code>-p</code></td><td><code>-P </code></td><td>コマンドラインでのパスワード指定 (同じマシンの他のユーザーから見えます)。</td></tr><tr><td><code>-hp[password]</code></td><td>
+				<br>
+
+				</td><td>-p と同じです。nikpak ではファイル名は常に暗号化されます。</td></tr><tr><td><code>-m0</code> .. <code>-m5</code></td><td><code>-0</code> .. <code>-9</code></td><td>保存、最速、高速、標準、高 (Deflate 再圧縮を追加)、最大 (1.2.1 以降の既定。LZMA2/PPMd、6.7 節)。サイズより速度が重要な場合は -m2 を使用してください。</td></tr><tr><td><code>-mt</code></td><td>
+				<br>
+
+				</td><td>スレッド数、1〜256 (既定: 全コア)。</td></tr><tr><td><code>-mc-</code> / <code>-mc+</code></td><td>
+				<br>
+
+				</td><td>すべてのコンテンツフィルター (メディアコーデックと Deflate 再圧縮) をオフ / メディアフィルターを常にオン。既定: ファイルごとの自動試行。</td></tr><tr><td><code>-r</code></td><td>
+				<br>
+
+				</td><td>フォルダーを再帰的に処理します (常にオン。互換性のために受け付けられます)。</td></tr><tr><td><code>-ep</code></td><td><code>-j</code></td><td>各引数の最後のパス構成要素のみを保存します。</td></tr><tr><td><code>-ep1</code></td><td>
+				<br>
+
+				</td><td>フォルダー引数のベースフォルダー名を保存しません。</td></tr><tr><td><code>-o+</code></td><td><code>-o</code></td><td>既存ファイルを確認なしで上書きします。</td></tr><tr><td><code>-o-</code></td><td><code>-n</code></td><td>既存ファイルを確認なしでスキップします。</td></tr><tr><td><code>-or</code></td><td>
+				<br>
+
+				</td><td>既に存在する展開済みファイルの名前を変更します: <code>name (1).ext</code>。</td></tr><tr><td><code>-y</code></td><td>
+				<br>
+
+				</td><td>すべての質問に「はい」と答えます。</td></tr><tr><td><code>-x</code></td><td><code>-x</code></td><td>ファイルを除外します。複数回指定できます。</td></tr><tr><td><code>-d </code></td><td><code>-d </code></td><td><code>x</code> および <code>e</code> の保存先フォルダー。</td></tr><tr><td><code>-legal &lt;file&gt;</code></td><td>
+				<br>
+				</td><td>ファイル内の法的声明 (UTF-8、最大 64 KB) を新しいアーカイブに添付します。アーカイブを開く前に承認する必要があります。</td></tr><tr><td><code>-cover &lt;file&gt;</code></td><td>
+				<br>
+				</td><td>表紙画像を新しいアーカイブに添付します。正方形に切り抜かれ、1024 x 1024 の JPEG として保存されます。</td></tr><tr><td><code>-accept</code></td><td>
+				<br>
+				</td><td>アーカイブの法的声明を確認なしで承認します (スクリプト向け)。</td></tr><tr><td><code>-inul</code> <code>-idq</code></td><td><code>-q</code></td><td>クワイエット: エラーのみ出力します。</td></tr><tr><td><code>@listfile</code></td><td>
+				<br>
+
+				</td><td>テキストファイルからファイル名を 1 行に 1 つずつ読み込みます。</td></tr><tr><td><code>-h</code> <code>-help</code> <code>-?</code></td><td>
+				<br>
+
+				</td><td>完全なヘルプ。<code>-V</code> はバージョンを表示します。</td></tr><tr><td><code>-v&lt;size&gt;</code></td><td></td><td>指定したサイズのボリュームにアーカイブを分割します: 700m、4.7g、1024k またはバイト数。登録版のみ。</td></tr><tr><td><code>-sfx</code></td><td></td><td>自己解凍 .exe を書き出します。アーカイブを追加した unNik です。登録版のみ。</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p>RAR フロントエンドがよく送るがここでは意味を持たないオプション (<code>-s</code>、<code>-ma5</code>、<code>-md64m</code>、<code>-ibck</code>、<code>-idp</code>、<code>-rr</code>、<code>-ts*</code>、<code>-w</code> など) は受け付けて無視されるため、既存のツール設定はそのまま動作します。それ以外は明確なエラーメッセージと終了コード 7 を返します。</p>
+<p>ファイルマネージャーのメニューはいくつかの長いオプションを追加します (3.11 節): <code>nikpak --add</code> と <code>--add-here</code> は指定した項目を新しいアーカイブに圧縮し、<code>nikpak --install-menu</code> と <code>--uninstall-menu</code> は右クリックメニューを追加または削除し (<code>--all-users</code> は全ユーザー向けインストール)、<code>unNik --extract</code>、<code>--extract-here</code>、<code>--extract-to</code> はメニューからの展開を担います。</p>
+<h3 class="se" id="3-3-passwords-in-detail">3.3 パスワードの詳細</h3>
+<p><code>-p</code> を付けてアーカイブを作成するとき、nikpak は次の順序でパスワードを解決し、パスワードが指定されなかったというだけで失敗することはありません。</p>
+<ul><li>コマンドラインの <code>-p</code> または <code>-P </code>: そのまま使用されます (最小 8 文字)。</li><li>環境変数 <code>NIKPAK_PASSWORD</code>。パスワードがプロセス一覧に現れないようにします。</li><li>対話プロンプト。確認のため 2 回尋ねられます。<b>空の入力ではランダムパスワードが生成されます。</b></li><li>ターミナルがない場合 (たとえば GUI 内)、標準入力からパイプされたパスワード。ない場合はランダムパスワードが生成されます。</li></ul>
+<p>生成されるパスワードは、紛らわしい文字を含まない 56 文字のアルファベット (0/O、1/l/I を除く) からなる 24 文字で、約 139 ビットのエントロピーを持ちます。コンソールのボックスに一度だけ表示されます。<b>復元はできません:</b> パスワードを失ったアーカイブは誰も開けません。</p>
+<p>暗号化アーカイブを開くとき、nikpak は同じ情報源を使用し、失敗した場合は終了コード 11 と説明メッセージを返します。生成されたパスワードは一致し得ないため、何も生成しません。</p>
+<h3 class="se" id="3-4-exit-codes">3.4 終了コード</h3>
+<table class="tech-table"><thead><tr><th><b>コード</b></th><th><b>意味</b></th><th><b>主な原因</b></th></tr></thead><tbody><tr><td>0</td><td>成功</td><td>
+				<br>
+
+				</td></tr><tr><td>1</td><td>警告</td><td>一部のファイルがスキップされました (読み取り不能、安全でないパス、シンボリックリンク)</td></tr><tr><td>2</td><td>致命的エラー</td><td>ファイルを作成または読み取れない、内部エラー</td></tr><tr><td>3</td><td>アーカイブの破損または CRC エラー</td><td>破損または切り詰められたアーカイブ、チェックサムの失敗</td></tr><tr><td>7</td><td>コマンドラインエラー</td><td>不明なオプション、アーカイブ名の欠落</td></tr><tr><td>10</td><td>一致なし</td><td>名前やワイルドカードに一致するファイルがない</td></tr><tr><td>11</td><td>パスワードの誤りまたは欠落</td><td>不正なパスワード、または改ざんされた暗号化アーカイブ</td></tr><tr><td>12</td><td>利用条件が未承認</td><td>アーカイブの法的声明が拒否された、または -accept で承認されていない</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="3-5-examples">3.5 例</h3>
+<pre>nikpak a backup.nik C:\Docs\*.txt Photos\ # create an archive</pre>
+<pre>nikpak a -m5 -mt8 big.nik Projects\ # maximum, 8 threads</pre>
+<pre>nikpak a -p secret.nik Taxes2026\ # encrypted, prompts</pre>
+<pre>nikpak a -pMyLongPassw0rd s.nik f.pdf # password given</pre>
+<pre>nikpak x backup.nik C:\Restore\ # extract with paths</pre>
+<pre>nikpak e backup.nik *.jpg C:\Pics\ # only *.jpg, flat</pre>
+<pre>nikpak x backup.nik Docs/report.pdf # extract ONE file</pre>
+<pre>nikpak e backup.nik Docs/report.pdf -d C:\Out # one file, no path</pre>
+<pre>nikpak x backup.nik Photos -d C:\Restore # one folder</pre>
+<pre>nikpak l backup.nik *.pdf # list only PDFs</pre>
+<pre>nikpak p backup.nik notes.txt # show a file</pre>
+<pre>nikpak d backup.nik Temp *.bak # delete entries</pre>
+<pre>nikpak l backup.nik # list</pre>
+<pre>nikpak t secret.nik # test (asks password)</pre>
+<pre>nikpak mt song.wav tracker.mod photo.bmp # which filter wins?</pre>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="3-6-integration-with-total-commander-and-other-front-ends">3.6 Total Commander およびその他のフロントエンドとの統合</h3>
+<p>nikpak は RAR のコマンド構文 (<code>a</code>、<code>x</code>、<code>e</code>、<code>l</code>、<code>t</code>、<code>@listfile</code>、<code>-p</code>、<code>-ep1</code>、<code>-o+</code>、<code>-y</code>、<code>-m</code>) を受け付けるため、外部の <code>rar.exe</code> を操作できるプログラムは <code>nikpak.exe</code> も操作できます。Total Commander では、<i>Configuration, Packer, Additional packer programs</i> で拡張子 <code>nik</code> を登録し、packer コマンドと unpacker コマンドを <code>nikpak.exe</code> に向けます。無人での展開には <code>-o+</code> または <code>-y</code> を使用してください。コンソールがない場合、nikpak は上書きするかどうかを尋ねられず、代わりに既存ファイルをスキップするためです。メニュー名は Total Commander のバージョンによって異なります。正確な項目については組み込みヘルプを参照してください。</p>
+<table class="tech-table"><tbody><tr><td><b>Windows でスペースを含むフォルダー</b> 末尾がバックスラッシュの引用符付きパス (<code>"C:\My Folder\"</code>) は Windows によって誤解析されます (最後の引用符がエスケープと見なされます)。スペースを含む保存先には代わりに <code>-d "C:\My Folder"</code> を使用してください。</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="3-7-the-graphical-interface">3.7 グラフィカルインターフェース</h3>
+<p><b>引数なしで</b> (たとえば nikpak.exe のダブルクリックで) 起動した nikpak は、使用方法を表示する代わりに小さなウィンドウを開きます。やることは 1 つ、ドロップされたものを圧縮することです。</p>
+<figure><img src="../assets/img/tech/93d28e45.png" alt="The nikpak window: waiting for files (left) and compressing (right)." loading="lazy"><figcaption>nikpak ウィンドウ: ファイルの待機中 (左) と圧縮中 (右)。</figcaption></figure>
+<ul><li><b>ファイルまたはフォルダーをドロップ</b> (複数可) するか、円をクリック (または choose files / choose a folder のリンク) してダイアログで選択します。円をクリックすると、リング内に Choose files と Choose a folder の 2 つのボタンが表示されます。それらは<b>最良の圧縮 (-m5)</b> で、ファイル名 (拡張子を除く)、フォルダー名、複数項目の場合はそれらの元のフォルダー名を付けた 1 つのアーカイブに圧縮されます。既存のアーカイブが上書きされることはありません。report.nik は report (2).nik になります。</li><li><b>進行状況</b> は円形メーター内の大きなパーセント表示で示され、フェーズ (analysing、compressing、finishing)、処理済み量、時間が併記されます。その下の <b>Cancel</b> ボタン (または Esc キー) は長時間の圧縮を直ちに停止し、未完成のアーカイブを削除します。ウィンドウは次の処理のために開いたままです。圧縮中にウィンドウを閉じた場合も同じです。</li><li><b>完了</b>: リングが緑になり、アーカイブ名、元のサイズに対する比率、時間が表示されます。Show in folder は Explorer、Finder、またはファイルマネージャーで開きます。Compress more (または円のクリック) で次を開始します。</li><li><b>保存先</b>: 下部の保存先フォルダーは入力するか Browse で選択できます。次回のために記憶されます (Windows: %APPDATA%\nikpak\settings.txt、macOS: ~/Library/Application Support/nikpak、Linux: ~/.config/nikpak)。初回はデスクトップです。</li><li><b>コミュニティ</b>: 右下の 3 つの丸いボタンは nikpak の Telegram、X、Discord ページを開きます (1.5 節)。</li><li><b>unNik への切り替え:</b> i ボタンの左にある上向き矢印の丸いボタンは、NikPak を閉じて unNik を起動します (3.9 節)。圧縮後は、このボタンと完了画面の <b>Open in unNik</b> リンクで新しいアーカイブをすぐに開けます。圧縮中はボタンが無効になります。</li><li><b>保存先フォルダーを開く:</b> Save to フィールドと Browse の間にあるフォルダーボタンは、そのフォルダーを Explorer または Finder で開きます。圧縮後は新しいアーカイブを選択した状態で開きます。</li><li><b>サウンド:</b> ボタン、リンク、オプションには柔らかいクリック音、各操作 (処理開始、成功、エラー、キャンセル、プログラムの切り替え、ウィンドウ上へのファイルのホバー) には短い音が鳴ります。音声ファイルは使わず、プログラム自身が生成します。タイトルバーのスピーカーボタンでオフ/オンを切り替えられます。既定はオンで、設定は unNik と共有されます。</li><li><b>言語</b>: 左下の、旗と言語自身の名前が付いたボタンは、世界で最も話者数の多い 10 言語 (Ethnologue 2025) のメニューを開きます: English、中文 (標準中国語)、हिन्दी (ヒンディー語)、Español、العربية (アラビア語)、Français、বাংলা (ベンガル語)、Português、Русский (ロシア語)、Bahasa Indonesia。選択すると保存され、その言語で nikpak が再起動します。初回は nikpak は Windows (またはシステム) の言語に従い、なければ English です。コマンドラインは English のままです。</li><li><b>管理者として実行</b>: Windows は、管理者として実行中のプログラムへ Explorer からファイルをドラッグすることを許可しません。nikpak.exe が管理者として (たとえば管理者 PowerShell から) 起動された場合、ドラッグ&amp;ドロップが機能するように、Explorer 経由で通常ユーザーとして一度だけ自身を再起動します。それができない場合は、ウィンドウに通知が表示されます。代わりにボタンでファイルを選択してください。</li><li><b>ステータスと About</b>: 左上には EVALUATION COPY · REGISTER (クリックで登録ボックスが開きます) または REGISTERED TO とライセンス保持者が表示されます。右上の最小化と閉じるの隣にある小さな <b>i</b> ボタンは <b>About</b> ボックスを開きます: バージョン、© 2026 Nicolas Choukroun、Nikkoid LLC による配布、ライセンスの状態、Web サイト、ライセンス条件 (LICENSE.txt)。</li></ul>
+<p>ウィンドウのサイズは 500 × 560 ポイント (約 9:10) なので、ウィンドウ全体のスクリーンショットはトリミングなしで X (Twitter) の画像投稿に収まります。フレームレスです: 上部をつかんでドラッグします。右上のボタンで About ボックスを開く、最小化、閉じるができます。nikpak.exe を Explorer から起動した場合、Windows が開くコンソールウィンドウは自動的に閉じられます。コマンドプロンプトから起動した場合は、プロンプトはそのまま残されます。グラフィカルディスプレイがない場合 (たとえば SSH 経由)、nikpak は従来どおり使用方法を出力します。インターフェースは egui/eframe を使用し、Inter、Noto Sans SC、Noto Sans Devanagari、Noto Sans Bengali、Noto Sans Arabic 書体のサブセットを内蔵しています (SIL Open Font License、assets/fonts/OFL.txt を参照)。コマンドライン専用の実行ファイルは <code>cargo build --release --no-default-features</code> でビルドされます。</p>
+<figure><img src="../assets/img/tech/2a2cecb.png" alt="The window in Chinese, Hindi and Arabic, and the language menu." loading="lazy"><figcaption>中国語とアラビア語のウィンドウ、ヒンディー語のリマインダー、言語メニュー。</figcaption></figure>
+<p><b>ヒンディー語、ベンガル語、アラビア語</b> はシェーピングが必要です。文字は形を変えて連結し、母音記号は子音の周囲に移動し、アラビア語は右から左に流れます。egui は 1 文字につき 1 グリフを描画するため、これらの言語は誤って表示されます。そこで nikpak はそのようなテキストを Unicode 双方向アルゴリズム (unicode-bidi) で並べ、rustybuzz (HarfBuzz の Rust ポート) でシェーピングし、ab_glyph でラスタライズして結果を画像として描画します (textshape.rs)。内部のラテン語や数字は Inter フォントのままです。長い翻訳はボタンに収まるよう縮小され、ボックスはテキストに合わせて大きくなります。翻訳 (i18n.rs) は機械支援で作成されました。ネイティブスピーカーによるレビューを歓迎します。</p>
+<h3 class="se" id="3-8-licence-and-registration-shareware">3.8 ライセンスと登録 (シェアウェア)</h3>
+<p>NikPak は<b>シェアウェア</b>であり、© 2026 Nicolas Choukroun、<b>Nikkoid LLC</b> による配布で、WinRAR と同様にライセンスされています。同じパッケージが無料の評価版であり、ライセンスキーを入力すると登録版になります。評価版で無効化されている機能はありません。</p>
+<table class="tech-table"><thead><tr><th><b>対象</b></th><th><b>条件</b></th></tr></thead><tbody><tr><td>個人</td><td>個人の非商用利用は無期限で無料です。個人ライセンス ($19) はリマインダーを削除し、保持者が使用するすべてのコンピューターを対象とします。</td></tr><tr><td>企業および組織</td><td>無料の 40 日間の評価後、1 シートにつき 1 社ライセンス。シートはコンピューター数またはユーザー数のいずれか多い方です。シートあたりのボリューム価格は WinRAR に倣っています: 1〜9 シート $19、10〜24 $15、25〜49 $12、50〜99 $9、100〜199 $7、200〜499 $6、500 以上 $5。</td></tr><tr><td>配布</td><td>未改変のパッケージ (LICENSE.txt と THIRD-PARTY-NOTICES.txt を含む) は任意のシェアウェアサイトやダウンロードサイトに置くことができます。キー、キーファイル、クラックの追加は禁止です。.nik アーカイブにはロイヤリティがかかりません。</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<figure><img src="../assets/img/tech/a48982f5.png" alt="The reminder of the evaluation copy, the registration box and the file chooser." loading="lazy"><figcaption>評価版のリマインダー (左)、登録ボックス (中央)、ファイル選択ダイアログ (右)。</figcaption></figure>
+<figure><img src="../assets/img/tech/cd6fee8b.png" alt="The main window with the i button, and the About box." loading="lazy"><figcaption>右上に小さな i ボタンがあるメインウィンドウ (左) と About ボックス (右)。</figcaption></figure>
+<ul><li><b>リマインダー</b> は、未登録のコピーがウィンドウを開いたときに表示されます。<b>Register</b> と <b>Test for free</b> の 2 つのボタンがあり、左右の順序は起動のたびにランダムに変わります。Test for free (または Esc) で閉じられ、nikpak は制限なく動作します。</li><li><b>登録ボックス</b> は名前、メールアドレス、ライセンスキーを尋ねます。3 つすべてが一致する必要があります。キーは名前とメールアドレスの署名です。大文字小文字、余分なスペース、紛らわしい文字 O/0 と I/L/1 は区別されません。<b>Buy a licence</b> は https://nikpak.nikkoid.com/buy.php を開きます。</li><li><b>一度登録すると</b> nikpak はそのコンピューターのそのユーザーに対して再度尋ねることはありません。ライセンスは %APPDATA%\nikpak\license.txt (macOS: ~/Library/Application Support/nikpak、Linux: ~/.config/nikpak) に保存されます。企業は代わりに nikpak.exe の隣に <code>nikpak.key</code> ファイルを置くことができ、その PC のすべてのユーザーが登録されます。</li><li><b>コマンドライン</b>: <code>nikpak register "Jane Doe" jane@example.com NPK1-…</code> で登録、<code>nikpak license</code> で状態表示、<code>nikpak unregister</code> でライセンスを削除します。<code>nikpak -V</code> と <code>nikpak -help</code> も状態を表示します。未登録のコピーはエラー出力 (stderr) に 1 行の評価版通知を出力しますが、標準出力には決して出力しません。-q で抑制できます。</li></ul>
+<h4 class="su" id="how-the-keys-work">キーの仕組み</h4>
+<p>ライセンスキーは <code>NPK1-</code> に続いて、5 文字ずつのグループで 108 文字 (Crockford base32) で構成されます。ライセンスの種類 (個人または企業)、シート数、および <code>NIKPAK-LICENSE-1</code>、種類、シート数、名前、メールアドレス (それぞれ正規化: スペースの圧縮、小文字化) の <b>Ed25519 署名</b> が含まれます。nikpak は <code>src/license_pubkey.rs</code> に 32 バイトの公開鍵のみを含むため、プログラムを解析しても誰もキーを作成できません。</p>
+<p>キーは秘密鍵で作成され、秘密鍵が Nikkoid LLC の外に出ることはありません。方法は 2 つあります。専用ツール <code>nikpak-keygen</code> を使う方法 (<code>cargo run --release --features keygen --bin nikpak-keygen -- make --name "Jane Doe" --email jane@example.com</code>、企業向けは <code>--company --seats 25</code>、<code>newkeys</code> で新しい鍵ペアを作成)、または <code>server/</code> の PHP キット (PHP 7.2+、MySQL 5.7) を Web サーバー上で使う方法で、支払いごとに 1 つのキーを発行し、まったく同じキーを生成します。server/README.md にセットアップと支払いの流れが説明されています。</p>
+<h3 class="se" id="3-9-unnik-the-free-archive-browser">3.9 unNik — 無料のアーカイブブラウザー</h3>
+<p><b>unNik</b> (unNik.exe) はパッケージの 2 つ目のプログラムです。.nik アーカイブを開き、内容を表示し、選んだものを展開します。企業を含め<b>誰でも無料</b>で、登録もリマインダーもありません (LICENSE.txt 第 2a 条)。セットアップは nikpak.exe の隣にインストールし、スタートメニューに追加し、.nik ファイルのプログラムとして設定するため、アーカイブをダブルクリックすると unNik で開きます。コマンドプロンプトからは unNik archive.nik でも同じです。</p>
+<figure><img src="../assets/img/tech/2a153152.png" alt="unNik waiting for an archive and its built-in viewer" loading="lazy"><figcaption>アーカイブを待つ unNik (左) と、ソースファイルを検索する内蔵ビューアー (右)。</figcaption></figure>
+<p>空のウィンドウは NikPak とまったく同じ外観で、リング内に上向きの矢印があります。.nik アーカイブをドロップするか、リングをクリックするか、最近使ったアーカイブの 1 つを選択してください。ウィンドウはブラウザーに拡大します (1120 × 720、端からサイズ変更可能、最大化も可能)。暗号化アーカイブは最初にパスワードを尋ねます。</p>
+<figure><img src="../assets/img/tech/399578f.png" alt="The unNik archive browser" loading="lazy"><figcaption>ブラウザー: フォルダーツリーと圧縮サマリー (左)、ファイル一覧 (中央)、選択したファイルの詳細 (右)。</figcaption></figure>
+<ul><li><b>移動</b> はフォルダーツリー、パンくず、Back、Forward、Up (Alt+Left、Alt+Right、Backspace)、ダブルクリックで行います。<b>検索</b> (Ctrl+F) はアーカイブ全体から名前でファイルを検索し、各結果はそのフォルダーを表示します。</li><li><b>選択</b> はクリック、Ctrl+クリック、Shift+クリック、チェックボックス、Ctrl+A、矢印キーで行います。列タイトルをクリックすると名前、サイズ、種類、日付で並べ替えられます。右クリックで全操作のメニューが開きます。</li><li><b>すべて展開</b>、または選択項目の展開 (Ctrl+E): 保存先 (既定ではアーカイブの隣の、アーカイブ名のフォルダー)、フォルダーを保持するかどうか、既存ファイルがある場合の動作 (置き換え、両方保持 (name (1).ext)、スキップ) を選択します。フォルダー内から取り出したファイルは、WinRAR と同様にそのフォルダーのパスなしで作成されます。読み取りは最後に選択したファイルの直後で停止します。</li><li><b>表示</b> (F3、またはテキストファイルのダブルクリック): 行番号付きのテキスト、ハイライト付き検索、行の折り返し、コピー。バイナリファイルは 16 進表示。最初の 16 MB が表示され、<b>Open in Notepad</b> はファイル全体を開きます。<b>Open</b> はファイルを専用のプログラムで起動します (まず一時フォルダーに展開されます)。</li><li><b>削除</b> (Del) は確認後にアーカイブからファイルやフォルダーを削除します。アーカイブはソリッドなので、それらを含めずに再書き込みされ、すべて成功した場合にのみ元のファイルを置き換える一時ファイルに書き込まれます。暗号化アーカイブはパスワードを保持し、他のエントリはメディアフィルターまたは Deflate フィルターと -m5 エンジンを保持します。</li><li><b>テスト</b> はアーカイブ全体を解凍し、すべてのファイルを検査します。<b>詳細</b> ペインにはサイズ、日付、フォルダー、CRC32、ファイルの保存方法、属性が表示され、アーカイブ自体についてはサイズ、方式、暗号化が表示されます。ツリー下のサマリーには節約された容量が表示されます。</li><li>NikPak と同じ 10 言語、言語ボタン、About ボックス (i)、コミュニティボタン。任意の文字体系のファイル名は、フォールバックとしてシステムのフォントで描画されます。</li><li><b>NikPak への切り替え:</b> i ボタンの左にある下向き矢印の丸いボタンは、unNik を閉じて NikPak を起動します。両方のプログラムは同じフォルダーにあります。設定ファイルを共有するため、一方で選択した言語が他方でも使われ、既に開いているウィンドウも 2 秒以内に変更に追随します。</li><li><b>保存先フォルダーを開く:</b> 取り出しボタンの左にあるボタンは、最後の展開先フォルダーを Explorer または Finder で開きます (展開前はアーカイブのフォルダー)。unNik は NikPak と同じサウンドを再生し、アーカイブを開く、展開、削除、テストの音があります。スピーカーボタンと NikPak の設定は 1 つを共有します。</li></ul>
+<figure><img src="../assets/img/tech/7b4e9aa1.png" alt="Extracting a selection and deleting a file in unNik" loading="lazy"><figcaption>選択項目の展開 (左) とファイルの削除 (右)。</figcaption></figure>
+<h3 class="se" id="3-10-skins">3.10 スキン</h3>
+<p>NikPak と unNik は同じ 55 種類のウィンドウスキンを共有します。Nikkomander の 41 種類 (既定の Nikkoid Blue と Nikkoid Bright から、Dracula、Nord、Solarized、Classic Blue、Matrix、Pizza、Christmas、8-Bit Game まで) に加え、背景をプログラム自身が描画する 14 種類のペイントスキン (Moon、America、Pattaya Neons、Burgers Tokyo、Sushi、Amiga、MSX、Colecovision、ZX Spectrum、Cat Life、Dog Life、Mario Bros、Counter Strike、Chess) があります。</p>
+<ul><li><b>スキンボタン</b> (両プログラムのタイトルバーにあるパレット): スキンメニューを開き、各スキンが自身の色で描画されます。スキンにポインターを合わせるとウィンドウ全体でプレビューされ、クリックで確定します。Esc または外側のクリックで元のスキンに戻ります。</li><li><b>太陽 / 月のボタン</b> はその隣にあり、Nikkoid Blue (ダーク) と Nikkoid Bright を 1 クリックで切り替えます。</li><li><b>スキンボックスはプログラムの外に置かれます。</b> ボックスが開いている間、ウィンドウは右側にボックスの幅だけ広がります。プログラムは 500 × 560 のパネルを保ち、ボックスはその横の余分な透明スペースに収まるため、試しているスキンの背後でもインターフェース全体が見えたままです。ボックスはタイトルバーでプログラムの上やウィンドウ内の任意の場所にドラッグでき、<b>Apply Skin</b> と <b>Cancel</b> ボタンがあります。スキンをクリックするとウィンドウ全体で試され、Apply で確定して両プログラム用に保存され、Cancel (または Esc か ×) で元のスキンに戻ります。プログラムをクリックしてもボックスは閉じなくなりました。unNik のウィンドウは広がりません。</li><li><b>選択したスキンは保存され</b> (<code>skin=</code> として設定ファイル内)、共有されます。一方のプログラムで選んだスキンは 2 秒以内に他方でも使われます。</li><li><b>独自のスキン:</b> メニュー下部の「Import a skin…」は Nikkomander の <code>.skin.json</code> ファイル (名前と色のリスト) を読み込み、設定ファイルの隣の <code>skins</code> フォルダーにコピーします。インポートしたスキンのタイル上の × で削除できます。</li><li><b>ペイントスキンはインターフェースの背後に退きます。</b> 描画背景は CSS グラデーションではなく <code>src/skin_scenes.rs</code> によって描かれるため、任意のウィンドウサイズに拡大縮小できます。1.6.2 以降、各スキンは <code>src/skin.rs</code> の <code>discreet()</code> パスを通ります。アートは自身の局所平均へ引き寄せられ、軽くぼかされ、スキンの背景色へフェードします。ドロップリングとテキスト列の背後では最も強く、ロゴの上では少し強めに適用されるため、14 種類すべてでタイトル、リング、ステータステキストが鮮明なままです。</li></ul>
+<h3 class="se" id="3-11-the-file-manager-menu">3.11 ファイルマネージャーのメニュー</h3>
+<p>ファイルマネージャーの右クリックメニューに、WinRAR のような「NikPak」サブメニューがセットアップによってインストールされます (Windows: 既定でチェックされるオプション、Linux: <code>nikpak --install-menu</code>、macOS: Finder クイックアクション)。</p>
+<ul><li><b>ファイルとフォルダーに対して:</b> <b>Add to archive…</b> (名前とフォルダーを尋ね、NikPak ウィンドウで圧縮します) と <b>Add to archive here</b> (アーカイブは項目の隣に作られ、ウィンドウへのドロップと同じ命名規則になります)。</li><li><b>.nik アーカイブに対して:</b> <b>Open with unNik</b>、<b>Extract files…</b>、<b>Extract here</b>、<b>Extract to its own folder</b>。</li><li><b>複数の項目</b> は 1 つのアーカイブになります。複数のアーカイブを選択した場合は、1 つのウィンドウで順番に展開されます。</li><li><b>コマンドは unNik.exe を通じて実行される</b>ため、コンソールウィンドウが一瞬表示されることはありません。ラベルは NikPak の言語に従います。Windows 10 ではサブメニューが直接表示され、Windows 11 では <b>Show more options</b> (Shift+F10) の下に表示されます。Linux では KDE Dolphin のサービスマニュー、Nemo アクション、Nautilus スクリプトが追加され、macOS では Finder クイックアクションが追加されます。</li><li><b>メニューが使用する新しいコマンドラインオプション:</b> <code>nikpak --add</code> と <code>--add-here</code> (指定した項目を圧縮)、<code>nikpak --install-menu</code>、<code>--uninstall-menu</code>、<code>--all-users</code>、<code>unNik --extract</code>、<code>--extract-here</code>、<code>--extract-to</code>。Extract here / to its own folder は進行リング付きの unNik の小さなウィンドウ (暗号化アーカイブではパスワードボックス) を表示し、すべて展開すると閉じます。警告とエラーは画面に残ります。</li><li><b>2 つ目のセットアップ</b> <code>unnik--setup.exe</code> は、.nik アーカイブを受け取るだけの人向けに unNik (無料のブラウザー) のみをインストールします。NikPak が既にインストールされている場合はプログラムのみをインストールするため、メニューが二重になることはありません。</li></ul>
+<h3 class="se" id="3-12-packages-create-package-and-open-package">3.12 パッケージ: Create Package と Open Package</h3>
+<p><b>パッケージ</b> は、アーカイブではなく製品である <code>.nik</code> ファイルです。ファイルとフォルダー、名前、作者、説明、表紙画像、パスワード、エンドユーザーライセンス契約を 1 つのファイルに収め、顧客に渡したり販売したりできます。Nikkosynth のサウンドバンクに対応する NikPak 側の形式で、形は同じですがマジックが異なるため、パッケージが Nikkosynth にインポートされることも、サウンドバンクがパッケージとして開かれることもありません (5.7 節)。</p>
+<figure><img src="../assets/img/tech/package-import-box.png" alt="The packaged-file import box: cover, name, author, description, password and the EULA with I approve." loading="lazy"><figcaption>パッケージ化ファイルのインポートボックス (ここでは Nikkosynth で表示): 表紙、名前、作者、説明、パスワード、および I approve 付きの EULA。NikPak の Open Package ボックスも同じ項目を配置しています。</figcaption></figure>
+<p>2 つのボックスは NikPak ウィンドウにあり、unNik はそのうち 2 つ目のボックスでパッケージを開きます。</p>
+<ul><li><b>Create Package</b> — ウィンドウ上部の、Fast / Medium / Best、§ Legal、▣ Cover と同じ行にあるピル。1 つのボックスがすべてを尋ねます: パッケージ名、作者、説明、パスワード (2 回)、任意の EULA、正方形の表紙画像、保存先フォルダー、梱包するファイル。画像フレームをクリックして表紙を選択し (またはウィンドウに画像をドロップし)、ボックス内でファイルかフォルダーを選択します。ボックスを開いたままウィンドウにドロップしてもよく、画像は表紙に、それ以外はリストに追加されます。</li><li><b>起動間で記憶</b> — 作者、EULA テキストとそのスイッチ、保存先フォルダーは設定ファイルに保存されるため (<code>package_author</code>、<code>package_eula_on</code>、<code>package_dest</code>、およびその隣の <code>package-eula.txt</code>)、2 つ目のパッケージには名前、ファイル、パスワードだけで済みます。</li><li><b>ファイル</b> — 保存先フォルダーの <code>&lt;name&gt;.nik</code>、その名前が使われている場合は <code>&lt;name&gt; (2).nik</code>。パスワードは必須です。ファイル、その名前、サイズはパスワードで暗号化され、Zstandard で圧縮されます。パッケージの書き込みが終わると、ウィンドウは通常どおり緑のリングに前後のサイズを表示します。</li><li><b>Open Package</b> — パッケージを NikPak または unNik にドロップするか、ファイルマネージャーから開きます。復号の前に、ボックスが表紙、名前、作者、ファイル数、説明を表示します。次に EULA が表示され、読んで <b>I approve</b> で承認する必要があります。続いてパスワードと保存先フォルダーです。保存先は Create Package と同じ記憶されたフォルダーです。</li><li><b>展開</b> — すべてのファイルがフォルダーごとに書き出され、CRC32 が検証され、安全でないエントリ名は拒否されます (10.1 節)。処理完了後に保存先を開くことができます。パッケージに EULA が含まれる場合は <code>Terms of use.txt</code> としてフォルダーに書き出されるため、条件はファイルと一緒に移動します。</li><li><b>コマンドラインからも同じ</b> — nikpak に渡されたパッケージは拒否されるのではなく、次のように名指しされます: 「This is a NikPak package (500 files, by …), not a NikPak archive. Open it with unNik or NikPak to unpack it.」</li><li><b>混同しないでください</b> — アーカイブ (第 5 章) は汎用のコンテナ、パッケージはライセンス付きの製品、Nikkosynth のサウンドバンクはパッチのバンクです。3 つは最初の 8 バイトで区別されます (5.7 節)。</li></ul>
+<h3 class="se" id="3-13-split-volumes-and-self-extracting-exe">3.13 分割ボリュームと自己解凍 .exe</h3>
+<p>1.12 以降、アーカイブは WinRAR ユーザーに馴染みのある方法で、ボリュームのセットまたは 1 つの自己解凍 .exe として配布できます。どちらも配布用 (アーカイブをディスクに入れる、アップロード制限内に収める、何もインストールされていない人の手に渡す) の機能であり、登録版でのみ利用できます。</p>
+<ul><li><b>分割ボリューム。</b> <code>-v&lt;size&gt;</code> (またはウィンドウの Split ピル) は、アーカイブのバイトストリームを指定サイズのボリュームに分割します — 100 MB、700 MB、1 GB、2 GB、4.7 GB、または入力したメガバイト/ギガバイト数。最初のボリュームは <code>photos.nik</code>、次は <code>photos.n01</code>、<code>photos.n02</code> … です。展開するには最初のボリュームを展開します。リーダーは <code>photos.n01</code>、<code>photos.n02</code> … を自動的に追跡します。ちょうどサイズいっぱいになったボリュームには空の後続ボリュームが付き、これによってリーダーは「さらに続く」と「最後」を区別します。</li>
+<li><b>自己解凍。</b> <code>-sfx</code> は <code>photos.exe</code> を書き出します — アーカイブを追加した unNik と、小さなトレーラーです。実行した人は小さなウィンドウ (名前、サイズ、ボリューム数、展開先フィールド、暗号化時のパスワード、承認する条件、1 つの Extract ボタン) を得て、何もインストールされておらず nikpak も不要な状態で展開できます。<code>-v</code> と <code>-sfx</code> を併用すると <code>photos.exe</code> と <code>photos.n01</code> … が得られます。</li>
+<li><b>登録版のみ。</b> 分割ボリュームと .exe はアーカイブを配布物にする 2 つの機能であるため、評価版では書き出されません。Split ピルは代わりに登録ボックスを開き、<code>-v</code> / <code>-sfx</code> は何かが書き込まれる前にコマンドラインで拒否されます。</li>
+<li><b>アーカイブをドロップして展開。</b> 1.13.1 以降、ウィンドウにドロップされた <code>.nik</code> (または分割セットの任意のボリューム、自己解凍 .exe) は、圧縮する代わりに Extract ボックス (名前、サイズ、ボリューム、パスワード、保存先) を開きます。</li></ul>
+<h2 class="ch" id="4-architecture">4 アーキテクチャ</h2>
+<p>nikpak は約 9,600 行 (単体テストを含む) の単一の Rust プログラムで、16 個のソースファイルと、非公開のライセンスツール nikpak-keygen から構成されます。中心となる設計原則は<b>ストリーミング</b>です。ファイルは 256 KiB 単位で読み込まれ、ライターの連鎖を通され、全体としてメモリに保持されることはありません (唯一の例外は BMP ピクセルデータで、256 MiB に制限されています。またコーデックの 64 KiB 作業バッファーも同様です)。</p>
+<h3 class="se" id="4-1-data-flow-when-creating-an-archive">4.1 アーカイブ作成時のデータフロー</h3>
+<figure><img src="../assets/img/tech/c917ced3.png" alt="Figure 1: the creation pipeline. The two lower boxes are inputs to the stage above them." loading="lazy"><figcaption>図 1: 作成パイプライン。下の 2 つのボックスは、その上のステージへの入力です。</figcaption></figure>
+<p>各ステージは、次のステージを包む標準の <code>Write</code> トレイトの実装であるため、同じコードパスが通常のアーカイブ、暗号化アーカイブ、メディア試行に使われます。</p>
+<h3 class="se" id="4-2-source-code-map">4.2 ソースコードマップ</h3>
+<table class="tech-table"><thead><tr><th><b>ファイル</b></th><th><b>役割</b></th></tr></thead><tbody><tr><td><code>main.rs</code></td><td>エントリーポイント。引数を解析し、コマンドをディスパッチし、エラーを終了コードに変換します。閉じたパイプを静かに処理します (<code>nikpak lb x | head</code>)。</td></tr><tr><td><code>cli.rs</code></td><td>手書きの RAR/zip 形式の引数パーサー、オプションテーブル、完全な <code>-help</code> テキスト。Clap 形式のライブラリでは <code>-pSECRET</code> や <code>-m5</code> のようなスイッチをきれいに表現できません。</td></tr><tr><td><code>archive.rs</code></td><td>作成、一覧表示、テスト、展開 (フィルターまたは正確な選択による)、削除、出力、メディアテスト。また unNik が使用するインデックスと単一ファイル読み取り。エントリストリームのライターとリーダー、上書きポリシー、アトミックな一時ファイルのロジックを含みます。</td></tr><tr><td><code>media.rs</code></td><td>WAV、AIFF、MOD、BMP の内容検出。Shuffle、Delta、MED フィルター。試行による選択。CRC とチャンクフレーミングのヘルパー。</td></tr><tr><td><code>nac.rs</code></td><td>NAC 可逆音声コーデック: ステレオのデコリレーション、予測器、残差符号化。</td></tr><tr><td><code>bits.rs</code></td><td>NAC が使用する MSB ファーストのビットライターとリーダー。</td></tr><tr><td><code>crypto.rs</code></td><td>Argon2id の鍵導出と、XChaCha20-Poly1305 のチャンクライター/リーダー。</td></tr><tr><td><code>format.rs</code></td><td>ディスク上の形式の定数: マジック、バージョン、レコード種別、KDF の制限。</td></tr><tr><td><code>package.rs</code></td><td>NikPak パッケージ (<code>NIKPACK2</code> マジックを持つ <code>.nik</code>): ファイルの収集、ヘッダー、封印、展開。読めるヘッダーは、Open Package ボックスがパスワード入力前に表示する内容です。</td></tr><tr><td><code>util.rs</code></td><td>パスワードのプロンプトと生成、パスのサニタイズ、ワイルドカードマッチング、日付とサイズの書式設定。</td></tr><tr><td><code>error.rs</code></td><td>エラー型、その終了コード、I/O エラーの分類 (破損かシステム障害か)。</td></tr><tr><td><code>engine.rs</code></td><td>-m5 のマルチエンジン本体: ブロックのライターとリーダー、LZMA2 エンジンと PPMd エンジン、エンジン試行 (5.6 節、6.7 節)。</td></tr><tr><td><code>recomp.rs</code></td><td>preflate による ZIP コンテナ、PDF、gzip の Deflate 再圧縮 (7.9 節)。</td></tr><tr><td><code>gui.rs</code></td><td>グラフィカルインターフェース: ドロップウィンドウ、進行リング、保存先設定、コミュニティリンク (3.7 節)。</td></tr><tr><td><code>unnik.rs</code></td><td>unNik — アーカイブブラウザー: ツリー、一覧、検索、ビューアー、展開および削除ボックス (3.9 節)。</td></tr><tr><td><code>lib.rs, bin/unnik.rs</code></td><td>nikpak と unNik が共有するライブラリ、および unNik.exe (コンソールなしのウィンドウプログラム) のエントリーポイント。</td></tr><tr><td><code>license.rs</code></td><td>シェアウェアライセンス: キー形式、Ed25519 検証、ライセンスの保存、登録 (3.8 節)。</td></tr><tr><td><code>i18n.rs</code></td><td>ウィンドウの、話者数の多い 10 言語への翻訳。言語設定 (3.7 節)。</td></tr><tr><td><code>textshape.rs</code></td><td>ヒンディー語、ベンガル語、アラビア語向けのシェーピング済みテキスト: bidi 順序、シェーピング、ラスタライズ (3.7 節)。</td></tr><tr><td><code>split.rs</code></td><td>分割ボリュームと自己解凍 .exe: <code>.n01</code> … を追跡する <code>Chain</code> リーダー、ストリームをボリュームまたは .exe に分割する <code>Out</code> ライター、SFX トレーラー。</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="4-3-creating-an-archive-step-by-step">4.3 アーカイブ作成の手順</h3>
+<ul><li><b>検証</b> 出力先を検証します。既存のアーカイブは <code>-o+</code> (または対話的な yes) でのみ置き換えられます。それ以外の場合、nikpak は追記がサポートされていないことを説明します。</li><li><b>収集</b> 入力を収集します。ワイルドカードは展開され (PowerShell は行いません)、<code>@listfiles</code> が読み込まれ、除外が適用され、シンボリックリンクと特殊ファイルは警告付きでスキップされ、アーカイブ自体が自分に追加されることはありません。</li><li><b>パスワードの解決</b> 暗号化が要求された場合はパスワードを解決し (3.3 節)、Argon2id で鍵を導出します。</li><li><b>ヘッダーの書き込み</b> 続いてライターの連鎖を構築します: ファイル、バッファー付きライター、任意のチャンク暗号化器、Zstandard エンコーダー。</li><li><b>各エントリの書き込み。</b> メディアファイルは検出と試行を経ます (第 7 章)。それ以外は CRC32 を計算しながら 256 KiB 単位でコピーされます。</li><li><b>終端マーカーの書き込み</b> エントリ数を含む終端マーカーを書き込み、Zstandard フレームを終了し、最後の暗号化チャンクを封印してディスクにフラッシュします。</li><li><b>名前の変更</b> <code>name.nik.tmp</code> を <code>name.nik</code> に変更します。それ以前に何かが失敗した場合、ガードオブジェクトが一時ファイルを削除するため、中途半端に書かれたアーカイブが正常なアーカイブを置き換えることはありません。</li></ul>
+<h3 class="se" id="4-4-extracting-an-archive-step-by-step">4.4 アーカイブ展開の手順</h3>
+<ul><li><b>ヘッダーの読み取りと検証</b>: マジック、バージョン、フラグ、方式、および暗号化アーカイブの場合は Argon2id パラメーター。これらはメモリを割り当てる前に範囲チェックされます。</li><li><b>パスワードの取得</b> と鍵の導出。最初の認証付きチャンクがパスワードの正否を証明します。</li><li><b>エントリストリームの走査。</b> 各エントリ名は、ファイルシステムにアクセスする前にサニタイズされます (10.1 節)。</li><li><b>ファイルの書き込み</b> は <code>create_new</code> で行い、タイムスタンプとパーミッションを設定し、再構築されたバイトの CRC32 を検証します。CRC に失敗したファイルは保持されず削除されます。</li><li><b>終端の検証</b> アーカイブの終端を検証します。終端マーカーの後でストリームが本当に終わっていること、暗号化されている場合は最後の認証付きチャンクが処理されていることを確認します。これにより切り詰めや追記されたデータを検出します。</li></ul>
+<h3 class="se" id="4-5-memory-and-threading">4.5 メモリとスレッド</h3>
+<p>Zstandard は圧縮にワーカースレッドを使用します (既定では全コア、<code>-mt&lt;N&gt;</code> で制限)。1.13 以降、最高レベルも並列で動作します: <code>-m5</code> はバイナリとテキストのエントリを均等なブロック (コアごとに 1 つ、8 MiB 未満にはならない) に分割し、各ブロックを専用スレッドで圧縮します。一方、ファイル単位の処理 (メディア試行、Deflate 再圧縮) はすべてのレベルでワーカースレッドのプール上で実行されます。エンコーダーのメモリは <code>ENCODER_RAM_BUDGET</code> (1.5 GiB) で制限されます。ブロックが多いほど LZMA2/PPMd の辞書は小さくなります。<code>NIKPAK_SEQ=1</code> で 1 つずつ処理する経路に戻ります。展開、音声コーデック、暗号化は呼び出しスレッドで実行されます。Argon2id は鍵導出に 64 MiB を必要とし、最高レベルでは 128 MiB のマッチウィンドウを使用します。</p>
+<h2 class="ch" id="5-the-nik-container-format">5 .nik コンテナ形式</h2>
+<p><code>.nik</code> ファイルは、小さな固定ヘッダーとそれに続く本体で構成されます。本体は 1 つの<b>ソリッド</b>ストリームです。すべてのエントリが連結され、まとめて圧縮され、必要に応じて暗号化されます。形式のバージョン 2 はメディアレコードを追加します。バージョン 1 のアーカイブも引き続き読み取れます。</p>
+<h3 class="se" id="5-1-header">5.1 ヘッダー</h3>
+<table class="tech-table"><thead><tr><th><b>オフセット</b></th><th><b>サイズ</b></th><th><b>フィールド</b></th><th><b>備考</b></th></tr></thead><tbody><tr><td>0</td><td>8</td><td>マジック</td><td><code>89 4E 49 4B 0D 0A 1A 0A</code> (PNG のアイデア: テキストモード転送による破損を検出)</td></tr><tr><td>8</td><td>1</td><td>バージョン</td><td>3 (1 と 2 も引き続き読み取り可能)</td></tr><tr><td>9</td><td>1</td><td>フラグ</td><td>ビット 0 = 暗号化、ビット 1 = 法的声明、ビット 2 = 表紙。他のビットは 0 でなければならない</td></tr><tr><td>10</td><td>1</td><td>方式</td><td>0 = 保存、1 = Zstandard、2 = マルチエンジンブロック (5.6)</td></tr><tr><td>11</td><td>1</td><td>予約</td><td>0</td></tr><tr><td>12</td><td>4</td><td>Argon2id メモリ (KiB)</td><td>暗号化アーカイブのみ、リトルエンディアン</td></tr><tr><td>16</td><td>4</td><td>Argon2id パス数</td><td>暗号化のみ</td></tr><tr><td>20</td><td>4</td><td>Argon2id レーン数</td><td>暗号化のみ</td></tr><tr><td>24</td><td>16</td><td>ソルト</td><td>アーカイブごとにランダム、暗号化のみ</td></tr><tr><td>40</td><td>19</td><td>ストリーム nonce プレフィックス</td><td>アーカイブごとにランダム、暗号化のみ</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p>完全なヘッダー (12 バイト、暗号化時は 59 バイトに、法的声明と表紙があればそれらを加えたもの) は、後で各暗号化チャンクの関連データとして認証されるため、検出されずに変更することはできません。</p>
+<p><b>法的声明</b> (フラグビット 1)。固定フィールドの後に 4 バイトの長さと UTF-8 の声明が続き、最大 64 KB です。パスワードを求める前にプログラムが表示できるよう平文で保存され、nikpak は承認されるまで一覧表示、テスト、展開、削除を拒否します。承認は、ウィンドウでは <b>I approve</b>、コンソールでは YES の入力、または <code>-accept</code> で行います。ビット 1 を知らないリーダーはアーカイブを拒否するため、古いバージョンで声明を飛ばすことはできません。</p>
+<p><b>表紙</b> (フラグビット 2)。続いて 4 バイトの長さと JPEG または PNG 画像 (最大 4 MB)。nikpak は任意の画像から正方形に切り抜き、1024 x 1024 に拡大縮小して作成します。パスワードなしで読み取られ、unNik と Nikkomander によって表示されます。</p>
+<p>どちらもヘッダーの一部であるため、暗号化アーカイブでは各チャンクとともに認証されます。条件や表紙を変更または削除すると、アーカイブは開けなくなります。これらを含まないアーカイブは従来とまったく同じように書き込まれます。</p>
+<h3 class="se" id="5-2-entry-records">5.2 エントリレコード</h3>
+<p>(復号・解凍された) ストリーム内では、各エントリがレコードです。すべての整数はリトルエンディアンです。</p>
+<table class="tech-table"><thead><tr><th><b>種類</b></th><th><b>レイアウト</b></th></tr></thead><tbody><tr><td><code>0</code> END</td><td><code>count:u64</code>。終端を示し、その前にいくつのエントリがあるかを示します。</td></tr><tr><td><code>1</code> FILE</td><td><code>name_len:u16 name mtime:i64 mode:u32 size:u64 data[size] crc32:u32</code></td></tr><tr><td><code>2</code> DIR</td><td><code>name_len:u16 name mtime:i64 mode:u32</code></td></tr><tr><td><code>3</code> MEDIA</td><td><code>name_len:u16 name mtime:i64 mode:u32 size:u64 filter:u8 method:u8 params_len:u8 params framed_stream crc32:u32</code></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<ul><li>名前は <code>/</code> 区切りの UTF-8 で、最大 4096 バイトです。</li><li><code>mtime</code> は Unix 秒、<code>mode</code> は Unix のパーミッションワードです (Windows のファイルは 0644 または 0755、読み取り専用の場合は 0444)。</li><li>CRC32 は常に<b>元の</b>バイトを対象とするため、メディアフィルターを検証できます。</li><li>MEDIA レコードでは <code>size</code> は元のサイズです。<code>framed_stream</code> は <code>[u32 length][bytes]</code> チャンクの連続で、長さ 0 で終わるため、リーダーはフィルターを理解せずにメディアエントリをスキップできます。</li></ul>
+<h4 class="su" id="media-parameters">メディアパラメーター</h4>
+<table class="tech-table"><thead><tr><th><b>フィルター</b></th><th><b>パラメーター</b></th><th><b>内容</b></th></tr></thead><tbody><tr><td>1 音声</td><td>19 バイト</td><td><code>offset:u64 frames:u64 channels:u8 bits:u8 flags:u8</code> (フラグビット 0 = ビッグエンディアン、ビット 1 = 符号付き)</td></tr><tr><td>2 画像</td><td>21 バイト</td><td><code>offset:u64 width:u32 rows:u32 bpp:u8 stride:u32</code></td></tr><tr><td>3 Deflate</td><td>0 バイト</td><td><code>none: the framed stream holds raw segments and recompressed Deflate streams (section 7.9)</code></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p><code>offset</code> より前のすべて (ヘッダー、タグ、パレット、MOD パターン) と、サンプルまたはピクセル領域より後のすべて (末尾のチャンク) は、フィルター処理されたデータの前後で変更されずに保存されます。</p>
+<h3 class="se" id="5-3-encrypted-body-framing">5.3 暗号化本体のフレーミング</h3>
+<p>暗号化フラグが設定されている場合、zstd の出力は平文 64 KiB のチャンクに分割されます。各チャンクは 32 ビットのビッグエンディアン長に続く暗号文として保存され、Poly1305 タグの分だけ 16 バイト長くなります。チャンクはさらに 1 バイト以上続く場合にのみ封印されるため、最後のチャンクが空になることはなく、最終としてマークできます (8.3 節)。</p>
+<h3 class="se" id="5-4-why-a-solid-stream">5.4 なぜソリッドストリームなのか?</h3>
+<p>すべてのファイルを 1 つのストリームとして圧縮すると、圧縮器はファイル間の繰り返しを見つけられます。これはソースツリーや文書コレクションでは極めて重要です (第 11 章のベンチマークでは、10,949 ファイルで RAR の非ソリッド出力がソリッド出力のほぼ 2 倍の大きさになっています)。代償はシーケンシャルアクセスです。単一ファイルを展開するには、その前にあるものを解凍する必要があります。nikpak はメディアエントリについてはデコードせずにスキップすることで、このコストを軽減します。</p>
+<h3 class="se" id="5-5-versioning">5.5 バージョニング</h3>
+<p>バージョンバイトは、プログラムが理解できる最高バージョンと比較されます。新しいアーカイブでは、誤解を招く破損エラーではなく、<i>Unsupported archive version N; please update nikpak</i> というメッセージが出力されます。不明なフラグ、方式、メディアフィルターも同様に拒否されます。</p>
+<h3 class="se" id="5-6-multi-engine-body-version-3">5.6 マルチエンジン本体 (バージョン 3)</h3>
+<p>-m5 で作成されたアーカイブは方式 2 を使用します。5.2 で説明した内部レコードストリームは変わりませんが、エントリの間でのみ<b>ブロック</b>に分割され、各ブロックは独自のエンジンで圧縮されます。解凍されたブロックを連結すると、シングルエンジンアーカイブのレコードストリームとまったく同じになるため、一覧表示、テスト、展開は同じように動作します。</p>
+<table class="tech-table"><thead><tr><th><b>要素</b></th><th><b>レイアウト</b></th></tr></thead><tbody><tr><td>body</td><td>block* に続いて単一の 0 バイト</td></tr><tr><td>block</td><td>engine:u8 parameters、続いてフレーム [u32 length 1 .. 1 MiB][compressed bytes]、長さ 0 で終了</td></tr><tr><td>エンジン 1</td><td>Zstandard (パラメーターなし)</td></tr><tr><td>エンジン 2</td><td>LZMA2 生ストリーム: 辞書サイズ u32、lc u8、lp u8、pb u8</td></tr><tr><td>エンジン 3</td><td>PPMd バリアント I (PPMd8): 次数 u8、モデルサイズ u32、復元方式 u8 (0 = 再起動)</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p>フレーミングにより、リーダーはデコーダーを信頼せずに各ブロックの終端を見つけられ、すべてのパラメーターはメモリを割り当てる前に範囲チェックされます (LZMA2 辞書は最大 1.5 GiB、PPMd モデルは最大 1 GiB、次数は 2〜16)。暗号化されている場合、本体は他のアーカイブと同じ認証付きチャンクで保護されます (第 8 章)。</p>
+<h3 class="se" id="5-7-the-package-container-nikpack2">5.7 パッケージコンテナ (NIKPACK2)</h3>
+<p>アーカイブ (本章) と Nikkosynth サウンドバンクのほかに、<code>.nik</code> は NikPak パッケージ (3.12 節) である場合があります。3 つは拡張子を共有するため、すべてのプログラムは最初の 8 バイトでファイルを識別します:</p>
+<table class="tech-table"><thead><tr><th><b>種類</b></th><th><b>最初の 8 バイト</b></th><th><b>書き出すプログラム</b></th></tr></thead><tbody><tr><td>NikPak アーカイブ</td><td><code>89 4E 49 4B 0D 0A 1A 0A</code></td><td>nikpak。unNik が読み取ります (第 5 章)</td></tr><tr><td>NikPak パッケージ</td><td><code>NIKPACK2</code> (4E 49 4B 50 41 43 4B 32)</td><td>NikPak 1.11 以降。unNik が展開します</td></tr><tr><td>Nikkosynth サウンドバンク</td><td><code>NIKPACK1</code> (4E 49 4B 50 41 43 4B 31)</td><td>Nikkosynth のみ</td></tr></tbody></table>
+<p>パッケージとサウンドバンクは同じ方法で構築されます (平文の JSON ヘッダー 1 行と、その後に封印された本体 1 つ)。しかしマジックが異なるため、2 つの製品は区別されます。</p>
+<p>ヘッダーは 1 行の JSON で、意図的にパスワードなしで読めるようになっています。Open Package ボックスがパスワードを求める前に表示する内容です。<code>format</code> (「nikpak-package」)、<code>version</code> (1)、<code>name</code>、<code>author</code>、<code>description</code>、<code>eula</code>、<code>cover</code> (1024 × 1024 の JPEG または PNG の base64) と <code>coverType</code>、<code>count</code>、<code>encrypted</code>、暗号化されている場合は 16 バイトの <code>salt</code> と <code>nonce</code> (16 進) を含みます。ファイルに関する情報は含まれません。ファイル名と内容は本体内にあります。ヘッダーはタグの対象の一部であるため、EULA が編集または削除されたパッケージは開けなくなります。</p>
+<p>本体は 5.2 節のレコードストリームです。同じレコード 1 FILE、2 DIR、0 END で、64 ビットのサイズ、mtime、mode、ファイルごとの CRC32 を持ち、1 つの Zstandard ストリーム (レベル 19) として圧縮されます。パッケージには MEDIA レコードも Deflate 再圧縮もありません。ファイルはそのまま保存され、ストリーム全体が一度に圧縮されるため、両方の製品が実装できるほど形式が小さく保たれます。</p>
+<ul><li><b>鍵</b> — salt ‖ password に対して SHA-256 を 600 000 回反復し、32 バイトの暗号化鍵と 32 バイトの検証鍵に分割します。推測 1 回に 0.5 秒かかり、これが盗まれたパッケージへの攻撃を高コストにします。</li><li><b>本体</b> — キーストリーム SHA-256(encryption key ‖ nonce ‖ counter) との XOR を 32 バイトずつ行います。</li><li><b>タグ</b> — ヘッダー行と暗号文に対する HMAC-SHA-256 で、末尾 32 バイト。定数時間で比較されます。誤ったパスワードと破損ファイルは同じように失敗するため、両者を区別できません。</li><li><b>なぜ Argon2id と XChaCha20-Poly1305 ではないのか</b> — パッケージは共有形式だからです。Nikkosynth のバンクも同じ構造を使っており、両方の製品が標準ライブラリのコード数十行で実装できる必要があります。これは封印されたコンテナ (書き手は 1 人、読み手は 1 人、攻撃者が選んだメッセージはなく、パスワードが移動することもない) であり、そうあるべきなのです。</li></ul>
+<p>制限: 説明 4 KB、EULA 64 KB、作者 256 バイト、パッケージ名 256 バイト、表紙 4 MB、エントリ名 4096 バイト、展開後の本体 512 MB (付録 A)。</p>
+<h3 class="se" id="5-8-split-volumes-and-the-sfx-trailer">5.8 分割ボリュームと SFX トレーラー</h3>
+<p>分割セットは 2 つ目の形式ではありません。ボリュームは、アーカイブ自身のバイトストリームをサイズ境界で切ったものです。形式の中で分割を認識するのは 1 つのヘッダーフラグだけです。最初のボリュームがアーカイブそのもの (ヘッダーにボリュームサイズを持つ完全な .nik) で、残りは純粋な継続です。</p>
+<p><b>ヘッダー。</b> フラグビット 3 (FLAG_SPLIT) と、表紙の後の 64 ビットのボリュームサイズ。アーカイブが暗号化されている場合、ボリュームサイズは AAD の一部であり、ボリュームが失われたときに「切り詰められたアーカイブ」ではなく「アーカイブは photos.n01 に続いていますが、それが見つかりません」とリーダーが言えるようにするものです。古いリーダーはアーカイブを拒否しますが、これは正しい動作です。サイズがないと、セットは破損ファイルのように見えるためです。</p>
+<p><b>Chain リーダー。</b> <code>split::Chain</code> は、最初のボリュームの先頭 (.exe 内の場合はそのオフセット) から開始し、ボリュームの終端に達すると次のボリューム (<code>photos.n01</code>、<code>photos.n02</code>、…、続いて <code>.100</code> …) を開いて続行する Read です。プログラム内のすべての読み取り経路がこれを通るため、一覧表示、表示、展開、右クリックメニューはすべてセットの全ボリュームを読み取ります。</p>
+<p><b>Out ライター。</b> <code>split::Out</code> は <code>-v</code> と <code>-sfx</code> の背後にあるライターです。….tmp ファイルに書き込み、<code>finish()</code> で名前を変更するため、失敗した実行が中途半端なボリュームを残すことはありません。1 つのファイル、ボリュームのセット、または .exe を書き出します。</p>
+<p><b>自己解凍。</b> .exe は <code>unNik.exe</code> のバイト列にアーカイブのバイト列と 40 バイトのトレーラー (マジック <code>NIKPAKSFX</code>、アーカイブのオフセットと長さ、全体サイズ、CRC32) を続けたものです。unNik は起動時に自身の実行ファイル内でこのトレーラーを探し、見つかった場合はドロップウィンドウの代わりに小さなボックスを表示します。.exe は約 8 MB にアーカイブのサイズを加えたものです。</p>
+<h2 class="ch" id="6-the-compression-engine">6 圧縮エンジン</h2>
+<h3 class="se" id="6-1-why-zstandard">6.1 なぜ Zstandard なのか</h3>
+<p>Zstandard は LZ77 マッチングと、ハフマン符号化と有限状態エントロピー (FSE) からなるエントロピー段階を組み合わせています。ZIP の Deflate アルゴリズムと比較して、はるかに大きなウィンドウでマッチを見つけ、リテラルとマッチ長をより厳密なエントロピー符号でモデル化し、毎秒ギガバイト級の速度でデコードします。また、オープンで広く監査された形式であるため、nikpak のデータを独立したツールで復元できます。</p>
+<h3 class="se" id="6-2-level-mapping">6.2 レベルの対応</h3>
+<p>nikpak は RAR 形式のレベル (<code>-m0</code> .. <code>-m5</code>) と zip 形式のレベル (<code>-0</code> .. <code>-9</code>) の両方を受け付け、Zstandard のレベルに対応付けます:</p>
+<table class="tech-table"><thead><tr><th><b>オプション</b></th><th><b>Zstandard レベル</b></th><th><b>特性</b></th></tr></thead><tbody><tr><td><code>-m0</code></td><td>なし (保存)</td><td>圧縮なし、メディアフィルターなし</td></tr><tr><td><code>-m1</code></td><td>1</td><td>最速</td></tr><tr><td><code>-m2</code></td><td>3</td><td>高速。1 コアで 197 MB を約 0.9 秒 (1.2.0 までの既定)</td></tr><tr><td><code>-m3</code></td><td>9</td><td>良好なバランス</td></tr><tr><td><code>-m4</code></td><td>15</td><td>高。128 MiB ウィンドウと長距離マッチング。Deflate 再圧縮 (7.9)</td></tr><tr><td><code>-m5 (default)</code></td><td>LZMA2 / PPMd</td><td>最大。1.2.1 以降の既定で、マルチエンジン本体 (6.7) と Deflate 再圧縮</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p>zip 形式のレベルは次のように対応します: <code>-0</code> は保存、<code>-1</code> から <code>-6</code> は Zstandard の 1 から 6、<code>-7</code> は 9、<code>-8</code> は 12、<code>-9</code> は -m5 と同じです。</p>
+<h3 class="se" id="6-3-large-window-and-long-distance-matching">6.3 大きなウィンドウと長距離マッチング</h3>
+<p>Zstandard レベル 15 以上では、nikpak は 2^27 バイト (128 MiB) のマッチウィンドウと長距離マッチングを有効にします。ソースツリー、文書セット、バックアップには、ストリーム内で遠く離れた多数の類似ファイルが含まれます。通常の 8 MiB ウィンドウではそれらをまたいで見ることはできません。197 MB のテストセットでは、これにより <code>-m5</code> の出力が 26.3 MB から <b>24.4 MB</b> に、<code>-m4</code> が 29.5 MB から 26.8 MB に減少し、<code>-m4</code> では速度の低下はなく、<code>-m5</code> ではわずかでした。2^27 のウィンドウは Zstandard の既定のデコーダー制限内であるため、標準のデコーダーならどれでもデータを読み取れます。</p>
+<h3 class="se" id="6-4-multi-threading">6.4 マルチスレッド</h3>
+<p>エンコーダーは入力をジョブに分割し、ワーカースレッド (既定では全コア) で実行します。そのため圧縮速度はコア数に応じて向上し、形式は単一のストリームのままです。1.13 以降、<code>-m5</code> はさらにアーカイブをコアごとに 1 ブロックへ分割し、ブロックを並列に圧縮します (4.5 節)。ファイル単位のパイプラインはすべてのレベルで動作します。本書のすべての数値は<b>1 つ</b>のコアで測定されたものです。一般的なマルチコアマシンでは、nikpak はここに示したよりかなり高速です。</p>
+<h3 class="se" id="6-5-integrity-inside-the-stream">6.5 ストリーム内の完全性</h3>
+<p>Zstandard フレームは独自のコンテンツチェックサムを持ち、nikpak はファイルごとの CRC32 と、エントリ数を含む終端マーカーを追加します。そのため、破損した平文アーカイブは 3 つのレベルで検出されます: フレームのチェックサム、ファイルごとの CRC、終端マーカーです。</p>
+<h3 class="se" id="6-6-store-mode">6.6 保存モード</h3>
+<p><code>-m0</code> はエントリを非圧縮で書き込みます。既に圧縮されたデータに有用であり、意図的にメディアフィルターをバイパスする唯一のモードでもあります。<i>保存</i> を求めたユーザーはデータが変換されることを期待していないためです。</p>
+<h3 class="se" id="6-7-the-maximum-level-lzma2-and-ppmd">6.7 最高レベル: LZMA2 と PPMd</h3>
+<p>Zstandard は速度のための正しいエンジンですが、最強の設定でもソースコードや文書では LZMA2 に数パーセント劣り、散文では PPMd に大きく劣ります。そのためバージョン 1.2 以降、-m5 はブロックからアーカイブを構築します (形式は 5.6):</p>
+<ul><li><b>バイナリブロック。</b> フォルダー、バイナリファイル、メディアエントリ、Deflate 再圧縮されたエントリは <b>LZMA2</b> で圧縮されます: プリセット 9、ナイス長 273、マッチファインダー深度 32、データに合わせた辞書サイズ (1〜128 MiB)。</li><li><b>テキストブロック。</b> 最初の 64 KiB に 0 バイトがなく、制御文字がほとんどないファイル (ソースコード、テキスト、CSV、HTML、XML など) は 2 つ目のブロックに送られます。これらのファイルの連続する 1 MiB の 4 つの範囲が、<b>PPMd バリアント I</b> (次数 8、192 MiB モデル) とテキスト向けに調整した LZMA2 (lc 4、pb 0) で試行圧縮され、小さい方の結果が採用されます。散文は PPMd に有利で、類似ファイルの多い大規模なソースツリーは LZMA2 に有利です。ファイル間の長い繰り返しをコピーできるためです。</li><li><b>順序。</b> 各ブロック内では、7-Zip と同様にファイルが拡張子、次にファイル名で並べられ、同一または類似のファイルが隣り合うようにされます。連続した試行サンプルと合わせて、これにより一般データセットが 7.5 % 小さくなりました。</li></ul>
+<p>「極端」な LZMA2 設定は測定のうえ却下されました。表計算の XML では最大 10 倍遅く、しかも小さくならなかったからです。1.13 以降、<code>-m5</code> アーカイブのブロックはコアごとに 1 つ、並列に圧縮されます。<code>-mt&lt;N&gt;</code> はブロック数を設定します (最高の圧縮率には 2、速度には 8)。</p>
+<h2 class="ch" id="7-media-intelligence">7 メディアインテリジェンス</h2>
+<p>汎用の圧縮器はバイトを見るだけです。WAV ファイルが、次のサンプルが前のサンプルから予測できる波形であることや、写真の隣接ピクセルがほぼ等しいことを知りません。nikpak のメディア層がその知識を提供します。そのようなファイルを認識し、冗長性をあらわにする可逆変換を適用し、圧縮器 (または専用コーデック) がそれを活用できるようにします。nikpak が RAR に対して最も優位に立つのはこの部分です。</p>
+<h3 class="se" id="7-1-detection-by-content">7.1 内容による検出</h3>
+<p>検出は 8 KiB 以上の各ファイルの先頭バイトを調べ、拡張子は決して信頼しません。そのため <code>.dat</code> に名前を変えた WAV も見つかり、<code>.wav</code> という名前のテキストファイルは見つかりません。</p>
+<table class="tech-table"><thead><tr><th><b>種類</b></th><th><b>認識方法</b></th><th><b>フィルター対象</b></th></tr></thead><tbody><tr><td>WAV</td><td><code>RIFF</code>..<code>WAVE</code>、整数 PCM の <code>fmt</code> チャンク (フォーマット 1、または PCM サブフォーマットを持つ WAVE_FORMAT_EXTENSIBLE)、8/16/24/32 ビット、1〜8 チャンネル、一貫したブロックアラインメント。続いて <code>data</code> チャンク</td><td>サンプル領域。0、過大、または不正なデータ長はファイルサイズに合わせてクランプされます。残りのバイトと末尾のチャンクはそのまま保持されます。</td></tr><tr><td>AIFF / AIFC</td><td><code>FORM</code>..<code>AIFF</code> または <code>AIFC</code> (圧縮 <code>NONE</code> または <code>twos</code>)、<code>COMM</code> と <code>SSND</code> チャンク、ビッグエンディアンの符号付きサンプル</td><td>サウンドデータ領域。</td></tr><tr><td>ProTracker MOD</td><td>オフセット 1080 のシグネチャ: M.K.、M!K!、FLT4、4CHN、6CHN、8CHN、FLT8、OCTA、CD81</td><td>パターンデータの後の 8 ビットサンプル領域 (7.6 節)。</td></tr><tr><td>BMP</td><td><code>BM</code>、40 バイト以上の DIB ヘッダー、圧縮なし、8、24、32 ビット/ピクセル、ファイルに収まるピクセル行、4 KiB から 256 MiB の領域</td><td>ピクセル行 (7.7 節)。</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p>処理されず、通常の圧縮で保存されるもの: 浮動小数点 WAV、ADPCM その他の圧縮音声、RLE またはビットフィールド BMP、ProTracker MOD 以外のトラッカー形式。MP3、JPEG、FLAC、PNG、MP4 のような既に圧縮されたメディアはまったく認識されず、そのまま扱われます。変換しても役に立たないためです。</p>
+<h3 class="se" id="7-2-the-trial-choosing-the-best-filter-per-file">7.2 試行: ファイルごとに最良のフィルターを選ぶ</h3>
+<p>すべてのファイルに最適な単一の変換はありません。予測符号化は録音音楽で勝ち、バイトプレーン分離は 8 ビット・コンパンディング由来の音声 (約 1,000 個の異なる 16 ビット値しか現れない) で勝ち、通常の圧縮は無音や非常に反復的なトラッカーサンプルで勝ちます。そのため nikpak は推測せずに<b>測定</b>します。</p>
+<ul><li>サンプルを取ります。サンプル領域が 3 MiB 以下なら全体、それ以上なら音声の 5 %、45 %、85 % の位置の 768 KiB の 3 つのウィンドウ。画像の場合は先頭の行から約 4 MiB まで。</li><li>サンプルを通常の Zstandard レベル 3 (ベースライン) と、該当するすべてのフィルターで圧縮します: 16/24/32 ビット音声には NAC、Shuffle、Shuffle+Delta、8 ビット音声には NAC と Shuffle+Delta、画像には MED。</li><li>推定値が最小のフィルターを採用しますが、ベースラインを少なくとも 2 % 上回る場合に限ります。そうでなければファイルは通常の圧縮で保存されます。</li><li>勝った方法でファイルを書き込みます。これはすべてファイルごとに行われるため、1 つのアーカイブに、異なる方法で符号化された WAV と通常のファイルが同居できます。</li></ul>
+<p><code>nikpak mt </code> は同じ測定を<b>ファイル全体</b>に対して実行し、表を出力します。第 11 章のベンチマークはこうして調べられました。オプションでは、<code>-mc-</code> はフィルターを無効にし、<code>-mc+</code> は試行なしで既定のフィルターを強制します。</p>
+<table class="tech-table"><tbody><tr><td><b>可逆で、検証され、回避可能</b> すべてのフィルターは正確に可逆です。各エントリとともに保存される CRC32 は元のバイトに対して計算され、展開時にチェックされます。NAC エンコーダーは書き込み中に各ブロックを検証し (7.4 節)、<code>-mc-</code> はレイヤー全体をオフにします。</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="7-3-the-nac-audio-codec">7.3 NAC 音声コーデック</h3>
+<p>NAC (nikpak audio codec) は、整数 PCM 向けのブロックベースの可逆コーデックです。FLAC と同じ系統で、線形予測と Rice 符号化を行います。このアーカイブ用に設計された独自のビットストリームを持ち、WAV、AIFF、MOD ファイルのサンプルデータに使用されます。</p>
+<figure><img src="../assets/img/tech/fc2a013c.png" alt="Figure 2: encoding one block of 4096 sample frames." loading="lazy"><figcaption>図 2: 4096 サンプルフレームの 1 ブロックの符号化。</figcaption></figure>
+<h4 class="su" id="blocks-and-stereo-decorrelation">ブロックとステレオのデコリレーション</h4>
+<p>音声は 4096 サンプルフレームのブロックに分割され、それぞれ独立して符号化されます。これによりコーデックは堅牢になり (エラーが広がらない)、エンコーダーは変化する素材に適応できます。ステレオの場合、エンコーダーはブロックごとに 4 つの表現から 1 つを選びます:</p>
+<table class="tech-table"><thead><tr><th><b>モード</b></th><th><b>符号化するチャンネル</b></th><th><b>再構築</b></th></tr></thead><tbody><tr><td>0</td><td>Left, Right</td><td>直接</td></tr><tr><td>1</td><td>Left, Side</td><td>R = L - S</td></tr><tr><td>2</td><td>Side, Right</td><td>L = R + S</td></tr><tr><td>3</td><td>Mid, Side</td><td><code>sum = (M &lt;&lt; 1) | (S &amp; 1)</code>、<code>L = (sum + S) &gt;&gt; 1</code>、<code>R = (sum - S) &gt;&gt; 1</code></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p>ここで <code>Side = L - R</code>、<code>Mid = (L + R) &gt;&gt; 1</code> です。サイドチャンネルは通常のチャンネルより 1 ビット多く必要で、<code>bits + 1</code> で符号化されます。モードの選択は低コストで、エンコーダーは L、R、M、S の 2 次固定予測残差の絶対値を合計し、合計が最小のペアを選びます。チャンネル相関の強い録音では、Mid/Side により通常数パーセント節約できます。</p>
+<h4 class="su" id="sub-frame-types">サブフレームの種類</h4>
+<p>ブロックの各符号化チャンネルは、最も小さい 4 種類のサブフレームのいずれかとして保存されます:</p>
+<table class="tech-table"><thead><tr><th><b>種類</b></th><th><b>用途</b></th><th><b>コスト</b></th></tr></thead><tbody><tr><td>Constant</td><td>すべてのサンプルが等しい (デジタル無音)</td><td>ブロック全体で 2 + サンプル幅ビット</td></tr><tr><td>Verbatim</td><td>ノイズ的な素材、または安全用フォールバック</td><td>n × 幅ビット</td></tr><tr><td>Fixed</td><td>0〜4 次の多項式予測器</td><td>ウォームアップサンプル + 残差</td></tr><tr><td>LPC</td><td>1〜32 次の線形予測器 (係数を伝送)</td><td>係数 + ウォームアップ + 残差</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p><b>無駄なビット。</b> ブロック内のすべてのサンプルの下位ビットが常に 0 の場合 (16 ビットコンテナに格納された 8 ビット録音、または量子化された信号)、それらは除去され、その数が 5 ビットで保存されます。</p>
+<h4 class="su" id="fixed-predictors">固定予測器</h4>
+<pre>order 0: e[i] = x[i]</pre>
+<pre>order 1: e[i] = x[i] - x[i-1]</pre>
+<pre>order 2: e[i] = x[i] - 2*x[i-1] + x[i-2]</pre>
+<pre>order 3: e[i] = x[i] - 3*x[i-1] + 3*x[i-2] - x[i-3]</pre>
+<pre>order 4: e[i] = x[i] - 4*x[i-1] + 6*x[i-2] - 4*x[i-3] + x[i-4]</pre>
+<p><br>
+<br>
+
+</p>
+<p>ブロックの最初の <code>order</code> 個のサンプルは、ウォームアップ値としてそのまま保存されます。</p>
+<h4 class="su" id="linear-predictive-coding-lpc">線形予測符号化 (LPC)</h4>
+<p>倍音や和声のある音楽では、ブロックに適合させた係数を持つ予測器の方が固定多項式よりはるかに優れています。エンコーダーは次のように係数を計算します:</p>
+<ul><li>ブロックに <b>Tukey 窓</b> (最初と最後の 4 分の 1 をテーパー) を適用し、端が統計を歪めないようにします。</li><li>窓かけされた信号の<b>自己相関</b> <code>r[0..32]</code> を計算します。</li><li><b>Levinson-Durbin 再帰</b> を実行します。これにより 1 回のパスで 1〜32 次すべての最適な係数セットが得られます: <code>k = (r[i] - sum a[j] r[i-j]) / err</code>、<code>a[i] = k</code>、<code>a[j] = a[j] - k a[i-j]</code>、<code>err = err (1 - k^2)</code>。</li><li>実数の係数を 12、14、15 ビットの精度 (サンプル幅による) で整数に<b>量子化</b>し、最大の係数がちょうど収まるように 2 のべき乗のスケール (<code>shift</code>、0〜20) を選びます。丸めには誤差フィードバックを使うため、量子化誤差が係数間で蓄積しません。</li><li>いくつかの次数 (セットは下記のエフォートレベルによる) を評価し、それぞれの残差を計算し、係数の送信コストも含めて推定合計サイズが最小のものを採用します。</li></ul>
+<p>予測器自体は純粋な整数演算で、デコーダーが実行するのはこれです:</p>
+<pre>pred[i] = (q[0]*x[i-1] + q[1]*x[i-2] + ... + q[n-1]*x[i-n]) &gt;&gt; shift</pre>
+<pre>e[i] = x[i] - pred[i] (n = order; the sum uses 64 bits)</pre>
+<p><br>
+<br>
+
+</p>
+<p>浮動小数点は、どの整数係数を送るかを決めるために<b>エンコーダーだけ</b>が使用します。デコーダーは浮動小数点に触れないため、デコードはあらゆるプロセッサとコンパイラでビット単位で正確です。</p>
+<h4 class="su" id="residual-coding">残差符号化</h4>
+<p>予測誤差はジグザグ変換 (<code>u = (e &lt;&lt; 1) XOR (e &gt;&gt; 63)</code> で、小さな正負の値が小さな数になる) で符号なし数に変換され、<b>分割 Rice 符号</b>で符号化されます。ブロックの残差は 2^p 個のパーティション (p は 0〜8、エンコーダーが選択) に分割され、各パーティションに独自の Rice パラメーター <code>k</code> (5 ビット) が与えられます。値は <code>u &gt;&gt; k</code> を単進 (その数の 0 と 1 つの 1) で書き、続いて下位 <code>k</code> ビットを書きます。パーティションの最良の <code>k</code> はその値の合計から導出されるため、各候補予測器のコストは符号化せずに実行中の合計から安価に見積もれます。</p>
+<h4 class="su" id="effort-levels">エフォートレベル</h4>
+<p>アーカイブのレベル (<code>-m</code> オプション) は、ブロックごとに試す LPC 次数の数を決めます。次数が多いほど結果はわずかに小さくなり、エンコーダーは遅くなりますが、デコーダーの速度は同じです。</p>
+<table class="tech-table"><thead><tr><th><b>アーカイブレベル</b></th><th><b>NAC エフォート</b></th><th><b>試す LPC 次数</b></th></tr></thead><tbody><tr><td><code>-m1</code></td><td>0</td><td>8、16</td></tr><tr><td>-m2、-m3</td><td>1</td><td>4、8、12、16、24、32</td></tr><tr><td>-m4、-m5</td><td>2</td><td>2、4、6、8、10、12、14、16、18、20、24、28、32</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p>0〜4 次の固定予測器は常に試されます。ベンチマークでは、エフォートレベルによるステレオ音楽の結果の差は 0.05 % 未満でした。大きな利得は、予測をそもそも使うことから得られます。</p>
+<h4 class="su" id="bit-layout-of-a-block">ブロックのビットレイアウト</h4>
+<pre>block := [stereo mode: 2 bits] sub-frame [sub-frame] (byte-padded)</pre>
+<pre>sub-frame := type:2 ...</pre>
+<pre>CONSTANT : value:width</pre>
+<pre>VERBATIM : wasted:5 samples:(n x (width - wasted))</pre>
+<pre>FIXED : wasted:5 order:3 warm-up residual</pre>
+<pre>LPC : wasted:5 order-1:5 precision-1:4 shift:5</pre>
+<pre>coefficients warm-up residual</pre>
+<pre>residual := partition-order:4 per partition: k:5 Rice-coded values</pre>
+<p><br>
+<br>
+
+</p>
+<p>各ブロックは先頭に 32 ビットの長さを付けてアーカイブに保存されるため、デコーダーは常に次のブロックの開始位置を知ることができます。</p>
+<h3 class="se" id="7-4-self-verification">7.4 自己検証</h3>
+<p>アーカイブの書き込みはエンコーダーのバグを検出できる唯一の機会であるため、NAC エンコーダーは自分自身を信頼しません。各ブロックを符号化した後、<b>そのブロックを再度デコード</b>し、元のサンプルと比較します。相違があれば、ブロックを verbatim (失敗し得ない) として再符号化して再度チェックします。それすら失敗すれば、アーカイブ処理は明示的なエラーと <code>-mc-</code> の使用提案とともに停止します。フォールバック経路は単体テストで実行され、ビット深度とチャンネル数のすべての組み合わせで verbatim 符号化を強制します。この仕組みにより、起こり得る無言のデータ損失バグが、検出・回復可能な状態に変わります。</p>
+<p>さらに、デコーダーはファジングされます。単体テストでは、ランダムなバイトのブロックやビットを反転したブロックが数千個与えられ、パニックや不合理な量のメモリ割り当てなしにエラーを返さなければなりません。開発中、これにより実際のバグが 1 つ見つかりました (32 ビット素材では Rice パラメーター探索が空になり、数ギガバイトのコードを生成するパラメーターにフォールバックする可能性がありました)。修正済みで、テストでカバーされています。</p>
+<h3 class="se" id="7-5-shuffle-and-shuffle-delta">7.5 Shuffle と Shuffle+Delta</h3>
+<p>予測に反応しない音声もあります。ベンチマークで使用したギャラリーの WAV ファイルは 16 ビットですが、コンパンディングされた 8 ビット音源から作られたため、異なるサンプル値は約 1,000 個しかありません。予測器ではそれを活用できず、FLAC は元の 84 % に圧縮しますが、通常の Zstandard では 63 % 必要です。役立つのは、圧縮器が均質なデータを見るようにバイトを並べ替えることです:</p>
+<ul><li><b>Shuffle</b> はサンプルのバイトをプレーンに分離します。チャンネル 0 のすべての最下位バイト、次にチャンネル 0 のすべての最上位バイト、次にチャンネル 1、という順で、32768 フレームのブロック単位で行います。上位バイトプレーンは滑らかで、下位バイトプレーンは非常に限られたアルファベットを持ち、Zstandard のエントロピー符号化器はインターリーブされた混合よりもそれぞれをはるかによくモデル化します。</li><li><b>Shuffle+Delta</b> はまず各サンプルを同じチャンネルの前のサンプルとの差分に置き換え (サンプル幅を法とし、ブロックをまたいで状態を引き継ぐため正確に可逆)、次にシャッフルします。これは信号が滑らかでも NAC が勝つほど予測可能でない場合に役立ちます。</li></ul>
+<p>35 個のギャラリーファイルでは、ファイルごとに最良のフィルター (試行で選択) を使ったアーカイブは、<code>-m2</code> で元のサイズの 51 %、<code>-m5</code> で 47 % となり、通常の Zstandard の 63 % を上回ります。</p>
+<h3 class="se" id="7-6-protracker-mod-files">7.6 ProTracker MOD ファイル</h3>
+<p>MOD モジュールは 1084 バイトのヘッダー (タイトル、31 個のサンプル記述子、128 エントリのパターンオーダーテーブル、オフセット 1080 の 4 バイトシグネチャ)、続いてパターンデータ、続いてすべての楽器の生の 8 ビット符号付きサンプルで構成されます。nikpak はサンプルの開始位置と長さを計算します:</p>
+<pre>patterns = max(order table) + 1</pre>
+<pre>sample_start = 1084 + patterns * 256 * channels (4 ch: 1024 B per pattern)</pre>
+<pre>sample_bytes = sum of (length in words * 2) over the 31 descriptors,</pre>
+<pre>clamped to the end of the file</pre>
+<p><br>
+<br>
+
+</p>
+<p>ヘッダーとパターンはそのまま保存され (圧縮器はその反復的な音符イベントをうまく扱います)、サンプル領域は試行のために単一のモノラル、符号付き、8 ビットストリームとして扱われます。ファイルごとに NAC、Shuffle+Delta、または通常の圧縮が勝ちます。サンプリングされた楽器は主に NAC に有利で、一部のモジュール (非常に短い、または非常に反復的なサンプルを持つものなど) では通常の圧縮が勝ちます。切り詰められたモジュールは、実際に存在するデータに領域をクランプして処理されます。</p>
+<h3 class="se" id="7-7-bmp-images">7.7 BMP 画像</h3>
+<p>非圧縮の BMP は、4 バイトの倍数にパディングされたピクセル行を保存します。フィルターは 4 つのステップで動作します:</p>
+<ul><li><b>分離</b> ピクセル領域をチャンネルごとに 1 つのプレーン (B、G、R、32 ビットの場合は A) に分割し、行ごとのパディングバイトは別に記憶します。</li><li><b>色のデコリレーション。</b> 青と赤のプレーンから緑のプレーンを減算します (法 256)。写真では 3 つのチャンネルが強く相関しているため、差分は小さくなります。</li><li><b>各ピクセルの予測</b> を、LOCO-I 画像符号化器で使われている <b>MED</b> (median edge detector) 予測器で隣接ピクセルから行います。左を <code>a</code>、上を <code>b</code>、左上を <code>c</code> とすると、予測は <code>c &gt;= max(a,b)</code> なら <code>min(a,b)</code>、<code>c &lt;= min(a,b)</code> なら <code>max(a,b)</code>、それ以外は <code>a + b - c</code> です。予測誤差がピクセルを置き換えます (法 256)。エッジでは予測器はエッジに沿い、滑らかなグラデーションではグラデーションを外挿します。</li><li><b>連結</b> 残差プレーンとパディングバイトを連結し、Zstandard に圧縮させます。滑らかな領域はゼロに近いバイトの連続になります。</li></ul>
+<p>デコーダーはステップを正確に逆順に実行します。8 ビット BMP は色のステップを省略し、そのパレットに対して予測が役立つかどうかは試行が判断します。パレットインデックスの予測はグレースケールや滑らかに並んだパレットでのみ意味があるためです。256 MiB を超える BMP ファイルは、メモリ使用量を制限するためにフィルターされません。</p>
+<h3 class="se" id="7-8-why-this-beats-rar">7.8 なぜこれが RAR を上回るのか</h3>
+<p>RAR は汎用のマッチングとハフマンのエンジンに少数のバイトフィルターを加えてメディアを圧縮します。nikpak は代わりに、音声にはブロックごとのステレオデコリレーションと適応 Rice 符号化を備えた真の予測コーデックを、画像には色デコリレーションを備えた適切な 2 次元予測器を与え、ファイルごとに測定で選択します。その結果はベンチマークに表れています。あらゆる種類の音声で 12〜15 % 小さく、トラッカーミュージックで 13 %、写真で 39 % 小さく、ステレオトラックの NAC の結果は専用の FLAC エンコーダーと 0.2 % 以内です。</p>
+<h3 class="se" id="7-9-office-documents-pdf-and-gzip-deflate-recompression">7.9 Office 文書、PDF、gzip: Deflate 再圧縮</h3>
+<p>現代の Office ファイルは XML の ZIP アーカイブ (docx、xlsx、pptx、odt、ods) であり、PDF ファイルはページを Deflate (FlateDecode) ストリームに保存します。したがって内容は既に圧縮されており、どのアーカイバも大きくは縮められません。1.1 のベンチマークでは、6.6 MB の .xlsx ファイルは 7-Zip でも 5.6 MB にしかなりませんでした。nikpak 1.2 はその障害を取り除きます。</p>
+<ul><li><b>内容による検出。</b> ファイル先頭の ZIP ローカルヘッダー (PK\x03\x04)、%PDF-、または gzip ヘッダー。拡張子は決して使用しません。</li><li><b>デコード。</b> すべての Deflate ストリーム (方式 8 の ZIP エントリ、zlib ヘッダーを持つ PDF ストリーム、すべての gzip メンバー) が見つけられ、<b>preflate</b> (Microsoft の preflate-rs) で解析されます。preflate は平文データと、元のエンコーダーがどのように選択したかを正確に記述する小さな修正レコードを返します。どのエンコーダーであっても同様です。</li><li><b>保存。</b> ファイルは生セグメントと (平文、修正) ペアの連続として保存されます。次に平文の XML またはページ記述がソリッドストリームに入り、LZMA2 が Deflate 時のサイズのほんの一部に圧縮します。</li><li><b>検証。</b> 結果を使用する前に、nikpak はすべての Deflate ストリームを再構築し、ファイル全体の長さと CRC32 を元のものと比較します。何かが異なる場合、または preflate が不正なファイルで失敗したりパニックしたりした場合、ファイルは単に通常どおり保存されます。</li><li><b>展開。</b> Deflate ストリームはビット単位で再作成されるため、展開された .docx や .pdf はバイト単位で同一であり、CRC32 はすべてのエントリと同様にチェックされます。</li></ul>
+<p>11.7 節の Office セットでは、これが nikpak を他のどのアーカイバよりも小さくする理由です。6.6 MB の .xlsx ファイルには、デコードすると 71 MB の XML が含まれており、その XML は Deflate よりもはるかによく圧縮されます。代償は時間です。preflate は 1 秒あたり約 15 MB の平文データを解析します。そのため再圧縮は -m4 と -m5 でのみ使用され、そこでは効果を発揮します (測定: -m3 では 6 倍の時間で 0.5 % の改善)。制限: ファイルは最大 512 MiB、ストリームあたり平文データ最大 512 MiB、修正最大 64 MiB。-mc- でオフにできます。</p>
+<h2 class="ch" id="8-encryption">8 暗号化</h2>
+<p>nikpak の暗号化は、標準的で十分に研究された構成要素 (Argon2id と XChaCha20-Poly1305 の RustCrypto 実装) のみから構築されています。このプロジェクトのために新しいプリミティブを発明したものはなく、作業はそれらを正しく組み合わせることです。</p>
+<h3 class="se" id="8-1-threat-model">8.1 脅威モデル</h3>
+<p>設計は、アーカイブファイルを入手し、自由に調査・改変でき、オフラインで無制限にパスワードを推測できる攻撃者を想定しています。nikpak が保証を目指すのは次のとおりです:</p>
+<ul><li><b>機密性</b>: ファイルの内容と、それに関する<i>すべて</i> (名前、サイズ、タイムスタンプ、パーミッション、ファイル数) の機密性。</li><li><b>完全性と真正性</b>: データ、ヘッダー、データの順序、長さのいずれに対する変更であっても、誤ったデータが受け入れられる前に検出されます。</li><li><b>推測耐性</b>: すべてのパスワード推測が実用的な範囲で可能な限り高コストになります。</li></ul>
+<p>アーカイブの存在やおおよそのサイズを隠すものではなく、アーカイブを作成・開くマシン上のマルウェアや、弱いパスワードから保護することもできません。</p>
+<h3 class="se" id="8-2-from-password-to-key-argon2id">8.2 パスワードから鍵へ: Argon2id</h3>
+<p>パスワードは良い鍵ではありません。短く、予測可能で、人間が入力するものです。それを <b>Argon2id</b> で 256 ビットの鍵に変換します。Argon2id は Password Hashing Competition の勝者であり、RFC 9106 で標準化されたアルゴリズムです。Argon2id は意図的に<b>メモリハード</b>です。1 つの鍵の計算には大きなメモリブロックが必要で、それが埋められ、その後データ依存のパターンで繰り返し読み出されます。nikpak は RFC の低メモリプロファイルを使用します:</p>
+<table class="tech-table"><thead><tr><th><b>パラメーター</b></th><th><b>値</b></th><th><b>意味</b></th></tr></thead><tbody><tr><td>メモリ</td><td>64 MiB</td><td>推測 1 回ごとに 64 MiB の高速メモリが必要</td></tr><tr><td>パス数</td><td>3</td><td>メモリは 3 回処理される</td></tr><tr><td>レーン数</td><td>4</td><td>1 回の導出内での並列度</td></tr><tr><td>ソルト</td><td>16 バイトのランダム値</td><td>アーカイブごとに新規。同じパスワードでも異なる鍵になり、事前計算テーブルは役に立たない</td></tr><tr><td>出力</td><td>32 バイト</td><td>XChaCha20-Poly1305 の鍵</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p>メモリハード性が、Argon2id を古い PBKDF2 (RAR5 や ZIP の AES モードで使用) と分かつものです。PBKDF2 はほとんどメモリを必要としないため、グラフィックスカードや専用チップで膨大な数の推測を並列に試せます。Argon2id では、攻撃者のハードウェアは並列推測 1 回につき 64 MiB を供給しなければならず、その優位性のほとんどが失われます。正規のユーザーのコストは 1 秒の何分の 1 かで、アーカイブごとに 1 回だけ支払います。</p>
+<p>パラメーターはヘッダーに保存されるため、将来のバージョンで古いアーカイブを壊さずに引き上げられます。読み取り時にはまず範囲チェックが行われ (メモリはレーン数 × 8 で最大 1 GiB、パス数 1〜64、レーン数 1〜64)、悪意のあるアーカイブがパスワードをチェックする前に nikpak に不合理な量のメモリを割り当てさせることはできません。</p>
+<h3 class="se" id="8-3-xchacha20-poly1305-in-the-stream-construction">8.3 STREAM 構築法における XChaCha20-Poly1305</h3>
+<p>本体データは <b>XChaCha20-Poly1305</b> で保護されます。これは関連データ付き認証暗号 (AEAD) です。ChaCha20 は 256 ビット鍵のストリーム暗号を提供し、X バリアントは nonce を 192 ビットに拡張し (繰り返すことなくランダムに選べるほど大きい)、Poly1305 は封印された各メッセージに 128 ビットの認証タグを追加します。ChaCha20 は特別な命令なしであらゆる CPU で高速であり、テーブルベースの AES と違ってキャッシュタイミングリークが本質的にありません。</p>
+<p>アーカイブは 1 つのメッセージよりはるかに大きいため、nikpak は <b>STREAM</b> 構築法 (現代のファイル暗号化ツールが使うものと同じ) を使用します。データは 64 KiB のチャンクに分割され、チャンク番号 <i>i</i> は次の nonce で封印されます</p>
+<pre>nonce (24 bytes) = random prefix (19 bytes)</pre>
+<pre>| chunk counter (4 bytes, big endian)</pre>
+<pre>| last-chunk flag (1 byte)</pre>
+<p><br>
+<br>
+
+</p>
+<p>これにより一度に 3 つの保証が得られます。各チャンクは一意の nonce を持ち、これはストリーム暗号に不可欠です。カウンターが nonce の一部であるため、<b>チャンクの並べ替えや複製は認証に失敗します</b>。最後のチャンクは異なるフラグを持つため、<b>アーカイブを切り詰めると、たとえチャンク境界で正確に切っても、認証に失敗します</b>。新しい最後のチャンクは非最終として封印されているからです。19 バイトのプレフィックスはアーカイブごとにランダムです。</p>
+<p>さらに、完全なアーカイブヘッダー (バージョン、フラグ、方式、Argon2id パラメーター、ソルト、nonce プレフィックス) が各チャンクに<b>関連データ</b>として渡されます。認証されますが暗号化はされず、そのどのビットを反転してもすべてのチャンクが失敗します。これにより、保存されたパラメーターを弱めようとするダウングレード攻撃も阻止されます。</p>
+<table class="tech-table"><thead><tr><th><b>項目</b></th><th><b>値</b></th></tr></thead><tbody><tr><td>暗号</td><td>XChaCha20-Poly1305: 256 ビット鍵、192 ビット nonce、128 ビットタグ</td></tr><tr><td>チャンク</td><td>平文は最大 64 KiB。<code>u32 length</code> + 暗号文 + 16 バイトタグとして保存</td></tr><tr><td>サイズのオーバーヘッド</td><td>約 0.03 % (64 KiB あたり 20 バイト)。222 MB のデータセットで 0.03 % を測定</td></tr><tr><td>速度のオーバーヘッド</td><td>測定値: 222 MB のデータセットで合計 +0.3 秒 (0.64 秒ではなく 0.92 秒)、鍵導出を含む</td></tr><tr><td>誤ったパスワード</td><td>最初のチャンクで検出され、平文は一切生成されない</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="8-4-what-an-observer-can-and-cannot-see">8.4 観察者に見えるもの、見えないもの</h3>
+<table class="tech-table"><thead><tr><th><b>パスワードなしで見える</b></th><th><b>保護される</b></th></tr></thead><tbody><tr><td>マジックナンバー、バージョン、フラグ、圧縮方式</td><td>ファイル名とフォルダー構造</td></tr><tr><td>Argon2id パラメーター、ソルト、nonce プレフィックス</td><td>ファイルサイズ、タイムスタンプ、パーミッション</td></tr><tr><td>アーカイブの総サイズとチャンク数</td><td>ファイル数</td></tr><tr><td>nikpak アーカイブであること</td><td>すべての内容 (メディアを含むかどうかも)</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p>暗号化の前に圧縮する結果の 1 つは、アーカイブのサイズがデータの圧縮しやすさを反映することです。これは圧縮と暗号化を行うすべてのアーカイバに固有のもので、攻撃者がデータの一部を制御してサイズを観察できる場合にのみ問題になりますが、ファイルのアーカイブには当てはまりません。</p>
+<h3 class="se" id="8-5-password-handling">8.5 パスワードの扱い</h3>
+<ul><li><b>最小長。</b> アーカイブ作成時は 8 文字。短いパスワードは説明付きで拒否されます。</li><li><b>確認。</b> 対話プロンプトは 2 回尋ね、入力文字をエコーせず、不一致を拒否します。</li><li><b>生成。</b> パスワードがない場合、nikpak は紛らわしい文字 (0/O、1/l/I) を除いた 56 記号のアルファベットから 24 文字を、オペレーティングシステムの暗号論的に安全な乱数生成器に対する<b>棄却サンプリング</b>で選びます。どの記号も他より出現しやすくならないようにするためです。これは 24 x log2(56)、約 <b>139 ビット</b> のエントロピーで、明確に印を付けたボックスに一度だけ表示されます。</li><li><b>メモリの衛生。</b> 導出された鍵とパスワード文字列は、不要になったときにメモリから消去されます (<code>zeroize</code> クレート)。</li><li><b>経路。</b> コマンドライン (<code>-p</code>)、環境変数 <code>NIKPAK_PASSWORD</code>、対話プロンプト、またはターミナルがない場合は標準入力。コマンドライン形式は便利ですがプロセス一覧に見えるため、他の形式の方が望ましいです。</li></ul>
+<h3 class="se" id="8-6-attack-tests">8.6 攻撃テスト</h3>
+<p>暗号化アーカイブに対する以下の操作は、完成したプログラムに対して実施されました。すべて、誤ったデータが受け入れられる前に検出されました:</p>
+<table class="tech-table"><thead><tr><th><b>操作</b></th><th><b>結果</b></th></tr></thead><tbody><tr><td>暗号文の途中で 1 バイトを反転</td><td>拒否: 認証失敗 (終了コード 11)</td></tr><tr><td>ヘッダーのソルトの 1 バイトを反転</td><td>拒否 (ヘッダーは関連データであり、鍵が変わる)</td></tr><tr><td>ヘッダーの方式バイトを変更</td><td>拒否</td></tr><tr><td>ファイルを 100 バイト切り詰め</td><td>破損として拒否 (終了コード 3)</td></tr><tr><td>最後のチャンクをチャンク境界で正確に削除</td><td>拒否: 新しい最後のチャンクに最終フラグがない</td></tr><tr><td>2 つのチャンクを入れ替え</td><td>拒否: カウンターの不一致</td></tr><tr><td>誤ったパスワードを指定</td><td>最初のチャンクで拒否 (終了コード 11)</td></tr><tr><td>ランダムなファイルをアーカイブとして渡す</td><td>拒否: 不正なシグネチャ (終了コード 3)</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<table class="tech-table"><tbody><tr><td><b>残存リスクを率直に</b> 弱いパスワードは常に推測可能です。Argon2id はそれを高コストにしますが、<code>password123</code> を救うことはできません。nikpak は独立した監査を受けていません。キーロガー、マルウェア、実行中プロセスのメモリを読む者に対する防御はできません。露出が深刻な害をもたらすデータについては、まず暗号技術者に実装のレビューを依頼してください。</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h2 class="ch" id="9-quantum-resistance">9 耐量子性</h2>
+<p>量子コンピューターは、ある種の暗号を深刻に脅かし、別の暗号にはほとんど影響しません。nikpak はほとんど影響を受けない側で設計されています。</p>
+<h3 class="se" id="9-1-what-quantum-computers-change">9.1 量子コンピューターが変えるもの</h3>
+<table class="tech-table"><thead><tr><th><b>アルゴリズム</b></th><th><b>影響</b></th><th><b>影響を受けるもの</b></th></tr></thead><tbody><tr><td><b>Shor</b> (1994)</td><td>整数を因数分解し、離散対数を多項式時間で計算する</td><td>RSA、Diffie-Hellman、DSA、楕円曲線暗号: 大規模な量子コンピューターによって<b>破られる</b></td></tr><tr><td><b>Grover</b> (1996)</td><td>N 個の項目からなる非構造化空間を約 N の平方根のステップ数で探索する</td><td>対称鍵とハッシュ関数: <i>実効</i>鍵長が<b>半減する</b></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p>Shor のアルゴリズムは劇的なものです。公開鍵数学に依存するすべてのシステムを破るため、政府や標準化団体は ML-KEM (FIPS 203) などの耐量子公開鍵アルゴリズムへ移行しています。Grover のアルゴリズムは穏やかなものです。256 ビット鍵は Grover に対して約 128 ビットのセキュリティを提供し、Grover の反復は本質的に逐次的であるため、多数の量子マシンに作業を分散しても、その台数の平方根分の高速化しか得られません。</p>
+<h3 class="se" id="9-2-nikpak-s-position">9.2 nikpak の立場</h3>
+<table class="tech-table"><thead><tr><th><b>構成要素</b></th><th><b>プリミティブ</b></th><th><b>量子的影響</b></th></tr></thead><tbody><tr><td>暗号化</td><td>XChaCha20、256 ビット鍵</td><td>既知の最良の攻撃: Grover、約 2^128 演算。到達不可能。</td></tr><tr><td>認証</td><td>Poly1305、128 ビットタグ、256 ビット秘密からの鍵</td><td>公開鍵数学は関与しない</td></tr><tr><td>パスワードから鍵へ</td><td>Argon2id、64 MiB、3 パス</td><td>Grover でもパスワードのエントロピーを最大で半分にできるだけで、各反復にはメモリハード関数の評価が必要</td></tr><tr><td>乱数</td><td>オペレーティングシステムの CSPRNG</td><td>影響なし</td></tr><tr><td>公開鍵暗号</td><td><b>なし</b></td><td>Shor のアルゴリズムが攻撃するものは何もない</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p>256 ビットの対称鍵は、NIST の耐量子標準化における<b>最高セキュリティカテゴリー (カテゴリー 5)</b> の基準です。NIST が標準化した公開鍵アルゴリズムは、256 ビット AES 鍵の全数探索の難しさにどれだけ近いかで評価されます。言い換えれば、nikpak のデータ暗号化は既に、耐量子標準が目指す強度に達しています。</p>
+<h3 class="se" id="9-3-what-about-the-password">9.3 パスワードはどうなのか?</h3>
+<p>暗号の鍵空間は 256 ビットですが、鍵はパスワードから導出されるため、実際の強度はパスワードのエントロピーと 256 ビットの小さい方です。量子攻撃者に対しては、パスワードのエントロピーは攻撃者にとって最良の場合でも半減します:</p>
+<table class="tech-table"><thead><tr><th><b>パスワード</b></th><th><b>エントロピー</b></th><th><b>古典的探索</b></th><th><b>Grover 探索 (最良の場合)</b></th></tr></thead><tbody><tr><td>nikpak 生成 (24 記号)</td><td>約 139 ビット</td><td>約 2^139 回の推測</td><td>約 2^70 回の反復。各反復にはコヒーレントな 64 MiB の Argon2id 評価が必要</td></tr><tr><td>ランダムな Diceware 単語 6 語</td><td>約 77 ビット</td><td>約 2^77 回の推測</td><td>同じ高コストな回路の約 2^39 回の反復</td></tr><tr><td>人間が選んだ 10 文字のパスワード</td><td>通常 30〜45 ビット</td><td>実行可能</td><td>実行可能</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p>結論はよくあるものですが、より鋭く言えばこうです。<b>弱点は暗号ではなくパスワードです。</b> 生成されたパスワードか長いランダムなパスフレーズを使えば、アーカイブは予見し得る将来において古典的攻撃者にも量子攻撃者にも耐えます。Argon2id はどちらの世界でも役立ちます。推測 1 回のコストはメモリに支配されており、Grover のアルゴリズムでもそれを安くできないからです。</p>
+<h3 class="se" id="9-4-harvest-now-decrypt-later">9.4 「今収穫し、後で復号する」</h3>
+<p>よく引用される量子の脅威は、攻撃者が今日暗号化されたデータを記録し、量子コンピューターが存在するようになったときに復号するというものです。TLS 接続やメール暗号化のように RSA や楕円曲線で鍵を交換するシステムでは、これは現実的です。nikpak アーカイブには鍵交換がありません。鍵はユーザーの頭かパスワードマネージャーから決して出ない秘密から導かれます。保存されたコピーは、その秘密を推測することによってのみ後で開けられ、量子コンピューターがそれを根本的に容易にすることはありません。</p>
+<h3 class="se" id="9-5-honest-limits-and-the-road-ahead">9.5 正直な限界と今後の道</h3>
+<ul><li>「耐量子」とは、これらのプリミティブに対して汎用探索を上回る既知の量子アルゴリズムが存在しないという意味です。証明ではありません。ChaCha20 と Argon2 の解読研究は続いており、形式はバージョン管理されているため、パラメーターやアルゴリズムを変更できます。</li><li>公開鍵による共有 (受信者の鍵<i>に</i>アーカイブを暗号化する) が将来追加される場合は、X25519 と ML-KEM を組み合わせた<b>ハイブリッド</b>方式を使用し、どちらか一方が安全であれば全体が安全になるようにします。</li><li>耐量子性は実装エラーから保護するものではありません。8.6 節と第 10 章を参照してください。</li></ul>
+<h2 class="ch" id="10-hardening-and-robustness">10 堅牢化と堅牢性</h2>
+<p>アーカイバは見知らぬ人が書いたファイルを読み、ユーザーのディスクにファイルを書き込むため、典型的な攻撃対象になります。nikpak はすべてのアーカイブを信頼できない入力として扱います。</p>
+<h3 class="se" id="10-1-safe-extraction">10.1 安全な展開</h3>
+<ul><li><b>パストラバーサル (「zip slip」)。</b> すべてのエントリ名が正規化されます。バックスラッシュはスラッシュになり、空の構成要素と <code>.</code> の構成要素は削除され、<code>..</code> の構成要素があるとエントリは警告付きでスキップされます。絶対名はルートを失うため、<code>/etc/passwd</code> は保存先フォルダーの<i>内側</i>に展開されます。</li><li><b>Windows の名前。</b> Windows で実行する場合、<code>&lt; &gt; : " | ? *</code> や制御文字を含む構成要素、スペースやドットで終わる構成要素、予約デバイス名 (CON、PRN、AUX、NUL、COM1-9、LPT1-9) と等しい構成要素は拒否されます。</li><li><b>シンボリックリンク。</b> 書き込みの前に、保存先より下の対象パスの既存のすべての構成要素がチェックされ、リンクが辿られることはありません。既存ファイルはまず削除され、新しいファイルは <code>create_new</code> で作成されます。これは既存パスを開くことを拒否するため、リンクを使って書き込みをリダイレクトすることはできません。</li><li><b>特権ビット。</b> Setuid、setgid、スティッキービットは決して復元されません。パーミッションは通常の rwx ビットにマスクされます。</li><li><b>失敗したファイル。</b> CRC32 が一致しないファイルは削除され、残されることはありません。</li></ul>
+<p><code>../../evil.txt</code>、<code>/tmp/evil.txt</code>、<code>..\..\evil.txt</code>、<code>ok/../../evil.txt</code> を含む手作りアーカイブがテストで展開されました。保存先の外に出たものはなく、安全でないエントリは報告されてスキップされ、保存先に仕込まれたシンボリックリンクは拒否されました。</p>
+<h3 class="se" id="10-2-bounded-decoders">10.2 境界付きデコーダー</h3>
+<ul><li>Argon2id パラメーターは、割り当ての前に範囲チェックされます (8.2 節)。</li><li>暗号化チャンクの長さは 16 バイトから 64 KiB + 16 の間でなければならず、名前は最大 4096 バイト、音声ブロックは妥当な長さを宣言しなければならず、BMP 領域は 256 MiB に制限され、単進 Rice 符号には上限があります。</li><li>音声およびメディアのデコーダーは単体テストで数千のランダム入力とビット反転入力を受け、エラーを返さなければならず、決してパニックやアボートを起こしてはなりません。</li><li>nikpak 自身のコードには <code>unsafe</code> ブロックがなく、Rust の境界チェックにより、C ではメモリ破壊バグになるようなロジックエラーもクリーンな失敗に変わります。</li></ul>
+<p>nikpak はアーカイブの展開比率を制限しないため、どのアーカイバとも同様に、意図的に細工された「圧縮爆弾」は展開時にディスクを埋め尽くす可能性があります。それが問題になる場合は、未知のアーカイブをまず <code>t</code> でテストしてください。</p>
+<h3 class="se" id="10-3-safe-creation-and-honest-errors">10.3 安全な作成と正直なエラー</h3>
+<ul><li>アーカイブは <code>name.nik.tmp</code> に書き込まれ、完了したときにのみ名前が変更されます。ガードが失敗時に一時ファイルを削除するため、中断された実行が中途半端に書かれたアーカイブや置き換えられたアーカイブを残すことはありません。</li><li>アーカイブ中にファイルが短くなった場合、nikpak は不整合なエントリを書き込む代わりに明示的なメッセージで中止します。読み取り不能なファイル、シンボリックリンク、特殊ファイルは警告付きでスキップされ (終了コード 1)、アーカイブが自分に追加されることはありません。</li><li>エラーはスクリプトが対応できるように分類されます。アーカイブ内のチェックサムまたはフレームエラーは<i>破損</i> (終了コード 3)、認証失敗は<i>誤ったパスワードまたは改ざん</i> (終了コード 11)、拒否された書き込みは<i>致命的エラー</i> (終了コード 2) です。</li></ul>
+<h2 class="ch" id="11-benchmarks">11 ベンチマーク</h2>
+<p>本章は主張ではなく測定結果を報告します。何を測定したかを正確に述べ、nikpak に不利な結果も含め、すべてを再現するために必要なコマンドを示します。</p>
+<p>11.1 節から 11.6 節は nikpak 1.1.0 で測定され、その -m5 はまだ Zstandard を使用していました。11.7 節では nikpak 1.2.0 を RAR、7-Zip、ZIP と 1 台のマシンで比較します。</p>
+<h3 class="se" id="11-1-method">11.1 方法</h3>
+<table class="tech-table"><thead><tr><th><b>項目</b></th><th><b>詳細</b></th></tr></thead><tbody><tr><td>マシン</td><td>Linux x86-64 仮想マシン、CPU <b>1</b> コア。すべての時間はそのシングルコアでの実時間秒です。マルチコアマシンでは両方のツールが高速になります。</td></tr><tr><td>ソフトウェア</td><td><b>RAR 7.00</b> (2024 年 2 月 26 日、Linux 試用版ビルド、<code>-ma5</code> 形式)、LTO 付きリリースモードでビルドした <b>nikpak 1.1.0</b>、音声の基準として FLAC 1.x <code>-8</code>。</td></tr><tr><td>RAR の設定</td><td><code>-m3</code> (RAR の既定) と <code>-m5</code> (最高)。一般データのテストでは <code>-s</code> (ソリッド) と <code>-md256m</code> (256 MB 辞書) も使用しました。nikpak のアーカイブは常にソリッドであり、公平な比較には RAR にも同じ設定を許す必要があるためです。</td></tr><tr><td>検証</td><td>すべての nikpak アーカイブは展開され、元のデータと比較されました (メディアファイルには <code>cmp</code>、一般セットには 10,949 ファイルすべての SHA-256)。</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h4 class="su" id="the-test-material">テスト素材</h4>
+<table class="tech-table"><thead><tr><th><b>セット</b></th><th><b>内容</b></th></tr></thead><tbody><tr><td>ギャラリー WAV</td><td>LibreOffice のギャラリーからの 35 個の音声ファイル: モノラル 16 ビット、23 個が 11,025 Hz、12 個が 22,050 Hz。異なるサンプル値は約 1,000 個しかなく (コンパンディング音源)、予測符号化にとって意図的に厄介なケースです。</td></tr><tr><td>音楽</td><td>100 秒のマルチ楽器曲 (ピアノ、弦、ベース、フルート、ドラム) を TiMidity++ と Freepats 音源セットで 44.1 kHz ステレオ 16 ビット (17.4 MB) にレンダリングしたもの。SoX で 22.05 kHz モノラル 16 ビット、22.05 kHz モノラル 8 ビット、48 kHz ステレオ 24 ビットの版を作成しました。</td></tr><tr><td>MOD</td><td>libxmp のテストコレクションからの 16 個の ProTracker モジュール。</td></tr><tr><td>BMP</td><td>6 枚の画像: scikit-image のサンプルセットからの写真 5 枚 (24 ビット、うち 1 枚の 8 ビットグレースケール変換を含む) と、TeX Live のテクスチャ 1 枚。</td></tr><tr><td>一般データ</td><td>10,949 ファイルで 197.6 MB: テストマシンの Python 標準ライブラリとパッケージ、ドキュメント、C ヘッダー (シンボリックリンクは除去)。</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<table class="tech-table"><tbody><tr><td><b>このテスト素材の限界</b> 音楽は合成です。MIDI からレンダリングされ、繰り返しのパッセージを含むため、NAC 後の Zstandard 段階を含め、あらゆる LZ ベースのツールに有利に働きます。実際の録音は完全な繰り返しが少ないため、絶対サイズは異なります。比較はすべてのツールを平等に扱っており、同じファイルでの FLAC の結果は音声コーデック自体が競争力があることを裏付けていますが、特定の素材を持つ読者はそれを測定すべきです。<code>nikpak mt </code> がまさにそれを行います。</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="11-2-media-files">11.2 メディアファイル</h3>
+<table class="tech-table"><thead><tr><th><b>セット</b></th><th><b>元のサイズ</b></th><th><b>RAR 7 -m5</b></th><th><b>nikpak -m2</b></th><th><b>nikpak -m5</b></th><th><b>m5 対 RAR</b></th></tr></thead><tbody><tr><td>BMP 写真 6 枚</td><td>9,183,956</td><td>2,862,744</td><td>2,035,223</td><td><b>1,750,706</b></td><td><b>38.8 % 小さい</b></td></tr><tr><td>ProTracker MOD ファイル 16 個</td><td>2,507,557</td><td>1,070,290</td><td>966,622</td><td><b>927,973</b></td><td><b>13.3 % 小さい</b></td></tr><tr><td>ギャラリー WAV 35 個 (モノラル 16 ビット)</td><td>2,991,820</td><td>1,605,879</td><td>1,529,219</td><td><b>1,418,532</b></td><td><b>11.7 % 小さい</b></td></tr><tr><td>音楽 44.1 kHz ステレオ 16 ビット</td><td>17,371,848</td><td>11,024,411</td><td>9,415,519</td><td><b>9,411,898</b></td><td><b>14.6 % 小さい</b></td></tr><tr><td>音楽 22.05 kHz モノラル 16 ビット</td><td>4,342,996</td><td>3,112,135</td><td>2,635,819</td><td><b>2,634,669</b></td><td><b>15.3 % 小さい</b></td></tr><tr><td>音楽 22.05 kHz モノラル 8 ビット</td><td>2,171,520</td><td>844,160</td><td>742,462</td><td><b>740,751</b></td><td><b>12.2 % 小さい</b></td></tr><tr><td>音楽 48 kHz ステレオ 24 ビット</td><td>28,362,206</td><td>21,467,283 (-m3)</td><td>18,689,529</td><td><b>18,688,030</b></td><td><b>12.9 % 小さい</b></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p>すべてのサイズはバイト単位です。24 ビットファイルについて RAR は <code>-m3</code> でのみ測定されたため、その行は他の行より弱い比較です。</p>
+<figure><img src="../assets/img/tech/58cb4866.png" alt="Figure 3: archive size as a percentage of the original data (lower is better)." loading="lazy"><figcaption>図 3: 元データに対するアーカイブサイズの割合 (低いほど良い)。</figcaption></figure>
+<figure><img src="../assets/img/tech/f09f585d.png" alt="Figure 4: size reduction of nikpak compared with RAR 7.00 -m5." loading="lazy"><figcaption>図 4: RAR 7.00 -m5 と比較した nikpak のサイズ削減。</figcaption></figure>
+<h4 class="su" id="what-the-media-filters-add">メディアフィルターが加えるもの</h4>
+<p>同じ nikpak をメディアフィルターなしで使った場合 (バージョン 1.0、既定レベルの通常の Zstandard) が、メディア層の価値を測る適切な基準です:</p>
+<table class="tech-table"><thead><tr><th><b>セット</b></th><th><b>nikpak 1.0 (フィルターなし)</b></th><th><b>nikpak 1.1 -m2</b></th><th><b>削減率</b></th></tr></thead><tbody><tr><td>BMP 写真 6 枚</td><td>3,580,971</td><td>2,035,223</td><td><b>43.2 %</b></td></tr><tr><td>ProTracker MOD ファイル 16 個</td><td>1,260,607</td><td>966,622</td><td><b>23.3 %</b></td></tr><tr><td>ギャラリー WAV 35 個 (モノラル 16 ビット)</td><td>1,876,722</td><td>1,529,219</td><td><b>18.5 %</b></td></tr><tr><td>音楽 44.1 kHz ステレオ 16 ビット</td><td>15,585,422</td><td>9,415,519</td><td><b>39.6 %</b></td></tr><tr><td>音楽 22.05 kHz モノラル 16 ビット</td><td>3,887,183</td><td>2,635,819</td><td><b>32.2 %</b></td></tr><tr><td>音楽 22.05 kHz モノラル 8 ビット</td><td>1,078,493</td><td>742,462</td><td><b>31.2 %</b></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h4 class="su" id="comparison-with-flac">FLAC との比較</h4>
+<p>44.1 kHz ステレオ音楽について、専用の基準エンコーダーである FLAC <code>-8</code> は 9,407,019 バイトを生成します。同じ音声の NAC ストリームは 9,425,305 バイトで 0.2 % 以内、完成した nikpak アーカイブは 9,415,519 バイトです。22 kHz モノラル版と 8 ビット版では NAC の方が FLAC より小さく (音声領域のみで 2,635,446 対 2,638,954、785,890 対 798,810)、24 ビットではアーカイブ (18.69 MB) が FLAC の 19.12 MB より小さくなります。ギャラリーファイルでは FLAC ははるかに弱く (2.50 MB 対 RAR の 1.61 MB)、理由は 7.5 節で説明しています。これが、他のフィルターがその存在価値を示すケースです。</p>
+<h3 class="se" id="11-3-general-data">11.3 一般データ</h3>
+<p>ソースコードと文書はメディアではないため、このテストは nikpak が他の場所で得た利得が通常のファイルで何かを犠牲にしていないかを確認します。</p>
+<table class="tech-table"><thead><tr><th><b>ツールとレベル</b></th><th><b>サイズ (バイト)</b></th><th><b>時間</b></th><th><b>展開</b></th></tr></thead><tbody><tr><td><b>nikpak -m5</b></td><td><b>24,443,483</b></td><td>45.6 秒</td><td>1.8 秒</td></tr><tr><td>RAR 7 -m5 -s -md256m</td><td>25,862,475</td><td>36.2 秒</td><td>
+				<br>
+
+				</td></tr><tr><td>RAR 7 -m5 -s</td><td>26,002,812</td><td>26.7 秒</td><td>
+				<br>
+
+				</td></tr><tr><td>RAR 7 -m3 -s</td><td>26,536,863</td><td>16.7 秒</td><td>1.5 秒</td></tr><tr><td>nikpak -m4</td><td>26,814,023</td><td>13.5 秒</td><td>
+				<br>
+
+				</td></tr><tr><td>nikpak -m3</td><td>30,329,965</td><td>2.0 秒</td><td>
+				<br>
+
+				</td></tr><tr><td><b>nikpak -m2 (1.1 の既定)</b></td><td>36,266,743</td><td><b>0.9 秒</b></td><td>0.8 秒</td></tr><tr><td>RAR 7 -m5 (既定、非ソリッド)</td><td>50,851,230</td><td>14.8 秒</td><td>
+				<br>
+
+				</td></tr><tr><td>RAR 7 -m3 (既定、非ソリッド)</td><td>50,974,773</td><td>9.7 秒</td><td>2.3 秒</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<figure><img src="../assets/img/tech/4e82b598.png" alt="Figure 5: general data, size and creation time on one core." loading="lazy"><figcaption>図 5: 一般データ、シングルコアでのサイズと作成時間。</figcaption></figure>
+<p>表を正直に読むと:</p>
+<ul><li><b>最高レベル:</b> nikpak は RAR の最良より 5.5 % 小さいアーカイブを生成します (24.4 対 25.9 MB)。このレベルでは RAR の方が<b>高速</b>です (26.7〜36.2 秒 対 45.6 秒)。</li><li><b>同等のサイズ:</b> <code>nikpak -m4</code> は RAR の既定ソリッドレベルと約 1 % 以内で、時間は 81 % です (13.5 秒 対 16.7 秒)。</li><li><b>高速レベル:</b> <code>-m2</code> は速度と引き換えに圧縮率を妥協します。RAR ソリッド <code>-m3</code> より 18 倍高速で、37 % 大きくなります。これは、最後の数メガバイトより時間が重要なバックアップやパイプライン向けのレベルです。</li><li><b>非ソリッド:</b> 小さなファイルが多いこのデータでは、RAR の既定 (非ソリッド) アーカイブはソリッドのほぼ 2 倍のサイズになります。nikpak と RAR を比較する人は、RAR に <code>-s</code> を付けるべきです。</li></ul>
+<h3 class="se" id="11-4-speed-on-a-single-large-media-file">11.4 単一の大きなメディアファイルでの速度</h3>
+<figure><img src="../assets/img/tech/d26c8b2.png" alt="Figure 6: creating an archive from the 17 MB stereo WAV." loading="lazy"><figcaption>図 6: 17 MB のステレオ WAV からのアーカイブ作成。</figcaption></figure>
+<table class="tech-table"><thead><tr><th><b>操作</b></th><th><b>nikpak</b></th><th><b>RAR 7</b></th><th><b>サイズ</b></th></tr></thead><tbody><tr><td>作成、高速 / RAR 既定</td><td><b>1.45 秒</b> (-m2)</td><td>2.54 秒 (-m3)</td><td>9,415,519 対 11,128,595</td></tr><tr><td>作成、最高レベル</td><td><b>3.14 秒</b> (-m5)</td><td>5.87 秒 (-m5)</td><td>9,411,898 対 11,024,411</td></tr><tr><td>展開</td><td>0.28 秒</td><td><b>0.23 秒</b></td><td>出力は同一</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p>メディアでは、nikpak はより小さく、作成も高速です。RAR の展開は少し速く、その理由として考えられるのは、NAC のデコードがすべてのサンプルに対して整数予測を行うため、一般的なデコードを支配するマッチのコピーより多少コストがかかることです。</p>
+<h3 class="se" id="11-5-encryption-overhead">11.5 暗号化のオーバーヘッド</h3>
+<p>222 MB のデータセットでは、暗号化アーカイブは 0.64 秒に対して 0.92 秒かかり、11,087 バイト (0.03 %) 大きくなりました。差には Argon2id の導出が含まれるため、コストは 1 秒の固定された何分の 1 かに支配されています。</p>
+<h3 class="se" id="11-6-reproducing-the-results">11.6 結果の再現</h3>
+<pre># media: which filter wins, per file</pre>
+<pre>nikpak mt song.wav tracker.mod photo.bmp</pre>
+<p>
+<code></code><br>
+
+</p>
+<pre># archive with nikpak and RAR, then compare</pre>
+<pre>nikpak a -q -ep -m2 test.nik *.wav</pre>
+<pre>rar a -ep -m5 -ma5 test.rar *.wav</pre>
+<p>
+<code></code><br>
+
+</p>
+<pre># fair comparison on many files: give RAR solid mode</pre>
+<pre>rar a -r -s -m5 -ma5 -md256m data.rar data</pre>
+<pre>nikpak a -m5 data.nik data</pre>
+<p>
+<code></code><br>
+
+</p>
+<pre># verify</pre>
+<pre>nikpak x -o+ test.nik restore\</pre>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="11-7-second-run-nikpak-rar-7-7-zip-and-zip">11.7 第 2 回実行: nikpak、RAR 7、7-Zip、ZIP</h3>
+<p><b>nikpak 1.2.0 向けに更新。</b> この実行の最初の版では、nikpak 1.1.0 に対して 7-Zip -mx9 がテキスト (1.4 %)、Office ファイル (3.3 %)、ソースコード (8.5 %) で優位でした。nikpak 1.2.0 は Deflate 再圧縮 (7.9) と、LZMA2 と PPMd に基づく新しい最高レベル (6.7) を追加し、同じマシンと同じファイルで再度測定されました。RAR、7-Zip、ZIP の数値は最初の実行によるものです。</p>
+<p>11.2 節から 11.5 節は nikpak と RAR のみを比較しています。この第 2 回実行では、ほとんどの人が既に持っている 2 つのアーカイバ <b>7-Zip</b> と古典的な <b>ZIP</b> 形式、そして毎日アーカイブされる 2 種類のファイル <b>プレーンテキスト</b> と <b>Office 文書</b> (.doc、.docx、.xls、.xlsx、.csv、.pdf) を追加します。4 つのツールはすべて同じマシンと同じファイルで順番に実行され、RAR も再度測定されました。コーパスは同じ公開ソースから再構築されたため、絶対サイズと時間は 11.2 節から 11.4 節のものと異なります。数値は節をまたいでではなく、この節内で比較してください。</p>
+<h4 class="su" id="method">方式</h4>
+<table class="tech-table"><thead><tr><th><b>項目</b></th><th><b>詳細</b></th></tr></thead><tbody><tr><td>マシン</td><td>Linux x86-64 仮想マシン (Intel Xeon、2.8 GHz)。すべてのコマンドは taskset で 1 つの CPU コアに固定され、シングルスレッドで実行されました (nikpak -mt1、RAR -mt1、7-Zip -mmt=1。ZIP は設計上シングルスレッド)。</td></tr><tr><td>ソフトウェア</td><td>nikpak 1.2.0 (リリースビルド)、RAR 7.00 (-ma5、ソリッド)、7-Zip 23.01 (.7z 形式、LZMA2、既定でソリッド)、Info-ZIP Zip 3.0 と UnZip 6.0 (Deflate)。</td></tr><tr><td>レベル</td><td>nikpak: 高速レベル -m2 と最高レベル -m5 (1.2.1 以降の既定)、および -m4。その他: 既定と最高、RAR -m3 -s / -m5 -s、7-Zip -mx5 / -mx9、ZIP -6 / -9。RAR にはソリッドモード (-s) を与えました。他の 3 つはソリッドであるか、ZIP の場合はソリッドにできないためです。</td></tr><tr><td>計測</td><td>実時間秒。50 MB 未満のセット: 3 回の実行の最良値。一般セット: 1 回の実行。</td></tr><tr><td>検証</td><td>92 個のアーカイブはすべて展開され、diff -r を使って元のデータと比較されました。すべて同一でした。</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h4 class="su" id="the-test-material">テスト素材</h4>
+<table class="tech-table"><thead><tr><th><b>セット</b></th><th><b>ファイル数</b></th><th><b>サイズ (バイト)</b></th><th><b>内容</b></th></tr></thead><tbody><tr><td>BMP 画像</td><td>8</td><td>6,987,840</td><td>scikit-image のサンプルセットからの写真 6 枚を 24 ビット BMP にしたもの、さらに 8 ビットグレースケール写真 1 枚と 8 ビット砂利テクスチャ 1 枚。</td></tr><tr><td>ProTracker MOD</td><td>16</td><td>2,252,604</td><td>libxmp のテストコレクションにある最大 16 個の ProTracker モジュール。</td></tr><tr><td>ギャラリー WAV</td><td>35</td><td>2,991,820</td><td>11.1 節と同じ LibreOffice ギャラリーの音声 35 個。</td></tr><tr><td>音楽、4 形式</td><td>4 × 1</td><td>53,417,226</td><td>新しい 100 秒の曲 (ピアノ、弦、ベース、フルート、ドラム) を TiMidity++ と Freepats で 44.1 kHz ステレオ 16 ビットにレンダリングし、SoX で 22.05 kHz モノラル 16 ビットと 8 ビット、48 kHz ステレオ 24 ビットに変換したもの。</td></tr><tr><td>プレーンテキスト</td><td>18</td><td>11,793,318</td><td>Project Gutenberg の書籍 18 冊を .txt にしたもの (Austen、Melville、Shakespeare、King James Bible など)。</td></tr><tr><td>Office ファイル</td><td>60</td><td>39,100,915</td><td>12 個のレポートを .docx、.doc、.pdf にしたもの (テキスト、見出し、表、一部の写真) と、500〜30,000 行の販売ワークブック 8 個を .xlsx、.xls、.csv にしたもの (数式を含む)。LibreOffice で保存。</td></tr><tr><td>一般データ</td><td>11,473</td><td>190,454,632</td><td>Python 3.12 と 3.13 の標準ライブラリ、Debian の Python パッケージ、C ヘッダー (/usr/include)、/usr/share/doc。シンボリックリンクは除去。</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h4 class="su" id="maximum-levels-archive-size">最高レベル: アーカイブサイズ</h4>
+<table class="tech-table"><thead><tr><th><b>セット</b></th><th><b>元のサイズ</b></th><th><b>nikpak -m5</b></th><th><b>RAR 7 -m5</b></th><th><b>7-Zip -mx9</b></th><th><b>ZIP -9</b></th></tr></thead><tbody><tr><td>BMP 画像 8 枚</td><td>6,987,840</td><td><b>3,557,350</b></td><td>4,394,310</td><td>4,195,043</td><td>4,974,680</td></tr><tr><td>ProTracker MOD ファイル 16 個</td><td>2,252,604</td><td><b>1,127,607</b></td><td>1,264,245</td><td>1,166,855</td><td>1,408,085</td></tr><tr><td>ギャラリー WAV 35 個 (モノラル 16 ビット)</td><td>2,991,820</td><td><b>1,346,484</b></td><td>1,596,971</td><td>1,484,879</td><td>1,852,279</td></tr><tr><td>音楽 44.1 kHz ステレオ 16 ビット</td><td>17,760,408</td><td><b>8,731,989</b></td><td>10,460,042</td><td>10,666,922</td><td>15,225,764</td></tr><tr><td>音楽 22.05 kHz モノラル 16 ビット</td><td>4,440,136</td><td><b>2,458,867</b></td><td>2,797,026</td><td>2,784,080</td><td>3,736,722</td></tr><tr><td>音楽 22.05 kHz モノラル 8 ビット</td><td>2,220,090</td><td><b>606,840</b></td><td>725,416</td><td>642,341</td><td>836,989</td></tr><tr><td>音楽 48 kHz ステレオ 24 ビット</td><td>28,996,592</td><td><b>18,198,056</b></td><td>21,229,465</td><td>25,542,036</td><td>26,980,770</td></tr><tr><td>プレーンテキストの書籍 18 冊 (.txt)</td><td>11,793,318</td><td><b>2,741,898</b></td><td>3,519,622</td><td>3,259,868</td><td>4,223,579</td></tr><tr><td>Office ファイル 60 個</td><td>39,100,915</td><td><b>6,887,729</b></td><td>11,186,217</td><td>10,085,779</td><td>17,399,998</td></tr><tr><td>一般データ (11,473 ファイル)</td><td>190,454,632</td><td><b>28,175,618</b></td><td>33,606,893</td><td>28,879,398</td><td>62,198,510</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p>すべてのサイズはバイト単位です。各行で最小のアーカイブは太字で示されています。</p>
+<figure><img src="../assets/img/tech/ddb7a26b.png" alt="Figure 7: archive size at the maximum level of each tool, as a percentage of the original (lower is better)." loading="lazy"><figcaption>図 7: 各ツールの最高レベルでのアーカイブサイズ (元データに対する割合、低いほど良い)。</figcaption></figure>
+<h4 class="su" id="fast-levels-size-and-creation-time">高速レベル: サイズと作成時間</h4>
+<table class="tech-table"><thead><tr><th><b>セット</b></th><th><b>nikpak -m2</b></th><th><b>RAR 7 -m3</b></th><th><b>7-Zip -mx5</b></th><th><b>ZIP -6</b></th></tr></thead><tbody><tr><td>BMP 画像 8 枚</td><td><b>54.0 % · 0.39 秒</b></td><td>63.0 % · 2.09 秒</td><td>60.1 % · 3.51 秒</td><td>71.2 % · 0.35 秒</td></tr><tr><td>ProTracker MOD ファイル 16 個</td><td>52.4 % · 0.61 秒</td><td>56.2 % · 0.43 秒</td><td><b>51.9 % · 0.69 秒</b></td><td>62.7 % · 0.10 秒</td></tr><tr><td>ギャラリー WAV 35 個 (モノラル 16 ビット)</td><td>51.1 % · 0.41 秒</td><td>53.6 % · 0.71 秒</td><td><b>49.6 % · 1.96 秒</b></td><td>61.9 % · 0.24 秒</td></tr><tr><td>音楽 44.1 kHz ステレオ 16 ビット</td><td><b>49.2 % · 1.72 秒</b></td><td>59.9 % · 3.60 秒</td><td>60.1 % · 14.03 秒</td><td>85.7 % · 0.82 秒</td></tr><tr><td>音楽 22.05 kHz モノラル 16 ビット</td><td><b>55.4 % · 0.58 秒</b></td><td>64.1 % · 0.95 秒</td><td>62.7 % · 2.14 秒</td><td>84.2 % · 0.22 秒</td></tr><tr><td>音楽 22.05 kHz モノラル 8 ビット</td><td><b>27.4 % · 0.77 秒</b></td><td>33.3 % · 0.52 秒</td><td>28.9 % · 2.13 秒</td><td>38.2 % · 0.32 秒</td></tr><tr><td>音楽 48 kHz ステレオ 24 ビット</td><td><b>62.8 % · 2.06 秒</b></td><td>73.6 % · 7.54 秒</td><td>88.1 % · 13.54 秒</td><td>93.0 % · 1.19 秒</td></tr><tr><td>プレーンテキストの書籍 18 冊 (.txt)</td><td>35.2 % · 0.11 秒</td><td>30.4 % · 5.53 秒</td><td><b>27.7 % · 11.76 秒</b></td><td>36.0 % · 0.89 秒</td></tr><tr><td>Office ファイル 60 個</td><td>38.0 % · 0.22 秒</td><td>29.5 % · 8.25 秒</td><td><b>26.2 % · 21.85 秒</b></td><td>44.7 % · 1.83 秒</td></tr><tr><td>一般データ (11,473 ファイル)</td><td>25.3 % · 1.67 秒</td><td>18.0 % · 48.19 秒</td><td><b>17.0 % · 93.71 秒</b></td><td>32.9 % · 7.32 秒</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p>nikpak -m2 と他のツールの既定レベルの比較。各セルは元データに対するアーカイブサイズの割合と、シングルコアでの作成時間を示します。各行で最小のアーカイブは太字です。</p>
+<h4 class="su" id="general-data-in-detail">一般データの詳細</h4>
+<table class="tech-table"><thead><tr><th><b>ツールとレベル</b></th><th><b>サイズ (バイト)</b></th><th><b>元データに対する %</b></th><th><b>作成時間</b></th><th><b>展開</b></th></tr></thead><tbody><tr><td><b>nikpak -m5</b></td><td><b>28,175,618</b></td><td><b>14.8 %</b></td><td><b>154.3 秒</b></td><td><b>5.6 秒</b></td></tr><tr><td><b>7-Zip -mx9</b></td><td>28,879,398</td><td>15.2 %</td><td>120.9 秒</td><td>6.0 秒</td></tr><tr><td>RAR 7 -m5 -s -md256m</td><td>32,350,575</td><td>17.0 %</td><td>73.6 秒</td><td>7.0 秒</td></tr><tr><td><b>7-Zip -mx5</b></td><td>32,375,802</td><td>17.0 %</td><td>93.7 秒</td><td>4.5 秒</td></tr><tr><td>nikpak -m4</td><td><b>33,295,133</b></td><td><b>17.5 %</b></td><td><b>37.8 秒</b></td><td><b>3.3 秒</b></td></tr><tr><td>RAR 7 -m5 -s</td><td>33,606,893</td><td>17.6 %</td><td>72.4 秒</td><td>6.7 秒</td></tr><tr><td>RAR 7 -m3 -s</td><td>34,236,198</td><td>18.0 %</td><td>48.2 秒</td><td>5.9 秒</td></tr><tr><td><b>nikpak -m2</b></td><td><b>48,229,284</b></td><td><b>25.3 %</b></td><td><b>1.7 秒</b></td><td><b>0.9 秒</b></td></tr><tr><td>RAR 7 -m3 (非ソリッド)</td><td>56,038,351</td><td>29.4 %</td><td>20.2 秒</td><td>6.9 秒</td></tr><tr><td><b>ZIP -9</b></td><td>62,198,510</td><td>32.7 %</td><td>28.2 秒</td><td>6.9 秒</td></tr><tr><td><b>ZIP -6</b></td><td>62,672,415</td><td>32.9 %</td><td>7.3 秒</td><td>5.4 秒</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<figure><img src="../assets/img/tech/9f20cd82.png" alt="Figure 8: general data, size and creation time of all four tools on one core." loading="lazy"><figcaption>図 8: 一般データ、4 つのツールすべてのシングルコアでのサイズと作成時間。</figcaption></figure>
+<h4 class="su" id="from-1-1-0-to-1-2-0">1.1.0 から 1.2.0 へ</h4>
+<table class="tech-table"><thead><tr><th><b>セット</b></th><th><b>nikpak 1.1.0 -m5</b></th><th><b>nikpak 1.2.0 -m5</b></th><th><b>7-Zip -mx9</b></th><th><b>1.2.0 対 7-Zip</b></th></tr></thead><tbody><tr><td>プレーンテキストの書籍 18 冊</td><td>3,306,819</td><td><b>2,741,898</b></td><td>3,259,868</td><td><b>15.9 % 小さい</b></td></tr><tr><td>Office ファイル 60 個</td><td>10,417,750</td><td><b>6,887,729</b></td><td>10,085,779</td><td>31.7 % 小さい</td></tr><tr><td>一般データ</td><td>31,322,041</td><td><b>28,175,618</b></td><td>28,879,398</td><td><b>2.4 % 小さい</b></td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h4 class="su" id="reading-the-results-honestly">結果を正直に読む</h4>
+<ul><li><b>nikpak -m5 はどのセットでも最小です。</b> 7-Zip -mx9 に対して 2.4〜31.7 % 小さく、RAR 7 -m5 に対して 10.8〜38.4 %、ZIP -9 に対して 19.9〜60.4 % 小さくなります。録音音声では、NAC は LZ ベースの圧縮器が一致させることしかできないものを予測します。24 ビット音楽では 7-Zip が 12 %、nikpak が 37 % 節約します。</li><li><b>Office ファイル: 7-Zip より 31.7 % 小さい。</b> Deflate 再圧縮により、6.6 MB の .xlsx と 1.9 MB の .docx が平文 XML になり、LZMA2 は Deflate よりはるかによく圧縮します (6.89 MB 対 10.09 MB)。-m4 でも 7-Zip -mx9 より 1.3 % 小さく、高速です (16 秒 対 26 秒)。-m5 での代償は時間です: 81 秒 対 26 秒。</li><li><b>テキスト: 15.9 % 小さく、半分の時間で。</b> 散文では PPMd が勝ちます (作成に 6.4 秒 対 12.9 秒)。PPMd は符号化と同じくらいデコードが遅いため、展開は 0.2 秒ではなく 2.7 秒かかります。</li><li><b>ソースコード: 2.4 % 小さく、わずかなリード。</b> 28.2 MB 対 28.9 MB、154 秒 対 121 秒。ファイル種別による並べ替えと、連続サンプルでのエンジン選択 (6.7) が差を生みました。</li><li><b>高速レベル -m2: 最速だが最小ではない。</b> nikpak -m2 は一般セットに 1.7 秒を要し、7-Zip -mx5 は 93.7 秒 (56 倍)、RAR は 48.2 秒、ZIP は 7.3 秒です。画像とほとんどの音声では 7-Zip -mx5 より小さいですが (MOD ファイルとギャラリー WAV は 1〜3 % 大きい)、テキスト、Office ファイル、ソースコードでは大きくなります (一般セットで 49.0 %)。そのため、バージョン 1.2.1 以降 nikpak は既定で -m5 を使用します。-m2 は明示的に指定する必要があります。</li><li><b>ZIP は高速だが、どこでも最大。</b> nikpak -m2 でもすべてのセットで ZIP -9 を上回ります。ZIP は小さなメディアアーカイブを nikpak -m2 より速く作成します。Deflate は NAC コーデックよりはるかに少ない作業で済むためですが、テキスト、Office ファイル、ソースコードでは遅くなります。</li><li><b>展開。</b> 一般セットは 0.9 秒 (nikpak -m2) または 5.6 秒 (-m5) で展開され、7-Zip は 6.0 秒、RAR は 6.7 秒、ZIP は 6.9 秒です。Deflate ストリームを再圧縮したアーカイブは、すべてのストリームが再構築されるため展開が遅くなります (Office セットで 0.7 秒 対 2.1 秒)。</li><li><b>このマシンでの RAR。</b> RAR はここでは 11.3 節より遅かったです (同程度のソースコードで -m5 -s が 27 秒ではなく 72 秒)。マシンとデータが異なるため、2 つの節を混ぜるべきではありません。この実行内では、すべてのツールが同じ条件でした。</li></ul>
+<h4 class="su" id="what-this-means-for-nikpak">これが nikpak にとって何を意味するか</h4>
+<p>最高レベルでは、nikpak は測定したすべてのセットで 4 つのツールの中で最小のアーカイブを作り、7-Zip -mx9 より 2.4〜31.7 % 小さくなります。代償は速度です。<code>-m5</code> は時間と引き換えにサイズを得ます。上記の数値はすべてのツールを 1 コアに固定したものです。実際の使用では <code>-m5</code> アーカイブはブロックをコア全体に分散します (4.5 節)。より高速な最高レベルはロードマップに残っています (15.2 節)。</p>
+<h2 class="ch" id="12-nikpak-and-rar-compared">12 nikpak と RAR の比較</h2>
+<p>RAR は優れた広く使われているアーカイバであり、本章はそうでないふりをしません。測定と設計が nikpak に有利な点、RAR が優れている点、誰が何を選ぶべきかを示します。</p>
+<h3 class="se" id="12-1-where-nikpak-is-ahead">12.1 nikpak が優れている点</h3>
+<table class="tech-table"><thead><tr><th><b>分野</b></th><th><b>nikpak</b></th><th><b>根拠</b></th></tr></thead><tbody><tr><td>音声、画像、トラッカーミュージック</td><td>測定したすべてのメディアセットで RAR 7 -m5 より 12〜39 % 小さい</td><td>11.2 節</td></tr><tr><td>ソースコード、最高レベル</td><td>RAR の最良のソリッド設定より 5.5 % 小さい</td><td>11.3 節</td></tr><tr><td>高速レベル -m2 での速度</td><td>197 MB で 0.9 秒 対 9.7〜16.7 秒、WAV で 1.45 秒 対 2.54 秒</td><td>11.3 節、11.4 節</td></tr><tr><td>暗号とモード</td><td>XChaCha20-Poly1305、認証付き。RAR5 は CBC モードの AES-256 を使用し、認証されず別のチェックサムに依存する</td><td>第 8 章</td></tr><tr><td>パスワードハッシュ</td><td>Argon2id、メモリハード (64 MiB)。RAR5 は PBKDF2-HMAC-SHA256 を使用し、CPU バウンドで GPU 上で安価に並列化される</td><td>8.2 節</td></tr><tr><td>ファイル名のプライバシー</td><td>常に暗号化。RAR は <code>-hp</code> スイッチが必要</td><td>8.4 節</td></tr><tr><td>パスワード生成</td><td>内蔵: 指定がない場合は強力なランダムパスワード</td><td>3.3 節</td></tr><tr><td>改ざんの証拠</td><td>並べ替え、切り詰め、ヘッダー変更が暗号学的に検出される</td><td>8.6 節</td></tr><tr><td>透明性</td><td>完全なソースと文書化された形式。メモリ安全な Rust での実装</td><td>第 5 章、第 10 章</td></tr><tr><td>配布</td><td>単一の静的実行ファイル (ドロップウィンドウとコマンドライン。ウィンドウなしで約 2.3 MB)、または小さな Windows インストーラー。シェアウェアで、個人利用は無料 (3.8)</td><td>第 13 章</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="12-2-where-rar-is-ahead">12.2 RAR が優れている点</h3>
+<table class="tech-table"><thead><tr><th><b>分野</b></th><th><b>RAR 7</b></th><th><b>現在の nikpak</b></th></tr></thead><tbody><tr><td>リカバリレコード</td><td>破損したアーカイブを修復できる</td><td>破損を検出できるが、修復はできない</td></tr><tr><td>マルチボリュームアーカイブ</td><td><b>はい</b></td><td>はい (<code>-v</code>、<code>photos.nik</code> + <code>photos.n01</code> …)</td></tr><tr><td>自己解凍アーカイブ</td><td><b>はい</b></td><td>はい (<code>-sfx</code>、<code>photos.exe</code>)</td></tr><tr><td>アーカイブの更新</td><td>ファイルをその場で追加、置換、削除</td><td>作成または上書きのみ</td></tr><tr><td>グラフィカルインターフェース</td><td>WinRAR、シェル統合付き</td><td>ドロップウィンドウ、ドロップされたアーカイブ用の Extract ボックス、ファイルマネージャーのメニュー (3.11)</td></tr><tr><td>最高レベルの速度</td><td>一般セットで 26.7〜36.2 秒</td><td>シングルコアで 45.6 秒。1.13 以降はブロックが並列に圧縮される</td></tr><tr><td>メディアでの展開速度</td><td>17 MB の WAV で 0.23 秒</td><td>0.28 秒</td></tr><tr><td>成熟度と普及</td><td>数十年の実地テスト。既存の数百万の .rar ファイル</td><td>新しい。独立した監査はない。読み取れるのは .nik のみ</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="12-3-quantum-resistance-in-perspective">12.3 耐量子性を大局的に見る</h3>
+<p>nikpak と RAR5 はどちらも 256 ビットの対称鍵で暗号化するため、両方とも Shor のアルゴリズムの影響を受けず、Grover のアルゴリズムに対しても約 128 ビットのセキュリティを保ちます。この点では両者を区別できません。nikpak がさらに加えるのは、メモリハードなパスワード処理 (現実世界で支配的な攻撃であるパスワード推測をはるかに高コストにする) と認証付き暗号 (改ざんを検出可能にする) です。また、公開鍵プリミティブがアーカイブ形式の一部になることは決してないという前提で最初から設計されており、公開鍵共有が追加された場合にはハイブリッドな耐量子方式を採用することがロードマップで約束されています。</p>
+<h3 class="se" id="12-4-which-one-to-choose">12.4 どちらを選ぶべきか</h3>
+<ul><li><b>nikpak を選ぶ</b> のは、サイズと速度が重要な音声、画像、トラッカーミュージック、ソースコードのアーカイブ、スクリプトによるバックアップ、強力な既定の暗号化、オープンで文書化された形式に価値がある場合です。</li><li>RAR を選ぶのは、リカバリレコード、その場での更新が必要な場合、または RAR ツールしか持たない人とアーカイブを交換しなければならない場合です。</li><li><b>両方を使う</b>: 大量のメディアと暗号化バックアップには nikpak を使い、配布用には RAR を残すというワークフローを妨げるものは何もありません。</li></ul>
+<h3 class="se" id="12-5-and-7-zip-and-zip">12.5 7-Zip と ZIP は?</h3>
+<p>11.7 節では nikpak 1.2 を 7-Zip 23.01 と Info-ZIP 3.0 とも比較しています。要約すると:</p>
+<ul><li><b>最小のアーカイブには nikpak -m5 を選んでください。</b> 測定したすべてのセットで 7-Zip -mx9 より 2.4〜31.7 % 小さくなります。Office ファイルで 31.7 %、テキストで 15.9 %、ソースコードで 2.4 % です。高速なバックアップには nikpak -m2 を選んでください (ソースコードで 7-Zip の既定より 56 倍高速)。nikpak の暗号化もより強力です。7-Zip は AES-256 とメモリハードでない SHA-256 鍵導出を使用し、-mhe を付けないとファイル名を隠しません。</li><li><b>7-Zip を選ぶ</b> のは、最高レベルで時間がより重要な場合 (大規模な Office やソースコードのセットでは高速)、既定レベルで文書を小さくしたい場合、または 7-Zip が読める多数の形式を開く必要がある場合です。</li><li><b>ZIP を選ぶ</b> のは互換性のためだけです。どのオペレーティングシステムでも追加ソフトなしで開けますが、nikpak -m5 は 19.9〜60.4 % 小さく、ZIP の従来の暗号化は弱いです。</li></ul>
+<h2 class="ch" id="13-building-deploying-and-integrating">13 ビルド、配備、統合</h2>
+<h3 class="se" id="13-1-windows-with-powershell">13.1 PowerShell を使った Windows</h3>
+<p>nikpak は Rust で書かれ、Cargo でビルドされます。Windows では Rust に C/C++ リンカーが必要で、それは Visual Studio Build Tools に含まれます。管理者 PowerShell で両方を一度インストールし、PowerShell を開き直してください:</p>
+<pre>winget install Rustlang.Rustup</pre>
+<pre>$o = '--wait --passive --add Microsoft.VisualStudio.Workload.VCTools'</pre>
+<pre>$o += ' --includeRecommended'</pre>
+<pre>winget install Microsoft.VisualStudio.2022.BuildTools --override $o</pre>
+<p><br>
+<br>
+
+</p>
+<p><code>winget</code> が利用できない場合は、rustup.rs から Rust を、<i>Build Tools for Visual Studio</i> を <i>Desktop development with C++</i> ワークロード付きでインストールしてください。その後、ソースを含むフォルダーで:</p>
+<pre>.\build.ps1 # builds dist\nikpak.exe and dist\unNik.exe</pre>
+<pre>.\build.ps1 -Test # runs the unit tests first</pre>
+<p>
+<code></code><br>
+
+</p>
+<pre># if PowerShell refuses to run scripts:</pre>
+<pre>powershell -ExecutionPolicy Bypass -File .\build.ps1</pre>
+<p><br>
+<br>
+
+</p>
+<p><code>build.ps1</code> は Cargo がインストールされていることを確認し (ない場合はインストール方法を表示)、ビルドを実行し、失敗した場合は通常の原因を説明し、実行ファイルを <code>dist\nikpak.exe</code> にコピーします。</p>
+<h4 class="su" id="the-windows-installer">Windows インストーラー</h4>
+<p><code>.uild.ps1 -Installer</code> (または <code>npm run installer</code>) は、<b>Inno Setup 6.3 以降</b>でセットアッププログラム <code>dist\nikpak--setup.exe</code> もビルドします (一度 <code>winget install JRSoftware.InnoSetup</code> でインストールしてください)。スクリプトは <code>installer\nikpak.iss</code> で、バージョンは Cargo.toml から取得されます。このセットアップファイルがシェアウェアサイトやダウンロードサイトにアップロードされます。</p>
+<ul><li>既定では<b>現在のユーザーのみ</b>に、管理者権限や UAC プロンプトなしで、%LOCALAPPDATA%\Programs\NikPak にインストールします。最初のページで「install for all users」(Program Files、管理者権限が必要) を提供します。</li><li>LICENSE.txt を表示して承認を求め、nikpak.exe、unNik.exe、アイコン、LICENSE.txt、THIRD-PARTY-NOTICES.txt、CHANGELOG.md をインストールします。<b>スタートメニュー</b>の項目、任意のデスクトップアイコン、要求に応じてコマンドライン用にフォルダーを <b>PATH</b> に追加します。設定 &gt; アプリにアンインストーラーを登録します。</li><li><b>ショートカット:</b> スタートメニューに NikPak、unNik、ライセンス。<b>デスクトップに NikPak</b> (常時) と、オプションでデスクトップに unNik。</li><li><b>.nik ファイルは常に登録されます</b> (1.5.2 以降)。独自のアイコン (nikfile.ico、.zip ファイルのようなファスナー付きのページ)、種類名「NikPak archive」が付き、ダブルクリックで <b>unNik</b> で開きます (右クリックメニューの「Open with unNik」)。unNik は「プログラムから開く」と既定のアプリにも表示されます。アンインストーラーは登録を削除します。.nik ファイルが既に別のプログラムで開くよう設定されている場合、Windows は「プログラムから開く」で unNik を一度選ぶまでその選択を保持します。</li><li>最後の「Launch NikPak」は通常ユーザーとして NikPak を起動し、決して管理者としては起動しないため、ドラッグ&amp;ドロップが機能します。更新は以前のバージョンに上書きインストールされます (AppId 固定)。%APPDATA%\nikpak のライセンスは更新とアンインストールでも保持されます。セットアップにキーやキーファイルが含まれることはありません。</li><li>インストーラーは Windows に従って英語またはフランス語で動作します。公開前に、nikpak.exe とセットアップにコード署名証明書で署名し、Windows SmartScreen が不明な発行元について警告しないようにしてください。</li></ul>
+<p><b>buildall.ps1</b> は公開されるすべてを 1 回の実行でビルドし (<code>nikpak.exe</code>、<code>unNik.exe</code>、2 つのセットアップ、<code>SHA256SUMS.txt</code>)、<code>binaries\</code> にコピーし、Web サイトを再ビルドして FTP でアップロードします (<code>-NoUpload</code> でアップロードをスキップ)。2 つ目のセットアップ <code>unnik--setup.exe</code> (<code>installer\unnik.iss</code>) は無料のアーカイブブラウザー unNik のみをインストールし、NikPak が既にインストールされている場合はプログラムのみをインストールするため、メニューが二重になることはありません。</p>
+<h3 class="se" id="13-2-building-with-npm">13.2 npm を使ったビルド</h3>
+<p>Rust プロジェクトは npm を使わないため、npm は決して必須ではありません。便宜上、プロジェクトには Cargo を呼ぶだけのスクリプトを持つ小さな <code>package.json</code> が含まれており、Node.js のワークフローに慣れた開発者が使い慣れたコマンドを入力できます:</p>
+<pre>npm run build # cargo build --release</pre>
+<pre>npm run dist # build.ps1 -&gt; dist\nikpak.exe</pre>
+<pre>npm test # cargo test --release</pre>
+<pre>npm run clean # cargo clean</pre>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="13-3-a-self-contained-executable">13.3 自己完結型の実行ファイル</h3>
+<p><code>.cargo/config.toml</code> ファイルは、Windows の MSVC ターゲット向けに C ランタイムを静的リンクします。その結果得られる <code>nikpak.exe</code> (グラフィカルインターフェース付きで数 MB、なしで約 2.3 MB) は DLL 依存関係がなく、実行するマシンに <i>Visual C++ Redistributable</i> を必要としません。どこでも使うには <code>PATH</code> の通ったフォルダーにコピーしてください。リリースプロファイルは、小さく高速なバイナリのために完全最適化、リンク時最適化、単一コード生成ユニット、シンボル除去、<code>panic = abort</code> を有効にします。</p>
+<h3 class="se" id="13-4-macos-and-linux">13.4 macOS と Linux</h3>
+<pre>./build.sh # builds and copies the result to dist/nikpak</pre>
+<pre># or: cargo build --release</pre>
+<pre>sudo cp dist/nikpak /usr/local/bin/</pre>
+<p><br>
+<br>
+
+</p>
+<p>macOS では最初にコマンドラインツールをインストールし (<code>xcode-select --install</code>)、Debian または Ubuntu では C コンパイラーをインストールします (<code>sudo apt install build-essential</code>)。Rust 自体は <code>curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh</code> で入手します。圧縮ライブラリは Cargo が C ソースからコンパイルするため、システムライブラリは不要です。</p>
+<p>サイトの macOS 版と Linux 版のダウンロードは <code>./package-unix.sh</code> が作成します。これは nikpak と unNik をビルドし、<code>install.sh</code> とともに <code>binaries\nikpak--macos.zip</code> (ユニバーサルバイナリ: Intel + Apple silicon) または <code>binaries\nikpak--linux-.tar.gz</code> にまとめます。Linux で <code>ZIG=1</code> を設定すると、glibc 2.28 に対して cargo-zigbuild でビルドし、古いディストリビューションでも動作します。</p>
+<h3 class="se" id="13-5-dependencies">13.5 依存関係</h3>
+<p>バージョン 1.2 以降、nikpak は <b>Rust 1.89 以降</b> を必要とします。build.ps1 と build.sh はインストールされているバージョンを確認し、古い場合は rustup update stable を実行します。npm を使う場合は、npm run build の前に一度 rustup update を実行してください。</p>
+<p>nikpak は少数の成熟したクレートに依存しています。正確なバージョンは <code>Cargo.lock</code> に固定されており、これはソースパッケージの一部であるため、すべてのビルドが同じコードを使用します。</p>
+<table class="tech-table"><thead><tr><th><b>クレート</b></th><th><b>目的</b></th></tr></thead><tbody><tr><td><code>zstd</code></td><td>Zstandard 圧縮 (マルチスレッド対応)</td></tr><tr><td><code>chacha20poly1305</code></td><td>XChaCha20-Poly1305 と STREAM 構築法 (RustCrypto)</td></tr><tr><td><code>argon2</code></td><td>Argon2id 鍵導出 (RustCrypto)</td></tr><tr><td><code>rand</code></td><td>オペレーティングシステムの安全な乱数生成器へのアクセス</td></tr><tr><td><code>zeroize</code></td><td>メモリから鍵とパスワードを消去</td></tr><tr><td><code>rpassword</code></td><td>すべてのプラットフォームでエコーなしにパスワードを読み取る</td></tr><tr><td><code>crc32fast</code></td><td>高速 CRC32</td></tr><tr><td><code>glob</code></td><td>ワイルドカード展開 (PowerShell はネイティブプログラムのワイルドカードを展開しない)</td></tr><tr><td><code>liblzma</code></td><td>-m5 用の LZMA2 エンジン (liblzma、C ソースから静的にコンパイル)</td></tr><tr><td><code>ppmd-rust</code></td><td>-m5 でのテキスト用 PPMd バリアント I エンジン</td></tr><tr><td><code>preflate-rs</code></td><td>ビット単位で正確な Deflate 再圧縮 (Microsoft、Apache-2.0)。vendor/preflate-rs のベンダーコピーで、LGPL のエントロピー符号化器 (cabac) は nikpak 独自のレンジコーダーに置き換えられているため、nikpak に LGPL コードは含まれません。Rust 1.89 以降が必要</td></tr><tr><td><code>eframe / egui</code></td><td>グラフィカルインターフェース (オプションの cargo フィーチャー gui、既定でオン)</td></tr><tr><td><code>rfd</code></td><td>Browse 用のネイティブフォルダーダイアログ</td></tr><tr><td><code>ed25519-dalek</code></td><td>ライセンスキー署名の検証 (3.8 節)</td></tr><tr><td><code>rustybuzz, unicode-bidi</code></td><td>ウィンドウ内のヒンディー語、ベンガル語、アラビア語のシェーピングと右から左への並べ替え (オプションの cargo フィーチャー gui)</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="13-6-scripting">13.6 スクリプト</h3>
+<p>予測可能な終了コードと環境変数によるパスワードにより、nikpak はスクリプト化が容易です。警告を許容し、それ以上を失敗として扱う PowerShell バックアップ:</p>
+<pre>$archive = "D:\Backups\docs-$(Get-Date -Format yyyy-MM-dd).nik"</pre>
+<pre># the password comes from a file or secret store, not from the script</pre>
+<pre>$env:NIKPAK_PASSWORD = Get-Content "$env:USERPROFILE\.nikpak-secret"</pre>
+<p>
+<code></code><br>
+
+</p>
+<pre>nikpak a -p -m3 -inul $archive "$env:USERPROFILE\Documents"</pre>
+<pre>if ($LASTEXITCODE -gt 1) { throw "nikpak failed: $LASTEXITCODE" }</pre>
+<p>
+<code></code><br>
+
+</p>
+<pre>nikpak t -inul $archive # verify what was written</pre>
+<pre>if ($LASTEXITCODE -ne 0) { throw "archive verification failed" }</pre>
+<p><br>
+<br>
+
+</p>
+<p>シェルスクリプトでの同じ処理。ベア一覧コマンドを使って他のツールに渡します:</p>
+<pre>export NIKPAK_PASSWORD="$(cat ~/.nikpak-secret)"</pre>
+<pre>nikpak a -p -m3 -inul "backup-$(date +%F).nik" ~/Documents || [ $? -eq 1 ]</pre>
+<pre>nikpak lb backup-2026-10-16.nik | grep -i '\.wav$'</pre>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="13-7-total-commander">13.7 Total Commander</h3>
+<p>3.6 節で説明した統合は、nikpak が RAR の構文に従うことに依存しています。簡単なチェックリスト: 拡張子 <code>nik</code> を登録する。圧縮には <code>a</code>、展開には <code>x</code> を使う。長いファイルリストにはフロントエンドに <code>@listfile</code> を渡させる。無人展開には <code>-o+</code> または <code>-y</code> を付ける。パスワードは <code>-p</code> または <code>NIKPAK_PASSWORD</code> 変数で渡す。グラフィカルなフロントエンドには問い合わせるコンソールがないためです。</p>
+<h2 class="ch" id="14-testing-and-verification">14 テストと検証</h2>
+<p>アーカイバは人々のデータを扱うため、nikpak は 4 つのレベルでテストされます。</p>
+<h3 class="se" id="14-1-unit-tests">14.1 単体テスト</h3>
+<p>75 個の自動テストが <code>cargo test --release</code> で実行されます:</p>
+<table class="tech-table"><thead><tr><th><b>分野</b></th><th><b>検査内容</b></th></tr></thead><tbody><tr><td>暗号化ストリーム</td><td>0、1、100、65,535、65,536、65,537、131,072、131,077、327,803 バイト (64 KiB チャンク境界付近) でのラウンドトリップ。誤ったヘッダー (関連データ)、誤った鍵、切り詰めはすべて失敗しなければなりません。</td></tr><tr><td>鍵導出の制限</td><td>敵対的な Argon2id パラメーター (巨大なメモリ、パス数 0、レーン数 0、過大なパス数) は拒否されます。</td></tr><tr><td>NAC 音声コーデック</td><td>8/16/24/32 ビット音声、1、2、3、6 チャンネル、9 種類の信号 (無音、ノイズ付き正弦波、ホワイトノイズ、フルスケール矩形波、ランプ、単一インパルス、一定最大値、下位ビットの無駄、一定最小値)、1〜5000 サンプルの 8 種類のブロック長、3 つのエフォートレベル、強制 verbatim 符号化での可逆ラウンドトリップ。</td></tr><tr><td>音声方式</td><td>すべてのビット深度、チャンネル数、バイト順、符号の有無にわたる NAC、Shuffle、Shuffle+Delta。均等に分割されないブロックも含みます。</td></tr><tr><td>検出とファイル</td><td>WAV (モノラル、ステレオ、8/16/24/32 ビット、拡張可能、6 チャンネル、末尾チャンク、奇数長の残りバイト、データ長 0 と過大)、AIFF、MOD (切り詰めも)、BMP (8/24/32 ビット、行パディング、末尾データ)。浮動小数点 WAV、極小ファイル、テキストは検出されてはなりません。すべてのファイルが該当するすべてのフィルターを通ってラウンドトリップします。</td></tr><tr><td>堅牢性</td><td>音声デコーダーとメディアデコーダーに与えられる数千のランダムおよびビット反転ブロック: エラーを返さなければならず、決してパニックやメモリ枯渇を起こしてはなりません。</td></tr><tr><td>フレーミングとヘルパー</td><td>末尾データ付きチャンクフレーミング、パスのサニタイズ、ワイルドカードとフィルターのマッチング、日付の書式設定、パスワード生成。</td></tr><tr><td>Deflate 再圧縮</td><td>Deflate レベル 1、3、6、9 の ZIP コンテナ、2 つの zlib ストリームを持つ PDF、3 メンバーの gzip、非コンテナ。400 個の破損または切り詰められた再圧縮ストリームはクリーンに失敗しなければなりません (preflate のパニックは捕捉されます)。</td></tr><tr><td>マルチエンジンブロック</td><td>256 KiB フレーム境界付近の zstd、LZMA2、PPMd ブロックを通るラウンドトリップ。300 個の破損または切り詰められた本体。敵対的なエンジンパラメーター。PPMd/LZMA2 の試行。</td></tr><tr><td>グラフィカルインターフェース</td><td>仮想ディスプレイ (Xvfb) で実行: 待機、ホバー、進行、完了の各画面を視覚的に確認。ドロップしたフォルダーがバイト単位でアーカイブ・展開される。圧縮中の Cancel と閉じるがファイルを残さない。ディスプレイがない場合は使用方法のテキストにフォールバックする。</td></tr><tr><td>ライセンス</td><td>nikpak-keygen と PHP キットで作られたキーは同一で受け入れられる。変更された名前、メール、種類、キー、および別のキーで署名されたキーは拒否される。仮想ディスプレイで: 両方のボタン順序のリマインダー、誤ったキーのエラー、登録成功、リマインダーなしの再起動。テキストはボックス内に収まる。</td></tr><tr><td>言語</td><td>すべての言語がすべてのテキストを同じプレースホルダーで翻訳している。デーヴァナーガリーの母音記号とアラビア語の連結がシェーピングされる。仮想ディスプレイで 10 言語すべてを画面ごとに確認 (リマインダー、待機、進行、完了、About、登録、言語メニュー)。言語を選択すると保存され、その言語で nikpak が再起動する。</td></tr><tr><td>アーカイブ API</td><td>インデックスの読み取り、フォルダー内からの単一ファイルの展開 (フォルダーのパスなしで配置される)、フォルダーの内容ごとの削除とすべての削除を、-m5、zstd + 暗号化、保存アーカイブで実行。誤ったパスワードはそのように報告される。</td></tr><tr><td>アーカイブブラウザー</td><td>暗黙のフォルダーを含むツリー構築、テキスト検出とデコード (UTF-8、UTF-16、Windows-1252)、ビューアーでの行折り返しと検索。仮想ディスプレイで: 開く、パスワード、移動、選択、検索、ビューアー、展開、削除、テストを複数の言語で。</td></tr><tr><td>スキンとファイルマネージャーのメニュー</td><td>Linux のメニューファイルが生成され、チェックされる。3 項目の選択から 1 つのアーカイブが作成された。3 項目を持つ --add-here と、仮想ディスプレイ下での --extract-here / --extract-to。暗号化アーカイブはパスワードを尋ね、同一のファイルを展開する。新しいインターフェーステキストはすべて 10 言語で翻訳されている (すべての言語がすべてのテキストを翻訳するというアサーション)。</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="14-2-end-to-end-tests">14.2 エンドツーエンドテスト</h3>
+<ul><li>すべてのベンチマークアーカイブが、複数のレベルで展開され、元のデータとバイト単位で比較されました (10,949 ファイルのセットは SHA-256)。</li><li>混合アーカイブ (WAV、MOD、BMP、テキスト、ランダムデータ、サブフォルダー) を作成し、一覧表示、テスト、完全展開し、さらに中間から単一ファイルを展開しました。</li><li>同じアーカイブを暗号化付きで作成し、正しいパスワードと誤ったパスワードでテストし、展開しました。</li><li>以前の形式バージョン (1.0) で書かれたアーカイブを 1.1 で開きました。</li><li>対話的なパスワード入力を擬似端末を通じて実行しました。一致するパスワード、不一致、空の入力 (生成)、開く際の正しいパスワードと誤ったパスワード。</li></ul>
+<h3 class="se" id="14-3-attack-tests">14.3 攻撃テスト</h3>
+<p>改ざん、切り詰め、チャンクの並べ替え、ヘッダー操作、ゴミファイル、10.1 節のパストラバーサルアーカイブが、すべてのリリース候補に対して実行されました。結果は 8.6 節と 10.1 節に表にまとめられています。どの場合も期待される結果は拒否、明確なメッセージ、非ゼロの終了コードであり、決してパニックや保存先外への書き込みではありません。</p>
+<h3 class="se" id="14-4-defects-found-by-testing">14.4 テストで見つかった欠陥</h3>
+<p>テストキャンペーンのおかげで、いくつかの欠陥がリリース版のプログラムに存在しません。2 つの例: 32 ビット音声で失敗し、数ギガバイトのコードを書き込む可能性があった Rice パラメーター探索 (単体テストマトリックスで発見され修正済み)、および汎用の終了コード 2 で報告されていた zstd チェックサム失敗 (改ざんテストで発見され、3 に修正)。3 つ目の例はベンチマークの方法論そのものです。RAR との最初の比較では非ソリッドの既定値を使用し、ソースコードで nikpak に有利に働いていました。これはソリッドモードでやり直され、第 11 章の結果が修正後のものです。</p>
+<h2 class="ch" id="15-limitations-and-roadmap">15 制限とロードマップ</h2>
+<h3 class="se" id="15-1-current-limitations">15.1 現在の制限</h3>
+<table class="tech-table"><thead><tr><th><b>制限</b></th><th><b>詳細と回避策</b></th></tr></thead><tbody><tr><td>リカバリレコードなし</td><td>破損は検出されるが修復はされない (重要なアーカイブは 2 つ目のコピーを保持してください)。必要に応じて一般的なツールで大きなアーカイブを分割してください。</td></tr><tr><td>その場での更新なし</td><td>形式は 1 つのソリッドストリームです。削除 (nikpak d、または unNik の Delete) はアーカイブを再書き込みします。既存のアーカイブへのファイル追加はサポートされていません。新しいアーカイブを作成するか、<code>-o+</code> で上書きしてください。</td></tr><tr><td>シーケンシャルアクセス</td><td>非常に大きなアーカイブから 1 つのファイルを展開すると、その前にあるものを読み取ります (メディアエントリはデコードせずにスキップされます)。unNik は最後に選択したファイルの後で読み取りを停止します。</td></tr><tr><td>メディアのカバレッジ</td><td>整数 PCM の WAV と AIFF、ProTracker MOD、非圧縮 BMP。浮動小数点 WAV、ADPCM、XM/S3M/IT、圧縮画像は通常の圧縮で保存されます。</td></tr><tr><td>高レベルでのメモリ</td><td><code>-m4</code> と <code>-m5</code> のアーカイブは 128 MiB のウィンドウを使用するため、展開にもその量のメモリが必要です。</td></tr><tr><td>最高レベル -m5</td><td>最も遅いレベル。作成には最大約 1.5 GiB の RAM (エンコーダーの予算) が必要です。1.13 以降はブロックが並列に実行されます。</td></tr><tr><td>シンボリックリンクと日付</td><td>リンクはアーカイブ時にスキップされ、展開時に拒否されます。日付は UTC で一覧表示されます。</td></tr><tr><td>セキュリティレビュー</td><td>独立した監査を受けていません。</td></tr><tr><td>Windows と macOS のビルド</td><td>Linux で開発、テスト、ベンチマークされています。Windows と macOS 固有のコードパスは手作業でレビューされましたが、まだそれらのシステムで実行されていません。ビルドに依存する前に、そこで <code>cargo test --release</code> を実行してください。</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h3 class="se" id="15-2-roadmap">15.2 ロードマップ</h3>
+<table class="tech-table"><thead><tr><th><b>項目</b></th><th><b>目的</b></th></tr></thead><tbody><tr><td>リカバリレコード</td><td>Reed-Solomon パリティにより破損したアーカイブを修復できるようにする。RAR ユーザーが惜しむ主な機能。</td></tr><tr><td>更新サポート</td><td>既存のアーカイブ内のファイルの追加と置換。</td></tr><tr><td>ハイブリッド方式による公開鍵共有</td><td>X25519 と ML-KEM を組み合わせて受信者の鍵にアーカイブを暗号化し、どちらか一方が安全なら安全。</td></tr><tr><td>より多くのメディアフィルター</td><td>浮動小数点音声、XM/S3M/IT トラッカー、PNG の再圧縮、TGA と非圧縮 TIFF 用の 2 次元フィルター。</td></tr><tr><td>ZIP と RAR の読み取り、シェル統合</td><td>unNik で一般的な形式を展開し、unNik からファイルをドラッグできるようにして、nikpak だけをインストールすれば済むようにする。(Explorer と Finder のコンテキストメニューは 1.5.5 で実現、3.11 節。)</td></tr><tr><td>より高速な最高レベル</td><td><code>-m5</code> は既にブロックをコアに分散しています。次のステップは、単一ファイル内での並列 LZMA2/PPMd、重複排除、実行ファイル用フィルターです。</td></tr><tr><td>外部セキュリティレビュー</td><td>暗号コードと展開ツールの独立した監査。</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p><b>ライセンス</b>: NikPak はクローズドソースのシェアウェアで、© 2026 Nicolas Choukroun、Nikkoid LLC による配布です (LICENSE.txt、3.8 節)。unNik はフリーウェアです (3.9 節)。含まれるオープンソースコンポーネントは、すべてのコピーに同梱する必要がある THIRD-PARTY-NOTICES.txt にライセンスとともに記載されています。秘密のライセンスキー (keys/nikpak-private.key) は、公開するすべてのパッケージと Web ルートの外に保管してください。ビルドを再現可能にするため <code>Cargo.lock</code> をリポジトリに保持し、サポートする各プラットフォームの継続的インテグレーションジョブで <code>cargo test --release</code> を実行してください。</p>
+<h2 class="ch" id="a-appendix-a-format-constants-and-limits">A 付録 A: 形式の定数と制限</h2>
+<table class="tech-table"><thead><tr><th><b>項目</b></th><th><b>値</b></th></tr></thead><tbody><tr><td>マジック</td><td><code>89 4E 49 4B 0D 0A 1A 0A</code></td></tr><tr><td>形式バージョン</td><td>3 (リーダーは 1、2、3 を受け入れる)</td></tr><tr><td>ヘッダーサイズ</td><td>12 バイト。暗号化時は 59 バイト</td></tr><tr><td>レコード種別</td><td>0 END、1 FILE、2 DIR、3 MEDIA</td></tr><tr><td>アーカイブ方式</td><td>0 保存、1 Zstandard、2 マルチエンジンブロック</td></tr><tr><td>ブロックエンジン</td><td>1 Zstandard、2 LZMA2 (書き込み時の辞書は最大 128 MiB、受け入れは 1.5 GiB)、3 PPMd8 (書き込み時は次数 8、192 MiB。受け入れは次数 2〜16、1 GiB)</td></tr><tr><td>Deflate 再圧縮</td><td>ZIP、PDF、gzip。ファイルは最大 512 MiB、ストリームあたり平文データ最大 512 MiB、修正最大 64 MiB</td></tr><tr><td>最大名前長</td><td>4096 バイト</td></tr><tr><td>暗号化チャンク</td><td>平文 64 KiB + 16 バイトタグ、先頭に <code>u32</code> ビッグエンディアン長</td></tr><tr><td>Argon2id (書き込み時)</td><td>64 MiB、3 パス、4 レーン、16 バイトソルト、32 バイト鍵</td></tr><tr><td>Argon2id (受け入れ時)</td><td>メモリはレーン数 × 8 〜 1 GiB、パス数 1〜64、レーン数 1〜64</td></tr><tr><td>ストリーム nonce</td><td>19 バイトのランダムプレフィックス + 32 ビットカウンター + 1 バイトの最終フラグ = 24 バイト</td></tr><tr><td>最小パスワード長</td><td>8 文字</td></tr><tr><td>生成パスワード</td><td>24 文字、56 記号のアルファベット、約 139 ビット</td></tr><tr><td>メディアの最小ファイルサイズ</td><td>8 KiB (領域は少なくとも 4 KiB)</td></tr><tr><td>NAC ブロック</td><td>4096 サンプルフレーム。Shuffle ブロックは 32768 フレーム</td></tr><tr><td>試行</td><td>最大 3 つの 768 KiB ウィンドウ (5 %、45 %、85 %)。3 MiB 以下なら領域全体。マージン 2 %</td></tr><tr><td>BMP 領域の制限</td><td>256 MiB</td></tr><tr><td>Zstandard ウィンドウ</td><td>既定。2^27 で、-m4 と -m5 では長距離マッチング</td></tr><tr><td>スレッド数</td><td>1〜256 (<code>-mt</code>)</td></tr><tr><td><b>分割フラグ</b></td><td>ヘッダーフラグビット 3 (FLAG_SPLIT) + 表紙の後の 64 ビットボリュームサイズ</td></tr><tr><td><b>ボリューム名</b></td><td><code>photos.nik</code>、<code>photos.n01</code> … <code>photos.n99</code>、続いて <code>.100</code> …。いっぱいになったボリュームには空の後続が付く</td></tr><tr><td><b>SFX マジック</b></td><td><code>NIKPAKSFX</code> — 自己解凍 .exe の末尾にある 40 バイトのトレーラー: マジック、オフセット、長さ、合計、CRC32</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<h2 class="ch" id="b-appendix-b-glossary">B 付録 B: 用語集</h2>
+<table class="tech-table"><thead><tr><th><b>用語</b></th><th><b>意味</b></th></tr></thead><tbody><tr><td><b>AEAD</b></td><td>関連データ付き認証暗号: 暗号化し、平文で送られるデータ (ヘッダーなど) も含め、あらゆる変更を検出します。</td></tr><tr><td><b>Argon2id</b></td><td>RFC 9106 で標準化されたメモリハードなパスワードハッシュ関数。意図的に高いメモリコストでパスワードを鍵に変換します。</td></tr><tr><td><b>CRC32</b></td><td>偶発的な破損を検出する 32 ビットのチェックサム。セキュリティ機能ではありません。</td></tr><tr><td><b>FSE</b></td><td>有限状態エントロピー: Zstandard が使用するテーブル駆動のエントロピー符号化器。</td></tr><tr><td><b>Grover のアルゴリズム</b></td><td>二次の高速化をもたらす量子探索アルゴリズム。対称鍵の実効長を半分にします。</td></tr><tr><td>LPC</td><td>線形予測符号化: 前のサンプルの加重和からサンプルを予測すること。</td></tr><tr><td><b>Levinson-Durbin</b></td><td>信号の自己相関から、すべての次数の最適な予測係数を計算する再帰。</td></tr><tr><td><b>LZMA2</b></td><td>7-Zip と xz が使用する Lempel-Ziv-Markov 連鎖アルゴリズム: 最適解析を伴う LZ77 マッチングとバイナリレンジコーダー。</td></tr><tr><td><b>MED</b></td><td>Median edge detector: LOCO-I / JPEG-LS 画像符号化器のピクセル予測器。</td></tr><tr><td><b>メモリハード</b></td><td>コストがメモリに支配される関数。GPU や専用チップによる高速化を制限します。</td></tr><tr><td><b>NAC</b></td><td>nikpak の可逆音声コーデック。</td></tr><tr><td><b>PPMd</b></td><td>Prediction by Partial Matching (バリアント I): 各バイトを先行する最大 8 バイトから予測します。テキストに非常に強い。</td></tr><tr><td><b>preflate</b></td><td>Deflate ストリームを平文データと小さな修正に変換し、そこから同一の Deflate ストリームを再構築できる方法 (およびライブラリ)。</td></tr><tr><td><b>Rice 符号</b></td><td>ほぼ幾何分布に従う数値向けの、単純で高速な符号: 単進の商と固定数の下位ビット。</td></tr><tr><td><b>Shor のアルゴリズム</b></td><td>整数を因数分解し離散対数を計算する量子アルゴリズム。RSA と楕円曲線暗号を破ります。</td></tr><tr><td><b>ソリッドアーカイブ</b></td><td>1 つの連続したストリームとして圧縮されたアーカイブ。ファイル間の冗長性を活用できます。</td></tr><tr><td><b>STREAM</b></td><td>長いメッセージを、nonce にカウンターと最終チャンクフラグを含む認証付きチャンクとして暗号化する構築法。</td></tr><tr><td><b>ジグザグマッピング</b></td><td>符号付き整数を符号なし整数にマッピングする (0、-1、1、-2 … を 0、1、2、3 … に)。小さな絶対値が小さな数になるようにします。</td></tr><tr><td><b>Zstandard</b></td><td>LZ77 マッチングとハフマンおよび FSE エントロピー符号化を組み合わせた、現代のオープンな圧縮形式。</td></tr></tbody></table>
+<p><br>
+<br>
+
+</p>
+<p>バージョン 1.6.2 · 2026 年 10 月 19 ページ</p>
