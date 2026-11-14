@@ -216,7 +216,14 @@ if ($hasChanges) {
     '(^|/)__pycache__/', '\.pyc$',
     '^\.ftp-state\.json$', '^website/shots-raw/.*\.tmp$'
   )
-  $junkStaged = @($staged | Where-Object { $p = $_; $hit = $false; foreach ($re in $junkPatterns) { if ($p -match $re) { $hit = $true; break } }; $hit })
+  # **A DELETION of a junk file is not junk.** It is the opposite: it is how a cached
+  # .pyc or an old installer leaves the repository. `git reset HEAD --` on it puts the
+  # file back in the index, so the working tree reports it as deleted again for ever -
+  # and commit.ps1 then finished "successfully" while leaving the tree dirty, which is
+  # what made buildmac.ps1 / buildunix.ps1 refuse to start ("14 uncommitted changes",
+  # nicol, 2026-11-14). Only additions and modifications are taken back out.
+  $junkStaged = @(Invoke-Git @('diff', '--cached', '--name-only', '--diff-filter=d') |
+    Where-Object { $p = $_; $hit = $false; foreach ($re in $junkPatterns) { if ($p -match $re) { $hit = $true; break } }; $hit })
   if ($junkStaged.Count -and -not $Force) {
     $reset = @('reset', '-q', 'HEAD', '--') + $junkStaged
     $null = Invoke-Git $reset
@@ -232,14 +239,24 @@ if ($hasChanges) {
   # being committed, and stays in the repository for good - one of them is what made GitHub
   # refuse a push on 2026-11-12. `git rm --cached` untracks it: the file stays on disk, and this
   # commit removes it from the tree. Done on every run, so the state cannot drift back.
-  $binaryDirs = @('binaries', 'binaries-old', 'old-nikpad-binaries', 'website/downloads', 'website/downloads')
+  $binaryDirs = @('binaries', 'binaries-old', 'old-nikpad-binaries', 'website/downloads')
   $stillTracked = @()
   foreach ($d in $binaryDirs) {
     if (@(Invoke-Git @('ls-files', '--', $d)).Count) { $stillTracked += $d }
   }
+  # **Python bytecode.** 17 .pyc files entered the repository before __pycache__ was
+  # ignored; .gitignore cannot remove what is already tracked, so they are taken out
+  # here, once, and never come back.
+  $pycTracked = @(Invoke-Git @('ls-files', '--', '*.pyc', '*/__pycache__/*'))
+  if ($pycTracked.Count) {
+    $null = Invoke-Git (@('rm', '-q', '--cached', '--') + $pycTracked)
+    Write-Host ("   untracked {0} Python bytecode file(s) already in git" -f $pycTracked.Count) -ForegroundColor Yellow
+  }
   if ($stillTracked.Count) {
     $null = Invoke-Git (@('rm', '-r', '-q', '--cached', '--') + $stillTracked)
     Write-Host ("   untracked build output already in git: {0}" -f ($stillTracked -join ', ')) -ForegroundColor Yellow
+  }
+  if ($stillTracked.Count -or $pycTracked.Count) {
     Write-Host '   (the files stay on disk; this commit takes them out of the repository)' -ForegroundColor DarkGray
     $staged = @(Invoke-Git @('diff', '--cached', '--name-only'))
   }
